@@ -17,13 +17,19 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    tcplistener.cpp \
+    udplistener.cpp
 
 HEADERS += \
-    mainwindow.h
+    mainwindow.h \
+    tcplistener.h \
+    udplistener.h
 
 FORMS += \
-    mainwindow.ui
+    mainwindow.ui \
+    tcplistener.ui \
+    udplistener.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

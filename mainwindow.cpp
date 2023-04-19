@@ -1,21 +1,17 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include <QDebug>
-#include <QHostAddress>
-#include <QAbstractSocket>
-
-#include <QMessageBox>
+#include "tcplistener.h"
+#include "udplistener.h"
 
 /********************************************************/
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow),
-    m_TcpServer(this)
+    ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    updateStatus();
+    setupUI();
 }
 
 /********************************************************/
@@ -27,81 +23,43 @@ MainWindow::~MainWindow()
 
 /********************************************************/
 
-void MainWindow::onNewConnection()
+void MainWindow::addTcpListener()
 {
-   auto clientSocket = m_TcpServer.nextPendingConnection();
-   connect(clientSocket, &QTcpSocket::readyRead,
-           this, &MainWindow::onReadyRead);
-   connect(clientSocket, &QTcpSocket::stateChanged,
-           this, &MainWindow::onSocketStateChanged);
-
-    ui->textLog->append(clientSocket->peerAddress().toString() + " connected to server !\n");
-    ui->textLog->moveCursor(QTextCursor::End);
+    auto widget = new TcpListener(this);
+    ui->tabWidget->addTab(widget, tr("TCP [-]"));
+    ui->tabWidget->setCurrentWidget(widget);
+    connect(widget, &TcpListener::tabText, [this, widget](const QString &label){
+        int idx = ui->tabWidget->indexOf(widget);
+        ui->tabWidget->setTabText(idx, label);
+    });
 }
 
 /********************************************************/
 
-void MainWindow::onSocketStateChanged(QAbstractSocket::SocketState socketState)
+void MainWindow::addUdpListener()
 {
-    if (socketState == QAbstractSocket::UnconnectedState) {
-        QTcpSocket* clientSocket = static_cast<QTcpSocket*>(QObject::sender());
-        ui->textLog->append(clientSocket->peerAddress().toString() + " disconnected from server !\n");
-        ui->textLog->moveCursor(QTextCursor::End);
-        clientSocket->deleteLater();
-    }
+    auto widget = new UdpListener(this);
+    ui->tabWidget->addTab(widget, tr("UDP [-]"));
+    ui->tabWidget->setCurrentWidget(widget);
+    connect(widget, &UdpListener::tabText, [this, widget](const QString &label){
+        int idx = ui->tabWidget->indexOf(widget);
+        ui->tabWidget->setTabText(idx, label);
+    });
 }
 
 /********************************************************/
 
-void MainWindow::onReadyRead()
+void MainWindow::setupUI()
 {
-    QTcpSocket* sender = static_cast<QTcpSocket*>(QObject::sender());
-    QByteArray data = sender->readAll();
-    ui->textLog->append(QString(data) + "\n");
-    ui->textLog->moveCursor(QTextCursor::End);
-}
+    connect(ui->btnTcp, &QPushButton::clicked,
+            ui->actionTCP_port, &QAction::triggered);
+    connect(ui->btnUdp, &QPushButton::clicked,
+            ui->actionUDP_port, &QAction::triggered);
 
-/********************************************************/
-
-void MainWindow::on_btnConnect_clicked()
-{
-    quint16 port = ui->spinPort->value();
-    if (m_TcpServer.listen(QHostAddress::Any, port)) {
-        connect(&m_TcpServer, &QTcpServer::newConnection,
-                this, &MainWindow::onNewConnection);
-        updateStatus();
-    } else {
-        QMessageBox::critical(this, QApplication::applicationDisplayName(),
-                              tr("Port %1 connection error!\n%2")
-                              .arg(port)
-                              .arg(m_TcpServer.errorString()));
-    }
-
-}
-
-/********************************************************/
-
-void MainWindow::on_btnDisconnect_clicked()
-{
-    m_TcpServer.close();
-    updateStatus();
-}
-
-/********************************************************/
-
-void MainWindow::updateStatus()
-{
-    if (m_TcpServer.isListening()) {
-        ui->lblConnection->setText(tr("<font color=\"darkRed\">Listening the TCP port</font>"));
-        ui->spinPort->setEnabled(false);
-        ui->btnConnect->setVisible(false);
-        ui->btnDisconnect->setVisible(true);
-    } else {
-        ui->lblConnection->setText(tr("Choose TCP port to listen"));
-        ui->spinPort->setEnabled(true);
-        ui->btnConnect->setVisible(true);
-        ui->btnDisconnect->setVisible(false);
-    }
+    connect(ui->actionTCP_port, &QAction::triggered,
+            this, &MainWindow::addTcpListener);
+    connect(ui->actionUDP_port, &QAction::triggered,
+            this, &MainWindow::addUdpListener);
 }
 
 /********************************************************/
