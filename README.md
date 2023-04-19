@@ -1,3 +1,3 @@
-# TcpPortListener
+# PortListener
 
-Listen the TCP port and print received data
+Listen the TCP and UDP ports and print received data
