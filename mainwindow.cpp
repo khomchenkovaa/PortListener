@@ -5,6 +5,8 @@
 #include "udplistener.h"
 
 #include <QTextCodec>
+#include <QRegularExpression>
+#include <QRegularExpressionMatch>
 
 /********************************************************/
 
