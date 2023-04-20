@@ -2,6 +2,7 @@
 #include "ui_udplistener.h"
 
 #include <QNetworkDatagram>
+#include <QTextCodec>
 
 #include <QMessageBox>
 
@@ -31,6 +32,17 @@ UdpListener::~UdpListener()
         m_UdpSocket->close();
     }
     delete ui;
+}
+
+/********************************************************/
+
+void UdpListener::setCodecList(const QList<QTextCodec *> &list)
+{
+    ui->cmbCodec->clear();
+    foreach (const QTextCodec *codec, list) {
+        ui->cmbCodec->addItem(QLatin1String(codec->name()),
+                              QVariant(codec->mibEnum()));
+    }
 }
 
 /********************************************************/
@@ -80,6 +92,13 @@ void UdpListener::on_btnDisconnect_clicked()
 
 /********************************************************/
 
+void UdpListener::on_chkText_stateChanged(int arg1)
+{
+    ui->cmbCodec->setVisible(arg1 == Qt::CheckState::Checked);
+}
+
+/********************************************************/
+
 void UdpListener::on_cmbReplyType_currentIndexChanged(int index)
 {
     ui->editReply->setVisible(index == ReplyType::PredefinedReply);
@@ -108,13 +127,21 @@ void UdpListener::updateStatus()
 
 QByteArray UdpListener::processDatagram(const QHostAddress &host, const QByteArray &data)
 {
-    std::string displayData = ui->chkText->isChecked() ?
-                data.toStdString() :
-                data.toHex().toStdString();
+    QString displayData;
+    if (ui->chkText->isChecked()) {
+        int mib = ui->cmbCodec->itemData(ui->cmbCodec->currentIndex()).toInt();
+        const QTextCodec *codec = QTextCodec::codecForMib(mib);
+        const QString name = QLatin1String(codec->name());
+        QTextCodec::ConverterState state;
+        displayData = codec->toUnicode(data.constData(), data.size(), &state);
+    } else {
+        displayData = QString::fromStdString(data.toHex().toStdString());
+    }
+
     // log payload data
     ui->textLog->append(QString("%1 -> %2")
                         .arg(host.toString())
-                        .arg(QString::fromStdString(displayData)));
+                        .arg(displayData));
     ui->textLog->moveCursor(QTextCursor::End);
     // make reply
     switch (ui->cmbReplyType->currentIndex()) {

@@ -3,6 +3,7 @@
 
 #include <QHostAddress>
 #include <QTcpSocket>
+#include <QTextCodec>
 
 #include <QMessageBox>
 #include <QDebug>
@@ -29,6 +30,17 @@ TcpListener::~TcpListener()
 {
     m_TcpServer.close();
     delete ui;
+}
+
+/********************************************************/
+
+void TcpListener::setCodecList(const QList<QTextCodec *> &list)
+{
+    ui->cmbCodec->clear();
+    foreach (const QTextCodec *codec, list) {
+        ui->cmbCodec->addItem(QLatin1String(codec->name()),
+                              QVariant(codec->mibEnum()));
+    }
 }
 
 /********************************************************/
@@ -124,13 +136,21 @@ void TcpListener::updateStatus()
 
 QByteArray TcpListener::processData(const QHostAddress &host, const QByteArray &data)
 {
-    std::string displayData = ui->chkText->isChecked() ?
-                data.toStdString() :
-                data.toHex().toStdString();
+    QString displayData;
+    if (ui->chkText->isChecked()) {
+        int mib = ui->cmbCodec->itemData(ui->cmbCodec->currentIndex()).toInt();
+        const QTextCodec *codec = QTextCodec::codecForMib(mib);
+        const QString name = QLatin1String(codec->name());
+        QTextCodec::ConverterState state;
+        displayData = codec->toUnicode(data.constData(), data.size(), &state);
+    } else {
+        displayData = QString::fromStdString(data.toHex().toStdString());
+    }
+
     // log payload data
     ui->textLog->append(QString("%1 -> %2")
                         .arg(host.toString())
-                        .arg(QString::fromStdString(displayData)));
+                        .arg(displayData));
     ui->textLog->moveCursor(QTextCursor::End);
     // make reply
     switch (ui->cmbReplyType->currentIndex()) {

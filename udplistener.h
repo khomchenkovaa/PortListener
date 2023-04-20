@@ -22,6 +22,8 @@ public:
     explicit UdpListener(QWidget *parent = nullptr);
     ~UdpListener();
 
+    void setCodecList(const QList<QTextCodec *> &list);
+
 signals:
     void tabText(const QString &label);
 
@@ -31,6 +33,7 @@ public slots:
 private slots:
     void on_btnConnect_clicked();
     void on_btnDisconnect_clicked();
+    void on_chkText_stateChanged(int arg1);
     void on_cmbReplyType_currentIndexChanged(int index);
 
 private:

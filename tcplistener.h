@@ -22,6 +22,8 @@ public:
     explicit TcpListener(QWidget *parent = nullptr);
     ~TcpListener();
 
+    void setCodecList(const QList<QTextCodec *> &list);
+
 signals:
     void tabText(const QString &label);
 
