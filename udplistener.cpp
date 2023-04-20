@@ -51,7 +51,7 @@ void UdpListener::readPendingDatagrams()
 {
     while (m_UdpSocket->hasPendingDatagrams()) {
         QNetworkDatagram datagram = m_UdpSocket->receiveDatagram();
-        QByteArray replyData = processDatagram(datagram.senderAddress(), datagram.data());
+        QByteArray replyData = processData(datagram.senderAddress(), datagram.data());
         if (!replyData.isEmpty()) {
             m_UdpSocket->writeDatagram(datagram.makeReply(replyData));
         }
@@ -101,7 +101,16 @@ void UdpListener::on_chkText_stateChanged(int arg1)
 
 void UdpListener::on_cmbReplyType_currentIndexChanged(int index)
 {
-    ui->editReply->setVisible(index == ReplyType::PredefinedReply);
+    switch (index) {
+    case ReplyType::NoReply:
+    case ReplyType::EchoReply:
+        ui->editReply->setVisible(false);
+        break;
+    case ReplyType::TextReply:
+    case ReplyType::BinaryReply:
+        ui->editReply->setVisible(true);
+        break;
+    }
 }
 
 /********************************************************/
@@ -125,17 +134,18 @@ void UdpListener::updateStatus()
 
 /********************************************************/
 
-QByteArray UdpListener::processDatagram(const QHostAddress &host, const QByteArray &data)
+QByteArray UdpListener::processData(const QHostAddress &host, const QByteArray &data)
 {
+    int mib = ui->cmbCodec->itemData(ui->cmbCodec->currentIndex()).toInt();
+    const QTextCodec *codec = QTextCodec::codecForMib(mib);
+    const QString name = QLatin1String(codec->name());
+    QTextCodec::ConverterState state;
+
     QString displayData;
     if (ui->chkText->isChecked()) {
-        int mib = ui->cmbCodec->itemData(ui->cmbCodec->currentIndex()).toInt();
-        const QTextCodec *codec = QTextCodec::codecForMib(mib);
-        const QString name = QLatin1String(codec->name());
-        QTextCodec::ConverterState state;
         displayData = codec->toUnicode(data.constData(), data.size(), &state);
     } else {
-        displayData = QString::fromStdString(data.toHex().toStdString());
+        displayData = QString::fromLatin1(data.toHex());
     }
 
     // log payload data
@@ -149,8 +159,10 @@ QByteArray UdpListener::processDatagram(const QHostAddress &host, const QByteArr
         break;
     case ReplyType::EchoReply:
         return data;
-    case ReplyType::PredefinedReply:
-        return ui->editReply->text().toUtf8();
+    case ReplyType::TextReply:
+        return codec->fromUnicode(ui->editReply->text());
+    case ReplyType::BinaryReply:
+        return QByteArray::fromHex(ui->editReply->text().toLatin1());
     }
     return QByteArray();
 }

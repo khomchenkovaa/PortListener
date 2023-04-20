@@ -117,7 +117,12 @@
           </item>
           <item>
            <property name="text">
-            <string>Predefined</string>
+            <string>Text</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Binary</string>
            </property>
           </item>
          </widget>

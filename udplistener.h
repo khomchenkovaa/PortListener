@@ -15,7 +15,8 @@ class UdpListener : public QWidget
     enum ReplyType {
         NoReply,
         EchoReply,
-        PredefinedReply
+        TextReply,
+        BinaryReply
     };
 
 public:
@@ -38,7 +39,7 @@ private slots:
 
 private:
     void updateStatus();
-    QByteArray processDatagram(const QHostAddress &host, const QByteArray &data);
+    QByteArray processData(const QHostAddress &host, const QByteArray &data);
 
 private:
     Ui::UdpListener *ui;

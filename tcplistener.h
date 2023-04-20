@@ -15,7 +15,8 @@ class TcpListener : public QWidget
     enum ReplyType {
         NoReply,
         EchoReply,
-        PredefinedReply
+        TextReply,
+        BinaryReply
     };
 
 public:
