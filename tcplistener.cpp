@@ -15,6 +15,11 @@ TcpListener::TcpListener(QWidget *parent) :
     m_TcpServer(this)
 {
     ui->setupUi(this);
+    // configure UI default state
+    ui->chkText->setChecked(true);
+    ui->cmbReplyType->setCurrentIndex(ReplyType::NoReply);
+    ui->editReply->setHidden(true);
+
     updateStatus();
 }
 
@@ -56,10 +61,12 @@ void TcpListener::onTcpSocketStateChanged(QAbstractSocket::SocketState socketSta
 
 void TcpListener::onReadyRead()
 {
-    QAbstractSocket* sender = static_cast<QAbstractSocket*>(QObject::sender());
+    QTcpSocket* sender = static_cast<QTcpSocket*>(QObject::sender());
     QByteArray data = sender->readAll();
-    ui->textLog->append(QString(data));
-    ui->textLog->moveCursor(QTextCursor::End);
+    QByteArray replyData = processData(sender->peerAddress(), data);
+    if (!replyData.isEmpty()) {
+        sender->write(replyData);
+    }
 }
 
 /********************************************************/
@@ -84,6 +91,14 @@ void TcpListener::on_btnConnect_clicked()
 void TcpListener::on_btnDisconnect_clicked()
 {
     m_TcpServer.close();
+    updateStatus();
+}
+
+/********************************************************/
+
+void TcpListener::on_cmbReplyType_currentIndexChanged(int index)
+{
+    ui->editReply->setVisible(index == ReplyType::PredefinedReply);
 }
 
 /********************************************************/
@@ -103,6 +118,30 @@ void TcpListener::updateStatus()
         ui->btnDisconnect->setVisible(false);
         emit tabText(QString("TCP [-]"));
     }
+}
+
+/********************************************************/
+
+QByteArray TcpListener::processData(const QHostAddress &host, const QByteArray &data)
+{
+    std::string displayData = ui->chkText->isChecked() ?
+                data.toStdString() :
+                data.toHex().toStdString();
+    // log payload data
+    ui->textLog->append(QString("%1 -> %2")
+                        .arg(host.toString())
+                        .arg(QString::fromStdString(displayData)));
+    ui->textLog->moveCursor(QTextCursor::End);
+    // make reply
+    switch (ui->cmbReplyType->currentIndex()) {
+    case ReplyType::NoReply:
+        break;
+    case ReplyType::EchoReply:
+        return data;
+    case ReplyType::PredefinedReply:
+        return ui->editReply->text().toUtf8();
+    }
+    return QByteArray();
 }
 
 /********************************************************/

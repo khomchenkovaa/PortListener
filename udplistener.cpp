@@ -1,6 +1,8 @@
 #include "udplistener.h"
 #include "ui_udplistener.h"
 
+#include <QNetworkDatagram>
+
 #include <QMessageBox>
 
 #include <QDebug>
@@ -37,7 +39,7 @@ void UdpListener::readPendingDatagrams()
 {
     while (m_UdpSocket->hasPendingDatagrams()) {
         QNetworkDatagram datagram = m_UdpSocket->receiveDatagram();
-        QByteArray replyData = processDatagram(datagram);
+        QByteArray replyData = processDatagram(datagram.senderAddress(), datagram.data());
         if (!replyData.isEmpty()) {
             m_UdpSocket->writeDatagram(datagram.makeReply(replyData));
         }
@@ -80,7 +82,7 @@ void UdpListener::on_btnDisconnect_clicked()
 
 void UdpListener::on_cmbReplyType_currentIndexChanged(int index)
 {
-    ui->editReply->setVisible(index == PredefinedReply);
+    ui->editReply->setVisible(index == ReplyType::PredefinedReply);
 }
 
 /********************************************************/
@@ -104,15 +106,14 @@ void UdpListener::updateStatus()
 
 /********************************************************/
 
-QByteArray UdpListener::processDatagram(const QNetworkDatagram &datagram)
+QByteArray UdpListener::processDatagram(const QHostAddress &host, const QByteArray &data)
 {
-    QByteArray data = datagram.data();
     std::string displayData = ui->chkText->isChecked() ?
                 data.toStdString() :
                 data.toHex().toStdString();
     // log payload data
     ui->textLog->append(QString("%1 -> %2")
-                        .arg(datagram.senderAddress().toString())
+                        .arg(host.toString())
                         .arg(QString::fromStdString(displayData)));
     ui->textLog->moveCursor(QTextCursor::End);
     // make reply

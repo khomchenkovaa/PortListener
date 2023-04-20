@@ -3,7 +3,6 @@
 
 #include <QWidget>
 #include <QUdpSocket>
-#include <QNetworkDatagram>
 
 namespace Ui {
 class UdpListener;
@@ -36,7 +35,7 @@ private slots:
 
 private:
     void updateStatus();
-    QByteArray processDatagram(const QNetworkDatagram &datagram);
+    QByteArray processDatagram(const QHostAddress &host, const QByteArray &data);
 
 private:
     Ui::UdpListener *ui;

@@ -12,6 +12,12 @@ class TcpListener : public QWidget
 {
     Q_OBJECT
 
+    enum ReplyType {
+        NoReply,
+        EchoReply,
+        PredefinedReply
+    };
+
 public:
     explicit TcpListener(QWidget *parent = nullptr);
     ~TcpListener();
@@ -27,9 +33,11 @@ public slots:
 private slots:
     void on_btnConnect_clicked();
     void on_btnDisconnect_clicked();
+    void on_cmbReplyType_currentIndexChanged(int index);
 
 private:
     void updateStatus();
+    QByteArray processData(const QHostAddress &host, const QByteArray &data);
 
 private:
     Ui::TcpListener *ui;
