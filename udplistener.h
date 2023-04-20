@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QUdpSocket>
+#include <QNetworkDatagram>
 
 namespace Ui {
 class UdpListener;
@@ -11,6 +12,12 @@ class UdpListener;
 class UdpListener : public QWidget
 {
     Q_OBJECT
+
+    enum ReplyType {
+        NoReply,
+        EchoReply,
+        PredefinedReply
+    };
 
 public:
     explicit UdpListener(QWidget *parent = nullptr);
@@ -25,9 +32,11 @@ public slots:
 private slots:
     void on_btnConnect_clicked();
     void on_btnDisconnect_clicked();
+    void on_cmbReplyType_currentIndexChanged(int index);
 
 private:
     void updateStatus();
+    QByteArray processDatagram(const QNetworkDatagram &datagram);
 
 private:
     Ui::UdpListener *ui;

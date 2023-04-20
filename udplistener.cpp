@@ -1,9 +1,9 @@
 #include "udplistener.h"
 #include "ui_udplistener.h"
 
-#include <QNetworkDatagram>
-
 #include <QMessageBox>
+
+#include <QDebug>
 
 /********************************************************/
 
@@ -13,6 +13,11 @@ UdpListener::UdpListener(QWidget *parent) :
     m_UdpSocket(Q_NULLPTR)
 {
     ui->setupUi(this);
+    // configure UI default state
+    ui->chkText->setChecked(true);
+    ui->cmbReplyType->setCurrentIndex(ReplyType::NoReply);
+    ui->editReply->setHidden(true);
+
     updateStatus();
 }
 
@@ -32,10 +37,10 @@ void UdpListener::readPendingDatagrams()
 {
     while (m_UdpSocket->hasPendingDatagrams()) {
         QNetworkDatagram datagram = m_UdpSocket->receiveDatagram();
-        ui->textLog->append(QString("%1 -> %2")
-                            .arg(datagram.senderAddress().toString())
-                            .arg(QString(datagram.data())));
-        ui->textLog->moveCursor(QTextCursor::End);
+        QByteArray replyData = processDatagram(datagram);
+        if (!replyData.isEmpty()) {
+            m_UdpSocket->writeDatagram(datagram.makeReply(replyData));
+        }
     }
 }
 
@@ -73,6 +78,13 @@ void UdpListener::on_btnDisconnect_clicked()
 
 /********************************************************/
 
+void UdpListener::on_cmbReplyType_currentIndexChanged(int index)
+{
+    ui->editReply->setVisible(index == PredefinedReply);
+}
+
+/********************************************************/
+
 void UdpListener::updateStatus()
 {
     if (m_UdpSocket) {
@@ -88,6 +100,31 @@ void UdpListener::updateStatus()
         ui->btnDisconnect->setVisible(false);
         emit tabText(QString("UDP [-]"));
     }
+}
+
+/********************************************************/
+
+QByteArray UdpListener::processDatagram(const QNetworkDatagram &datagram)
+{
+    QByteArray data = datagram.data();
+    std::string displayData = ui->chkText->isChecked() ?
+                data.toStdString() :
+                data.toHex().toStdString();
+    // log payload data
+    ui->textLog->append(QString("%1 -> %2")
+                        .arg(datagram.senderAddress().toString())
+                        .arg(QString::fromStdString(displayData)));
+    ui->textLog->moveCursor(QTextCursor::End);
+    // make reply
+    switch (ui->cmbReplyType->currentIndex()) {
+    case ReplyType::NoReply:
+        break;
+    case ReplyType::EchoReply:
+        return data;
+    case ReplyType::PredefinedReply:
+        return ui->editReply->text().toUtf8();
+    }
+    return QByteArray();
 }
 
 /********************************************************/
