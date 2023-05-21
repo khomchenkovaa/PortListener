@@ -1,0 +1,34 @@
+[
+{
+    "prefix" : "counters",
+    "table" : "COUNTERS",
+    "fields" : [
+        { "index" : 0, "name" : "CODE_KKS", "type" : "String" },
+        { "index" : 1, "name" : "PULSE_COUNT", "type" : "Real" },
+        { "index" : 2, "name" : "CONC_1SEC", "type" : "Real" },
+        { "index" : 3, "name" : "CONC_10SEC", "type" : "Real" },
+        { "index" : 4, "name" : "CONC_100SEC", "type" : "Real" },
+        { "index" : 5, "name" : "REG_TIME", "type" : "DateTime", "format" : "yyyy:MM:dd:HH:mm:ss:zzz" }
+    ]
+},
+{
+    "prefix" : "temperature",
+    "table" : "TEMPERATURE",
+    "fields" : [
+        { "index" : 0, "name" : "CODE_KKS", "type" : "String" },
+        { "index" : 1, "name" : "SIGNAL_CURRENT", "type" : "Real" },
+        { "index" : 2, "name" : "TEMPERATURE", "type" : "Real" },
+        { "index" : 3, "name" : "REG_TIME", "type" : "DateTime", "format" : "yyyy:MM:dd:HH:mm:ss:zzz" }
+    ]
+},
+{
+    "prefix" : "diagnostic",
+    "table" : "DIAG_DATA",
+    "fields" : [
+        { "index" : 0, "name" : "CODE_KKS", "type" : "String" },
+        { "index" : 1, "name" : "PLACE", "type" : "String" },
+        { "index" : 2, "name" : "ERROR_CODE", "type" : "String" },
+        { "index" : 3, "name" : "REG_TIME", "type" : "DateTime", "format" : "yyyy:MM:dd:HH:mm:ss:zzz" }
+    ]
+}
+]

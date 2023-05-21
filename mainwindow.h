@@ -18,6 +18,7 @@ public:
 private slots:
     void addTcpListener();
     void addUdpListener();
+    void addSocketListener();
 
 private:
     void setupUI();

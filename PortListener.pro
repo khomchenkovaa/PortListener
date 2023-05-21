@@ -18,16 +18,19 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
+    socketlistener.cpp \
     tcplistener.cpp \
     udplistener.cpp
 
 HEADERS += \
     mainwindow.h \
+    socketlistener.h \
     tcplistener.h \
     udplistener.h
 
 FORMS += \
     mainwindow.ui \
+    socketlistener.ui \
     tcplistener.ui \
     udplistener.ui
 
@@ -35,3 +38,6 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+RESOURCES += \
+    PortListener.qrc

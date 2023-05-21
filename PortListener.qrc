@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/sql/counters.sql</file>
+        <file>resources/sql/diagnostic.sql</file>
+        <file>resources/sql/temperature.sql</file>
+        <file>resources/datamapper.json</file>
+    </qresource>
+</RCC>

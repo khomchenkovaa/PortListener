@@ -3,6 +3,7 @@
 
 #include "tcplistener.h"
 #include "udplistener.h"
+#include "socketlistener.h"
 
 #include <QTextCodec>
 #include <QRegularExpression>
@@ -56,17 +57,35 @@ void MainWindow::addUdpListener()
 
 /********************************************************/
 
+void MainWindow::addSocketListener()
+{
+    auto widget = new SocketListener(this);
+    ui->tabWidget->addTab(widget, tr("Socket [-]"));
+    ui->tabWidget->setCurrentWidget(widget);
+    widget->setCodecList(codecs);
+    connect(widget, &SocketListener::tabText, [this, widget](const QString &label){
+        int idx = ui->tabWidget->indexOf(widget);
+        ui->tabWidget->setTabText(idx, label);
+    });
+}
+
+/********************************************************/
+
 void MainWindow::setupUI()
 {
     connect(ui->btnTcp, &QPushButton::clicked,
             ui->actionTCP_port, &QAction::triggered);
     connect(ui->btnUdp, &QPushButton::clicked,
             ui->actionUDP_port, &QAction::triggered);
+    connect(ui->btnSocket, &QPushButton::clicked,
+            ui->actionSocket, &QAction::triggered);
 
     connect(ui->actionTCP_port, &QAction::triggered,
             this, &MainWindow::addTcpListener);
     connect(ui->actionUDP_port, &QAction::triggered,
             this, &MainWindow::addUdpListener);
+    connect(ui->actionSocket, &QAction::triggered,
+            this, &MainWindow::addSocketListener);
 }
 
 /********************************************************/
