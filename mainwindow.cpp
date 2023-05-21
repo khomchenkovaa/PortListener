@@ -86,6 +86,12 @@ void MainWindow::setupUI()
             this, &MainWindow::addUdpListener);
     connect(ui->actionSocket, &QAction::triggered,
             this, &MainWindow::addSocketListener);
+
+    connect(ui->tabWidget->tabBar(), &QTabBar::tabCloseRequested, this, [this](int index){
+        QWidget *widget = ui->tabWidget->widget(index);
+        ui->tabWidget->removeTab(index);
+        widget->deleteLater();
+    });
 }
 
 /********************************************************/
