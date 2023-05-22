@@ -1,6 +1,8 @@
 #include "udplistener.h"
 #include "ui_udplistener.h"
 
+#include "filehandler.h"
+
 #include <QNetworkDatagram>
 #include <QTextCodec>
 
@@ -13,7 +15,8 @@
 UdpListener::UdpListener(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::UdpListener),
-    m_UdpSocket(Q_NULLPTR)
+    m_UdpSocket(Q_NULLPTR),
+    m_Handler(Q_NULLPTR)
 {
     ui->setupUi(this);
     // configure UI default state
@@ -75,6 +78,18 @@ void UdpListener::on_btnConnect_clicked()
         m_UdpSocket->deleteLater();
         m_UdpSocket = Q_NULLPTR;
     }
+    if (m_Handler) {
+        IHandlerWidget *editor = findChild<IHandlerWidget*>();
+        if (editor) {
+            m_Handler->setSettings(editor->settings());
+        }
+        m_Handler->connect(!ui->chkText->isChecked());
+        if (m_Handler->hasError()) {
+            ui->textLog->append(QString("%1 : %2")
+                                .arg(m_Handler->name())
+                                .arg(m_Handler->lastError()));
+        }
+    }
     updateStatus();
 }
 
@@ -86,6 +101,9 @@ void UdpListener::on_btnDisconnect_clicked()
         m_UdpSocket->close();
         m_UdpSocket->deleteLater();
         m_UdpSocket = Q_NULLPTR;
+    }
+    if (m_Handler) {
+        m_Handler->disconnect();
     }
     updateStatus();
 }
@@ -104,12 +122,38 @@ void UdpListener::on_cmbReplyType_currentIndexChanged(int index)
     switch (index) {
     case ReplyType::NoReply:
     case ReplyType::EchoReply:
+    case ReplyType::ActionReply:
         ui->editReply->setVisible(false);
         break;
     case ReplyType::TextReply:
     case ReplyType::BinaryReply:
         ui->editReply->setVisible(true);
         break;
+    }
+}
+
+/********************************************************/
+
+void UdpListener::on_cmbHandler_currentIndexChanged(int index)
+{
+    IHandlerWidget *editor = findChild<IHandlerWidget*>();
+    if (editor) {
+        editor->deleteLater();
+    }
+    if (m_Handler) {
+        m_Handler->deleteLater();
+    }
+    switch (index) {
+    case ActionHandler::NoActionHandler:
+        m_Handler = Q_NULLPTR;
+        break;
+    case ActionHandler::FileActionHandler:
+        m_Handler = new FileHandler(this);
+        break;
+    }
+    if (m_Handler) {
+        editor = m_Handler->settingsWidget(this);
+        ui->actionLayout->addWidget(editor);
     }
 }
 
@@ -148,23 +192,38 @@ QByteArray UdpListener::processData(const QHostAddress &host, const QByteArray &
         displayData = QString::fromLatin1(data.toHex());
     }
 
+    QByteArray reply;
+    // Handler
+    if (m_Handler) {
+        if (ui->chkText->isChecked()) {
+            reply = m_Handler->processData(displayData);
+        } else {
+            reply = m_Handler->processData(data);
+        }
+    }
+
     // log payload data
     ui->textLog->append(QString("%1 -> %2")
                         .arg(host.toString())
                         .arg(displayData));
     ui->textLog->moveCursor(QTextCursor::End);
+
     // make reply
     switch (ui->cmbReplyType->currentIndex()) {
     case ReplyType::NoReply:
+        reply.clear();
         break;
     case ReplyType::EchoReply:
-        return data;
+        reply = data;
+        break;
     case ReplyType::TextReply:
-        return codec->fromUnicode(ui->editReply->text());
+        reply = codec->fromUnicode(ui->editReply->text());
+        break;
     case ReplyType::BinaryReply:
-        return QByteArray::fromHex(ui->editReply->text().toLatin1());
+        reply = QByteArray::fromHex(ui->editReply->text().toLatin1());
+        break;
     }
-    return QByteArray();
+    return reply;
 }
 
 /********************************************************/

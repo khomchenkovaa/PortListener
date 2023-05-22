@@ -74,6 +74,13 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_2">
         <item>
+         <widget class="QLabel" name="lblReceive">
+          <property name="text">
+           <string>Receive as</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QCheckBox" name="chkText">
           <property name="text">
            <string>Text</string>
@@ -112,23 +119,66 @@
           </item>
           <item>
            <property name="text">
-            <string>Echo</string>
+            <string>Echo Reply</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>Text</string>
+            <string>Predefined Text</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>Binary</string>
+            <string>Predefined Binary</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Defined by Action</string>
            </property>
           </item>
          </widget>
         </item>
         <item>
          <widget class="QLineEdit" name="editReply"/>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="actionLayout">
+        <item>
+         <widget class="QLabel" name="lblAction">
+          <property name="text">
+           <string>Action</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="cmbHandler">
+          <item>
+           <property name="text">
+            <string>No Action</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Save to File</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
         </item>
        </layout>
       </item>

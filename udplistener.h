@@ -1,6 +1,8 @@
 #ifndef UDPLISTENER_H
 #define UDPLISTENER_H
 
+#include "ihandler.h"
+
 #include <QWidget>
 #include <QUdpSocket>
 
@@ -16,7 +18,13 @@ class UdpListener : public QWidget
         NoReply,
         EchoReply,
         TextReply,
-        BinaryReply
+        BinaryReply,
+        ActionReply
+    };
+
+    enum ActionHandler {
+        NoActionHandler,
+        FileActionHandler
     };
 
 public:
@@ -36,6 +44,7 @@ private slots:
     void on_btnDisconnect_clicked();
     void on_chkText_stateChanged(int arg1);
     void on_cmbReplyType_currentIndexChanged(int index);
+    void on_cmbHandler_currentIndexChanged(int index);
 
 private:
     void updateStatus();
@@ -44,6 +53,7 @@ private:
 private:
     Ui::UdpListener *ui;
     QUdpSocket *m_UdpSocket;
+    IHandler *m_Handler;
 };
 
 #endif // UDPLISTENER_H
