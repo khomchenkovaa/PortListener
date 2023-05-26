@@ -1,6 +1,8 @@
 #include "socketlistener.h"
 #include "ui_socketlistener.h"
 
+#include "message.h"
+
 #include <QTextCodec>
 
 #include <QMessageBox>

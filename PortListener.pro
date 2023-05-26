@@ -34,6 +34,7 @@ FORMS += \
     tcplistener.ui \
     udplistener.ui
 
+include("messaging/messaging.pri")
 include("handler/handler.pri")
 
 # Default rules for deployment.

@@ -20,9 +20,18 @@ UdpListener::UdpListener(QWidget *parent) :
 {
     ui->setupUi(this);
     // configure UI default state
-    ui->chkText->setChecked(true);
+    ui->rbBinary->setChecked(false);
+    ui->rbText->setChecked(true);
     ui->cmbReplyType->setCurrentIndex(ReplyType::NoReply);
     ui->editReply->setHidden(true);
+
+    ui->splitter->setStretchFactor(0, 1);
+    ui->splitter->setStretchFactor(1, 3);
+
+    connect(ui->rbBinary, &QRadioButton::toggled,
+            this, &UdpListener::onInputFormatChanged);
+    connect(ui->rbText, &QRadioButton::toggled,
+            this, &UdpListener::onInputFormatChanged);
 
     updateStatus();
 }
@@ -83,7 +92,7 @@ void UdpListener::on_btnConnect_clicked()
         if (editor) {
             m_Handler->setSettings(editor->settings());
         }
-        m_Handler->connect(!ui->chkText->isChecked());
+        m_Handler->connect(ui->rbBinary->isChecked());
         if (m_Handler->hasError()) {
             ui->textLog->append(QString("%1 : %2")
                                 .arg(m_Handler->name())
@@ -110,9 +119,9 @@ void UdpListener::on_btnDisconnect_clicked()
 
 /********************************************************/
 
-void UdpListener::on_chkText_stateChanged(int arg1)
+void UdpListener::onInputFormatChanged()
 {
-    ui->cmbCodec->setVisible(arg1 == Qt::CheckState::Checked);
+    ui->cmbCodec->setVisible(ui->rbText->isChecked());
 }
 
 /********************************************************/
@@ -153,7 +162,7 @@ void UdpListener::on_cmbHandler_currentIndexChanged(int index)
     }
     if (m_Handler) {
         editor = m_Handler->settingsWidget(this);
-        ui->actionLayout->addWidget(editor);
+        ui->boxAction->layout()->addWidget(editor);
     }
 }
 
@@ -186,7 +195,7 @@ QByteArray UdpListener::processData(const QHostAddress &host, const QByteArray &
     QTextCodec::ConverterState state;
 
     QString displayData;
-    if (ui->chkText->isChecked()) {
+    if (ui->rbText->isChecked()) {
         displayData = codec->toUnicode(data.constData(), data.size(), &state);
     } else {
         displayData = QString::fromLatin1(data.toHex());
@@ -195,7 +204,7 @@ QByteArray UdpListener::processData(const QHostAddress &host, const QByteArray &
     QByteArray reply;
     // Handler
     if (m_Handler) {
-        if (ui->chkText->isChecked()) {
+        if (ui->rbText->isChecked()) {
             reply = m_Handler->processData(displayData);
         } else {
             reply = m_Handler->processData(data);

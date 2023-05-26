@@ -42,7 +42,7 @@ public slots:
 private slots:
     void on_btnConnect_clicked();
     void on_btnDisconnect_clicked();
-    void on_chkText_stateChanged(int arg1);
+    void onInputFormatChanged();
     void on_cmbReplyType_currentIndexChanged(int index);
     void on_cmbHandler_currentIndexChanged(int index);
 
