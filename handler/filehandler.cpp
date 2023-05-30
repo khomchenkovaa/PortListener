@@ -8,9 +8,9 @@
 /********************************************************/
 
 FileHandler::FileHandler(QObject *parent)
-    : IHandler(parent)
+    : MessageHandler(parent)
 {
-
+    m_Name = tr("File handler");
 }
 
 /********************************************************/
@@ -18,6 +18,23 @@ FileHandler::FileHandler(QObject *parent)
 FileHandler::~FileHandler()
 {
     disconnect();
+}
+
+/********************************************************/
+
+void FileHandler::processMessage(Message *msg)
+{
+    m_Error.clear();
+    if (!m_Connected || !m_File.isOpen()) {
+        m_Error = tr("Cannot write data to file");
+        return;
+    }
+    if (msg->payload.type() == QVariant::ByteArray) {
+        m_File.write(msg->payload.toByteArray());
+    } else {
+        QTextStream out(&m_File);
+        out << msg->payload.toString();
+    }
 }
 
 /********************************************************/
@@ -84,7 +101,7 @@ void FileHandler::disconnect()
 
 /********************************************************/
 
-IHandlerWidget *FileHandler::settingsWidget(QWidget *parent) const
+MessageHandlerWgt *FileHandler::settingsWidget(QWidget *parent) const
 {
     return new FileHandlerWidget(parent);
 }

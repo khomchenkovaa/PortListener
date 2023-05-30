@@ -1,28 +1,29 @@
-#ifndef IHANDLER_H
-#define IHANDLER_H
+#ifndef MESSAGEHANDLER_H
+#define MESSAGEHANDLER_H
+
+#include "message.h"
 
 #include <QObject>
 #include <QVariant>
-#include <QWidget>
-
-/********************************************************/
 
 typedef QMap<int, QVariant> SettingsMap;
-class IHandlerWidget;
+class MessageHandlerWgt;
 
-/********************************************************/
-
-class IHandler : public QObject {
+class MessageHandler : public QObject {
     Q_OBJECT
 
 public:
-    explicit IHandler(QObject *parent = nullptr) : QObject(parent) {
+    explicit MessageHandler(QObject *parent = nullptr) : QObject(parent) {
         m_Name = tr("Empty handler");
         m_Connected = false;
     }
 
     QString name() const {
         return m_Name;
+    }
+
+    virtual void processMessage(Message *msg) {
+        Q_UNUSED(msg)
     }
 
     virtual QByteArray processData(const QByteArray& data) {
@@ -57,7 +58,7 @@ public:
         m_Connected = false;
     }
 
-    virtual IHandlerWidget *settingsWidget(QWidget *parent = nullptr) const {
+    virtual MessageHandlerWgt *settingsWidget(QWidget *parent = nullptr) const {
         Q_UNUSED(parent)
         return Q_NULLPTR;
     }
@@ -77,26 +78,4 @@ protected:
     QString m_Error;
 };
 
-/********************************************************/
-
-class IHandlerWidget : public QWidget
-{
-    Q_OBJECT
-
-public:
-    explicit IHandlerWidget(QWidget *parent = nullptr) : QWidget(parent) {
-        setObjectName("HandlerWidget");
-    }
-
-    virtual SettingsMap settings() const {
-        return SettingsMap();
-    }
-
-    void setSettings(const SettingsMap& map) {
-        Q_UNUSED(map)
-    }
-};
-
-/********************************************************/
-
-#endif // IHANDLER_H
+#endif // MESSAGEHANDLER_H

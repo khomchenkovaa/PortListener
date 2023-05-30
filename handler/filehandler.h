@@ -1,11 +1,11 @@
 #ifndef FILEHANDLER_H
 #define FILEHANDLER_H
 
-#include "ihandler.h"
+#include "messagehandler.h"
 
 #include <QFile>
 
-class FileHandler : public IHandler
+class FileHandler : public MessageHandler
 {
     Q_OBJECT
 public:
@@ -13,11 +13,12 @@ public:
 
     ~FileHandler();
 
+    void processMessage(Message *msg);
     QByteArray processData(const QByteArray& data);
     QByteArray processData(const QString& data);
     void connect(bool binary = false);
     void disconnect();
-    IHandlerWidget *settingsWidget(QWidget *parent = nullptr) const;
+    MessageHandlerWgt *settingsWidget(QWidget *parent = nullptr) const;
 
 private:
     QFile m_File;

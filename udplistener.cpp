@@ -1,6 +1,7 @@
 #include "udplistener.h"
 #include "ui_udplistener.h"
 
+#include "messagehandlerwgt.h"
 #include "filehandler.h"
 
 #include <QNetworkDatagram>
@@ -88,7 +89,7 @@ void UdpListener::on_btnConnect_clicked()
         m_UdpSocket = Q_NULLPTR;
     }
     if (m_Handler) {
-        IHandlerWidget *editor = findChild<IHandlerWidget*>();
+        MessageHandlerWgt *editor = findChild<MessageHandlerWgt*>();
         if (editor) {
             m_Handler->setSettings(editor->settings());
         }
@@ -145,7 +146,7 @@ void UdpListener::on_cmbReplyType_currentIndexChanged(int index)
 
 void UdpListener::on_cmbHandler_currentIndexChanged(int index)
 {
-    IHandlerWidget *editor = findChild<IHandlerWidget*>();
+    MessageHandlerWgt *editor = findChild<MessageHandlerWgt*>();
     if (editor) {
         editor->deleteLater();
     }

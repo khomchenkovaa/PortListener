@@ -1,13 +1,13 @@
 #ifndef FILEHANDLERWIDGET_H
 #define FILEHANDLERWIDGET_H
 
-#include "ihandler.h"
+#include "messagehandlerwgt.h"
 
 namespace Ui {
 class FileHandlerWidget;
 }
 
-class FileHandlerWidget : public IHandlerWidget
+class FileHandlerWidget : public MessageHandlerWgt
 {
     Q_OBJECT
 

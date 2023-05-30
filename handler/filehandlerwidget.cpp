@@ -6,7 +6,7 @@
 /********************************************************/
 
 FileHandlerWidget::FileHandlerWidget(QWidget *parent) :
-    IHandlerWidget(parent),
+    MessageHandlerWgt(parent),
     ui(new Ui::FileHandlerWidget)
 {
     ui->setupUi(this);

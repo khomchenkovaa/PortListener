@@ -1,7 +1,7 @@
 #ifndef UDPLISTENER_H
 #define UDPLISTENER_H
 
-#include "ihandler.h"
+#include "messagehandler.h"
 
 #include <QWidget>
 #include <QUdpSocket>
@@ -53,7 +53,7 @@ private:
 private:
     Ui::UdpListener *ui;
     QUdpSocket *m_UdpSocket;
-    IHandler *m_Handler;
+    MessageHandler *m_Handler;
 };
 
 #endif // UDPLISTENER_H

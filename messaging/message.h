@@ -9,20 +9,21 @@
 /**
  * A message representation with headers and body
  */
-class Message {
+struct Message {
 
     QUuid       id;
     QDateTime   timestamp;
     QString     sender;
     QVariant    payload;
+    QVariant    original;
     QVariantMap headers;
 
-public:
     explicit Message(const QString& sndr, const QVariant& value, const QVariantMap& hdrs = QVariantMap())
         : id(QUuid::createUuid())
         , timestamp(QDateTime::currentDateTime())
         , sender(sndr)
         , payload(value)
+        , original(value)
         , headers(hdrs)
     {
     }
