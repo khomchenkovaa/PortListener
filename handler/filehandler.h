@@ -8,12 +8,18 @@
 class FileHandler : public MessageHandler
 {
     Q_OBJECT
+
 public:
+    enum Settings {
+        FileName,
+        AppendToFile
+    };
+
     explicit FileHandler(QObject *parent = nullptr);
 
     ~FileHandler();
 
-    void processMessage(Message *msg);
+    void handleMessage(Message *msg);
     QByteArray processData(const QByteArray& data);
     QByteArray processData(const QString& data);
     void connect(bool binary = false);

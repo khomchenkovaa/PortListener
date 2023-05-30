@@ -22,11 +22,9 @@ private slots:
 
 private:
     void setupUI();
-    void findCodecs();
 
 private:
     Ui::MainWindow *ui;
-    QList<QTextCodec *> codecs;
 
 };
 #endif // MAINWINDOW_H

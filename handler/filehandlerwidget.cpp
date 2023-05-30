@@ -25,8 +25,8 @@ FileHandlerWidget::~FileHandlerWidget()
 SettingsMap FileHandlerWidget::settings() const
 {
     SettingsMap map;
-    map.insert(Settings::FileName, ui->editFile->text());
-    map.insert(Settings::AppendToFile, ui->chkAppend->isChecked());
+    map.insert(FileHandler::FileName, ui->editFile->text());
+    map.insert(FileHandler::AppendToFile, ui->chkAppend->isChecked());
     return map;
 }
 
@@ -34,8 +34,8 @@ SettingsMap FileHandlerWidget::settings() const
 
 void FileHandlerWidget::setSettings(const SettingsMap &map)
 {
-    ui->editFile->setText(map.value(Settings::FileName).toString());
-    ui->chkAppend->setChecked(map.value(Settings::AppendToFile, true).toBool());
+    ui->editFile->setText(map.value(FileHandler::FileName).toString());
+    ui->chkAppend->setChecked(map.value(FileHandler::AppendToFile, true).toBool());
 }
 
 /********************************************************/

@@ -1,6 +1,8 @@
 #ifndef TCPLISTENER_H
 #define TCPLISTENER_H
 
+#include "iodecoder.h"
+
 #include <QWidget>
 #include <QTcpServer>
 
@@ -23,8 +25,6 @@ public:
     explicit TcpListener(QWidget *parent = nullptr);
     ~TcpListener();
 
-    void setCodecList(const QList<QTextCodec *> &list);
-
 signals:
     void tabText(const QString &label);
 
@@ -40,11 +40,13 @@ private slots:
 
 private:
     void updateStatus();
+    void updateCodecs();
     QByteArray processData(const QHostAddress &host, const QByteArray &data);
 
 private:
     Ui::TcpListener *ui;
     QTcpServer m_TcpServer;
+    IODecoder  ioDecoder;
 };
 
 #endif // TCPLISTENER_H

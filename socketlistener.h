@@ -1,6 +1,8 @@
 #ifndef SOCKETLISTENER_H
 #define SOCKETLISTENER_H
 
+#include "iodecoder.h"
+
 #include <QWidget>
 #include <QLocalServer>
 #include <QLocalSocket>
@@ -24,8 +26,6 @@ public:
     explicit SocketListener(QWidget *parent = nullptr);
     ~SocketListener();
 
-    void setCodecList(const QList<QTextCodec *> &list);
-
 signals:
     void tabText(const QString &label);
 
@@ -41,11 +41,13 @@ private slots:
 
 private:
     void updateStatus();
+    void updateCodecs();
     QByteArray processData(quintptr socketDescriptor, const QByteArray &data);
 
 private:
     Ui::SocketListener *ui;
     QLocalServer m_LocalServer;
+    IODecoder  ioDecoder;
 };
 
 #endif // SOCKETLISTENER_H

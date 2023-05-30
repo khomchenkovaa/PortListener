@@ -2,6 +2,7 @@
 #define UDPLISTENER_H
 
 #include "messagehandler.h"
+#include "iodecoder.h"
 
 #include <QWidget>
 #include <QUdpSocket>
@@ -31,8 +32,6 @@ public:
     explicit UdpListener(QWidget *parent = nullptr);
     ~UdpListener();
 
-    void setCodecList(const QList<QTextCodec *> &list);
-
 signals:
     void tabText(const QString &label);
 
@@ -48,12 +47,14 @@ private slots:
 
 private:
     void updateStatus();
+    void updateCodecs();
     QByteArray processData(const QHostAddress &host, const QByteArray &data);
 
 private:
     Ui::UdpListener *ui;
-    QUdpSocket *m_UdpSocket;
-    MessageHandler *m_Handler;
+    QUdpSocket      *m_UdpSocket;
+    IODecoder        ioDecoder;
+    MessageHandler  *m_Handler;
 };
 
 #endif // UDPLISTENER_H

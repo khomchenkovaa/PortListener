@@ -21,6 +21,7 @@ TcpListener::TcpListener(QWidget *parent) :
     ui->cmbReplyType->setCurrentIndex(ReplyType::NoReply);
     ui->editReply->setHidden(true);
 
+    updateCodecs();
     updateStatus();
 }
 
@@ -30,17 +31,6 @@ TcpListener::~TcpListener()
 {
     m_TcpServer.close();
     delete ui;
-}
-
-/********************************************************/
-
-void TcpListener::setCodecList(const QList<QTextCodec *> &list)
-{
-    ui->cmbCodec->clear();
-    foreach (const QTextCodec *codec, list) {
-        ui->cmbCodec->addItem(QLatin1String(codec->name()),
-                              QVariant(codec->mibEnum()));
-    }
 }
 
 /********************************************************/
@@ -143,19 +133,22 @@ void TcpListener::updateStatus()
 
 /********************************************************/
 
+void TcpListener::updateCodecs()
+{
+    ui->cmbCodec->clear();
+    foreach (const QTextCodec *codec, IODecoder::findCodecs()) {
+        ui->cmbCodec->addItem(QLatin1String(codec->name()),
+                              QVariant(codec->mibEnum()));
+    }
+}
+
+/********************************************************/
+
 QByteArray TcpListener::processData(const QHostAddress &host, const QByteArray &data)
 {
     int mib = ui->cmbCodec->itemData(ui->cmbCodec->currentIndex()).toInt();
-    const QTextCodec *codec = QTextCodec::codecForMib(mib);
-    const QString name = QLatin1String(codec->name());
-    QTextCodec::ConverterState state;
-
-    QString displayData;
-    if (ui->chkText->isChecked()) {
-        displayData = codec->toUnicode(data.constData(), data.size(), &state);
-    } else {
-        displayData = QString::fromLatin1(data.toHex());
-    }
+    ioDecoder.setMib(mib);
+    QString displayData = ioDecoder.toUnicode(data, !ui->chkText->isChecked());
 
     // log payload data
     ui->textLog->append(QString("%1 -> %2")
@@ -169,9 +162,9 @@ QByteArray TcpListener::processData(const QHostAddress &host, const QByteArray &
     case ReplyType::EchoReply:
         return data;
     case ReplyType::TextReply:
-        return codec->fromUnicode(ui->editReply->text());
+        return ioDecoder.fromUnicode(ui->editReply->text());
     case ReplyType::BinaryReply:
-        return QByteArray::fromHex(ui->editReply->text().toLatin1());
+        return ioDecoder.fromUnicode(ui->editReply->text(), true);
     }
     return QByteArray();
 }

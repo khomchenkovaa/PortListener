@@ -4,12 +4,12 @@ DEPENDPATH += $$PWD
 HEADERS += \
     $$PWD/filehandler.h \
     $$PWD/filehandlerwidget.h \
-    $$PWD/messagetransformer.h
+    $$PWD/iodecoder.h
 
 SOURCES += \
     $$PWD/filehandler.cpp \
     $$PWD/filehandlerwidget.cpp \
-    $$PWD/messagetransformer.cpp
+    $$PWD/iodecoder.cpp
 
 FORMS += \
     $$PWD/filehandlerwidget.ui

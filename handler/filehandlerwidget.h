@@ -1,6 +1,7 @@
 #ifndef FILEHANDLERWIDGET_H
 #define FILEHANDLERWIDGET_H
 
+#include "filehandler.h"
 #include "messagehandlerwgt.h"
 
 namespace Ui {
@@ -12,11 +13,6 @@ class FileHandlerWidget : public MessageHandlerWgt
     Q_OBJECT
 
 public:
-    enum Settings {
-        FileName,
-        AppendToFile
-    };
-
     explicit FileHandlerWidget(QWidget *parent = nullptr);
     ~FileHandlerWidget();
 

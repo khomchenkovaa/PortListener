@@ -22,7 +22,7 @@ public:
         return m_Name;
     }
 
-    virtual void processMessage(Message *msg) {
+    virtual void handleMessage(Message *msg) {
         Q_UNUSED(msg)
     }
 

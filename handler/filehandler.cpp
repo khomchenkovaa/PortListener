@@ -22,7 +22,7 @@ FileHandler::~FileHandler()
 
 /********************************************************/
 
-void FileHandler::processMessage(Message *msg)
+void FileHandler::handleMessage(Message *msg)
 {
     m_Error.clear();
     if (!m_Connected || !m_File.isOpen()) {
@@ -69,13 +69,13 @@ QByteArray FileHandler::processData(const QString &data)
 void FileHandler::connect(bool binary)
 {
     m_Error.clear();
-    QString fileName = m_Settings.value(FileHandlerWidget::FileName).toString();
+    QString fileName = m_Settings.value(Settings::FileName).toString();
     if (fileName.isEmpty()) {
         m_Error = tr("No file to open");
     }
     m_File.setFileName(fileName);
     QIODevice::OpenMode flags;
-    if (m_Settings.value(FileHandlerWidget::AppendToFile, true).toBool()) {
+    if (m_Settings.value(Settings::AppendToFile, true).toBool()) {
         flags = QIODevice::Append;
     } else {
         flags = QIODevice::WriteOnly;

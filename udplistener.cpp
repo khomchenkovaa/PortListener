@@ -2,6 +2,7 @@
 #include "ui_udplistener.h"
 
 #include "messagehandlerwgt.h"
+#include "iodecoder.h"
 #include "filehandler.h"
 
 #include <QNetworkDatagram>
@@ -34,6 +35,7 @@ UdpListener::UdpListener(QWidget *parent) :
     connect(ui->rbText, &QRadioButton::toggled,
             this, &UdpListener::onInputFormatChanged);
 
+    updateCodecs();
     updateStatus();
 }
 
@@ -45,17 +47,6 @@ UdpListener::~UdpListener()
         m_UdpSocket->close();
     }
     delete ui;
-}
-
-/********************************************************/
-
-void UdpListener::setCodecList(const QList<QTextCodec *> &list)
-{
-    ui->cmbCodec->clear();
-    foreach (const QTextCodec *codec, list) {
-        ui->cmbCodec->addItem(QLatin1String(codec->name()),
-                              QVariant(codec->mibEnum()));
-    }
 }
 
 /********************************************************/
@@ -188,19 +179,22 @@ void UdpListener::updateStatus()
 
 /********************************************************/
 
+void UdpListener::updateCodecs()
+{
+    ui->cmbCodec->clear();
+    foreach (const QTextCodec *codec, IODecoder::findCodecs()) {
+        ui->cmbCodec->addItem(QLatin1String(codec->name()),
+                              QVariant(codec->mibEnum()));
+    }
+}
+
+/********************************************************/
+
 QByteArray UdpListener::processData(const QHostAddress &host, const QByteArray &data)
 {
     int mib = ui->cmbCodec->itemData(ui->cmbCodec->currentIndex()).toInt();
-    const QTextCodec *codec = QTextCodec::codecForMib(mib);
-    const QString name = QLatin1String(codec->name());
-    QTextCodec::ConverterState state;
-
-    QString displayData;
-    if (ui->rbText->isChecked()) {
-        displayData = codec->toUnicode(data.constData(), data.size(), &state);
-    } else {
-        displayData = QString::fromLatin1(data.toHex());
-    }
+    ioDecoder.setMib(mib);
+    QString displayData = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
 
     QByteArray reply;
     // Handler
@@ -227,10 +221,10 @@ QByteArray UdpListener::processData(const QHostAddress &host, const QByteArray &
         reply = data;
         break;
     case ReplyType::TextReply:
-        reply = codec->fromUnicode(ui->editReply->text());
+        reply = ioDecoder.fromUnicode(ui->editReply->text());
         break;
     case ReplyType::BinaryReply:
-        reply = QByteArray::fromHex(ui->editReply->text().toLatin1());
+        reply = ioDecoder.fromUnicode(ui->editReply->text(), true);
         break;
     }
     return reply;
