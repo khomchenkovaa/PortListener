@@ -1,11 +1,14 @@
 #include "socketlistener.h"
 #include "ui_socketlistener.h"
 
-#include "message.h"
+#include "messagehandlerwgt.h"
+#include "iodecoder.h"
+#include "filehandler.h"
 
 #include <QTextCodec>
 
 #include <QMessageBox>
+
 #include <QDebug>
 
 /********************************************************/
@@ -13,13 +16,23 @@
 SocketListener::SocketListener(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::SocketListener),
-    m_LocalServer(this)
+    m_LocalServer(this),
+    m_Handler(Q_NULLPTR)
 {
     ui->setupUi(this);
     // configure UI default state
-    ui->chkText->setChecked(true);
+    ui->rbBinary->setChecked(false);
+    ui->rbText->setChecked(true);
     ui->cmbReplyType->setCurrentIndex(ReplyType::NoReply);
     ui->editReply->setHidden(true);
+
+    ui->splitter->setStretchFactor(0, 1);
+    ui->splitter->setStretchFactor(1, 3);
+
+    connect(ui->rbBinary, &QRadioButton::toggled,
+            this, &SocketListener::onInputFormatChanged);
+    connect(ui->rbText, &QRadioButton::toggled,
+            this, &SocketListener::onInputFormatChanged);
 
     updateStatus();
     updateCodecs();
@@ -85,6 +98,18 @@ void SocketListener::on_btnConnect_clicked()
                               .arg(socketName)
                               .arg(m_LocalServer.errorString()));
     }
+    if (m_LocalServer.isListening() && m_Handler) {
+        MessageHandlerWgt *editor = findChild<MessageHandlerWgt*>();
+        if (editor) {
+            m_Handler->setSettings(editor->settings());
+        }
+        m_Handler->connect(ui->rbBinary->isChecked());
+        if (m_Handler->hasError()) {
+            ui->textLog->append(QString("%1 : %2")
+                                .arg(m_Handler->name())
+                                .arg(m_Handler->lastError()));
+        }
+    }
     updateStatus();
 }
 
@@ -93,7 +118,17 @@ void SocketListener::on_btnConnect_clicked()
 void SocketListener::on_btnDisconnect_clicked()
 {
     m_LocalServer.close();
+    if (m_Handler) {
+        m_Handler->disconnect();
+    }
     updateStatus();
+}
+
+/********************************************************/
+
+void SocketListener::onInputFormatChanged()
+{
+    ui->cmbCodec->setVisible(ui->rbText->isChecked());
 }
 
 /********************************************************/
@@ -103,12 +138,38 @@ void SocketListener::on_cmbReplyType_currentIndexChanged(int index)
     switch (index) {
     case ReplyType::NoReply:
     case ReplyType::EchoReply:
+    case ReplyType::ActionReply:
         ui->editReply->setVisible(false);
         break;
     case ReplyType::TextReply:
     case ReplyType::BinaryReply:
         ui->editReply->setVisible(true);
         break;
+    }
+}
+
+/********************************************************/
+
+void SocketListener::on_cmbHandler_currentIndexChanged(int index)
+{
+    MessageHandlerWgt *editor = findChild<MessageHandlerWgt*>();
+    if (editor) {
+        editor->deleteLater();
+    }
+    if (m_Handler) {
+        m_Handler->deleteLater();
+    }
+    switch (index) {
+    case ActionHandler::NoActionHandler:
+        m_Handler = Q_NULLPTR;
+        break;
+    case ActionHandler::FileActionHandler:
+        m_Handler = new FileHandler(this);
+        break;
+    }
+    if (m_Handler) {
+        editor = m_Handler->settingsWidget(this);
+        ui->boxAction->layout()->addWidget(editor);
     }
 }
 
@@ -121,12 +182,14 @@ void SocketListener::updateStatus()
         ui->editSocket->setEnabled(false);
         ui->btnConnect->setVisible(false);
         ui->btnDisconnect->setVisible(true);
+        ui->boxAction->setEnabled(false);
         emit tabText(QString("Socket [%1]").arg(ui->editSocket->text()));
     } else {
         ui->lblConnection->setText(tr("Socket to listen"));
         ui->editSocket->setEnabled(true);
         ui->btnConnect->setVisible(true);
         ui->btnDisconnect->setVisible(false);
+        ui->boxAction->setEnabled(true);
         emit tabText(QString("Socket [-]"));
     }
 }
@@ -148,7 +211,17 @@ QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArr
 {
     int mib = ui->cmbCodec->itemData(ui->cmbCodec->currentIndex()).toInt();
     ioDecoder.setMib(mib);
-    QString displayData = ioDecoder.toUnicode(data, !ui->chkText->isChecked());
+    QString displayData = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
+
+    QByteArray reply;
+    // Handler
+    if (m_Handler) {
+        if (ui->rbText->isChecked()) {
+            reply = m_Handler->processData(displayData);
+        } else {
+            reply = m_Handler->processData(data);
+        }
+    }
 
     // log payload data
     ui->textLog->append(QString("%1 -> %2")
@@ -158,15 +231,16 @@ QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArr
     // make reply
     switch (ui->cmbReplyType->currentIndex()) {
     case ReplyType::NoReply:
+        reply.clear();
         break;
     case ReplyType::EchoReply:
-        return data;
+        reply = data;
     case ReplyType::TextReply:
-        return ioDecoder.fromUnicode(ui->editReply->text());
+        reply = ioDecoder.fromUnicode(ui->editReply->text());
     case ReplyType::BinaryReply:
-        return ioDecoder.fromUnicode(ui->editReply->text(), true);
+        reply = ioDecoder.fromUnicode(ui->editReply->text(), true);
     }
-    return QByteArray();
+    return reply;
 }
 
 /********************************************************/

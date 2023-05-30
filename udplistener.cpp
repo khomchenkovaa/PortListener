@@ -79,7 +79,7 @@ void UdpListener::on_btnConnect_clicked()
         m_UdpSocket->deleteLater();
         m_UdpSocket = Q_NULLPTR;
     }
-    if (m_Handler) {
+    if (m_UdpSocket && m_Handler) {
         MessageHandlerWgt *editor = findChild<MessageHandlerWgt*>();
         if (editor) {
             m_Handler->setSettings(editor->settings());
@@ -167,12 +167,14 @@ void UdpListener::updateStatus()
         ui->spinPort->setEnabled(false);
         ui->btnConnect->setVisible(false);
         ui->btnDisconnect->setVisible(true);
+        ui->boxAction->setEnabled(false);
         emit tabText(QString("UDP [%1]").arg(ui->spinPort->value()));
     } else {
         ui->lblConnection->setText(tr("Choose UDP port to listen"));
         ui->spinPort->setEnabled(true);
         ui->btnConnect->setVisible(true);
         ui->btnDisconnect->setVisible(false);
+        ui->boxAction->setEnabled(true);
         emit tabText(QString("UDP [-]"));
     }
 }

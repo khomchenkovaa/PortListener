@@ -1,6 +1,7 @@
 #ifndef TCPLISTENER_H
 #define TCPLISTENER_H
 
+#include "messagehandler.h"
 #include "iodecoder.h"
 
 #include <QWidget>
@@ -18,7 +19,13 @@ class TcpListener : public QWidget
         NoReply,
         EchoReply,
         TextReply,
-        BinaryReply
+        BinaryReply,
+        ActionReply
+    };
+
+    enum ActionHandler {
+        NoActionHandler,
+        FileActionHandler
     };
 
 public:
@@ -36,7 +43,9 @@ public slots:
 private slots:
     void on_btnConnect_clicked();
     void on_btnDisconnect_clicked();
+    void onInputFormatChanged();
     void on_cmbReplyType_currentIndexChanged(int index);
+    void on_cmbHandler_currentIndexChanged(int index);
 
 private:
     void updateStatus();
@@ -47,6 +56,7 @@ private:
     Ui::TcpListener *ui;
     QTcpServer m_TcpServer;
     IODecoder  ioDecoder;
+    MessageHandler  *m_Handler;
 };
 
 #endif // TCPLISTENER_H
