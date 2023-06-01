@@ -160,6 +160,11 @@
               <string>Save to File</string>
              </property>
             </item>
+            <item>
+             <property name="text">
+              <string>CSV to DB</string>
+             </property>
+            </item>
            </widget>
           </item>
          </layout>

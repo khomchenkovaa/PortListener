@@ -17,7 +17,6 @@ public:
     ~FileHandlerWidget();
 
     SettingsMap settings() const;
-
     void setSettings(const SettingsMap& map);
 
 private slots:

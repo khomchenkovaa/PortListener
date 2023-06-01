@@ -26,7 +26,8 @@ class SocketListener : public QWidget
 
     enum ActionHandler {
         NoActionHandler,
-        FileActionHandler
+        FileActionHandler,
+        DbActionHandler
     };
 
 public:

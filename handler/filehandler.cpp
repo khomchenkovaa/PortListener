@@ -4,7 +4,6 @@
 
 #include <QTextStream>
 
-
 /********************************************************/
 
 FileHandler::FileHandler(QObject *parent)
@@ -75,7 +74,7 @@ void FileHandler::connect(bool binary)
     }
     m_File.setFileName(fileName);
     QIODevice::OpenMode flags;
-    if (m_Settings.value(Settings::AppendToFile, true).toBool()) {
+    if (m_Settings.value(Settings::FileAppend, true).toBool()) {
         flags = QIODevice::Append;
     } else {
         flags = QIODevice::WriteOnly;
@@ -93,10 +92,10 @@ void FileHandler::connect(bool binary)
 
 void FileHandler::disconnect()
 {
-    if (m_Connected) {
+    if (m_File.isOpen()) {
         m_File.close();
-        m_Connected = false;
     }
+    m_Connected = false;
 }
 
 /********************************************************/

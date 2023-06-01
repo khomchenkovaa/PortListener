@@ -4,6 +4,7 @@
 #include "messagehandlerwgt.h"
 #include "iodecoder.h"
 #include "filehandler.h"
+#include "dbhandler.h"
 
 #include <QTextCodec>
 
@@ -166,6 +167,9 @@ void SocketListener::on_cmbHandler_currentIndexChanged(int index)
     case ActionHandler::FileActionHandler:
         m_Handler = new FileHandler(this);
         break;
+    case ActionHandler::DbActionHandler:
+        m_Handler = new DbHandler(this);
+        break;
     }
     if (m_Handler) {
         editor = m_Handler->settingsWidget(this);
@@ -213,6 +217,12 @@ QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArr
     ioDecoder.setMib(mib);
     QString displayData = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
 
+    // log payload data
+    ui->textLog->append(QString("%1 -> %2")
+                        .arg(QString::number(socketDescriptor))
+                        .arg(displayData));
+    ui->textLog->moveCursor(QTextCursor::End);
+
     QByteArray reply;
     // Handler
     if (m_Handler) {
@@ -221,13 +231,14 @@ QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArr
         } else {
             reply = m_Handler->processData(data);
         }
+        if (m_Handler->hasError()) {
+            ui->textLog->append(QString("%1 -> %2")
+                                .arg(QString::number(socketDescriptor))
+                                .arg(m_Handler->lastError()));
+            ui->textLog->moveCursor(QTextCursor::End);
+        }
     }
 
-    // log payload data
-    ui->textLog->append(QString("%1 -> %2")
-                        .arg(QString::number(socketDescriptor))
-                        .arg(displayData));
-    ui->textLog->moveCursor(QTextCursor::End);
     // make reply
     switch (ui->cmbReplyType->currentIndex()) {
     case ReplyType::NoReply:

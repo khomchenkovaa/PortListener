@@ -25,7 +25,8 @@ class UdpListener : public QWidget
 
     enum ActionHandler {
         NoActionHandler,
-        FileActionHandler
+        FileActionHandler,
+        DbActionHandler
     };
 
 public:

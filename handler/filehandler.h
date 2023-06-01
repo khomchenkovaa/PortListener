@@ -12,7 +12,7 @@ class FileHandler : public MessageHandler
 public:
     enum Settings {
         FileName,
-        AppendToFile
+        FileAppend
     };
 
     explicit FileHandler(QObject *parent = nullptr);

@@ -18,7 +18,7 @@ public:
         return SettingsMap();
     }
 
-    void setSettings(const SettingsMap& map) {
+    virtual void setSettings(const SettingsMap& map) {
         Q_UNUSED(map)
     }
 };
