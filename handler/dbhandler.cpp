@@ -18,7 +18,7 @@ DbHandler::DbHandler(QObject *parent)
 
 DbHandler::~DbHandler()
 {
-    disconnect();
+    doDisconnect();
 }
 
 /********************************************************/
@@ -61,7 +61,7 @@ QByteArray DbHandler::processData(const QString &data)
 
 /********************************************************/
 
-void DbHandler::connect(bool binary)
+void DbHandler::doConnect(bool binary)
 {
     assert(!dbuuid.isNull());
 
@@ -109,7 +109,7 @@ void DbHandler::connect(bool binary)
 
 /********************************************************/
 
-void DbHandler::disconnect()
+void DbHandler::doDisconnect()
 {
     if (db.isOpen()) {
         db.close();

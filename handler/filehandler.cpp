@@ -16,7 +16,7 @@ FileHandler::FileHandler(QObject *parent)
 
 FileHandler::~FileHandler()
 {
-    disconnect();
+    doDisconnect();
 }
 
 /********************************************************/
@@ -65,7 +65,7 @@ QByteArray FileHandler::processData(const QString &data)
 
 /********************************************************/
 
-void FileHandler::connect(bool binary)
+void FileHandler::doConnect(bool binary)
 {
     m_Error.clear();
     QString fileName = m_Settings.value(Settings::FileName).toString();
@@ -90,7 +90,7 @@ void FileHandler::connect(bool binary)
 
 /********************************************************/
 
-void FileHandler::disconnect()
+void FileHandler::doDisconnect()
 {
     if (m_File.isOpen()) {
         m_File.close();

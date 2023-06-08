@@ -22,8 +22,8 @@ public:
     void handleMessage(Message *msg);
     QByteArray processData(const QByteArray& data);
     QByteArray processData(const QString& data);
-    void connect(bool binary = false);
-    void disconnect();
+    void doConnect(bool binary = false);
+    void doDisconnect();
     MessageHandlerWgt *settingsWidget(QWidget *parent = nullptr) const;
 
 private:

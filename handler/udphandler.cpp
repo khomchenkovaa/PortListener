@@ -17,7 +17,7 @@ UdpHandler::UdpHandler(QObject *parent)
 
 UdpHandler::~UdpHandler()
 {
-    disconnect();
+    doDisconnect();
 }
 
 /********************************************************/
@@ -53,7 +53,7 @@ QByteArray UdpHandler::processData(const QString &data)
 
 /********************************************************/
 
-void UdpHandler::connect(bool binary)
+void UdpHandler::doConnect(bool binary)
 {
     Q_UNUSED(binary)
 
@@ -68,10 +68,10 @@ void UdpHandler::connect(bool binary)
 
 /********************************************************/
 
-void UdpHandler::disconnect()
+void UdpHandler::doDisconnect()
 {
     if (m_UdpSocket) {
-        m_UdpSocket->close();
+        m_UdpSocket->disconnectFromHost();
         m_UdpSocket->deleteLater();
         m_UdpSocket = Q_NULLPTR;
     }

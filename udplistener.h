@@ -27,7 +27,9 @@ class UdpListener : public QWidget
         NoActionHandler,
         FileActionHandler,
         DbActionHandler,
-        UdpActionHandler
+        UdpActionHandler,
+        TcpActionHandler,
+        SocketActionHandler
     };
 
 public:

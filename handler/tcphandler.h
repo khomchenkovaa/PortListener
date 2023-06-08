@@ -1,23 +1,23 @@
-#ifndef FILEHANDLER_H
-#define FILEHANDLER_H
+#ifndef TCPHANDLER_H
+#define TCPHANDLER_H
 
 #include "messagehandler.h"
 
-#include <QFile>
+#include <QTcpSocket>
 
-class FileHandler : public MessageHandler
+class TcpHandler : public MessageHandler
 {
-    Q_OBJECT
+     Q_OBJECT
 
 public:
     enum Settings {
-        FileName,
-        FileAppend
+        Host,
+        Port
     };
 
-    explicit FileHandler(QObject *parent = nullptr);
+    explicit TcpHandler(QObject *parent = nullptr);
 
-    ~FileHandler();
+    ~TcpHandler();
 
     void handleMessage(Message *msg);
     QByteArray processData(const QByteArray& data);
@@ -27,7 +27,8 @@ public:
     MessageHandlerWgt *settingsWidget(QWidget *parent = nullptr) const;
 
 private:
-    QFile m_File;
+    QTcpSocket *m_TcpSocket;
+
 };
 
-#endif // FILEHANDLER_H
+#endif // TCPHANDLER_H

@@ -180,6 +180,16 @@
               <string>Send to UDP</string>
              </property>
             </item>
+            <item>
+             <property name="text">
+              <string>Send to TCP</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Send to Soket</string>
+             </property>
+            </item>
            </widget>
           </item>
          </layout>

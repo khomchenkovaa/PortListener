@@ -6,6 +6,8 @@
 #include "filehandler.h"
 #include "dbhandler.h"
 #include "udphandler.h"
+#include "tcphandler.h"
+#include "sockhandler.h"
 
 #include <QTextCodec>
 
@@ -53,6 +55,8 @@ SocketListener::~SocketListener()
 void SocketListener::onNewConnection()
 {
     auto clientSocket = m_LocalServer.nextPendingConnection();
+    if (!clientSocket) return;
+
     connect(clientSocket, &QLocalSocket::readyRead,
            this, &SocketListener::onReadyRead);
     connect(clientSocket, &QLocalSocket::stateChanged,
@@ -105,7 +109,7 @@ void SocketListener::on_btnConnect_clicked()
         if (editor) {
             m_Handler->setSettings(editor->settings());
         }
-        m_Handler->connect(ui->rbBinary->isChecked());
+        m_Handler->doConnect(ui->rbBinary->isChecked());
         if (m_Handler->hasError()) {
             ui->textLog->append(QString("%1 : %2")
                                 .arg(m_Handler->name())
@@ -121,7 +125,7 @@ void SocketListener::on_btnDisconnect_clicked()
 {
     m_LocalServer.close();
     if (m_Handler) {
-        m_Handler->disconnect();
+        m_Handler->doDisconnect();
     }
     updateStatus();
 }
@@ -160,10 +164,10 @@ void SocketListener::on_cmbHandler_currentIndexChanged(int index)
     }
     if (m_Handler) {
         m_Handler->deleteLater();
+        m_Handler = Q_NULLPTR;
     }
     switch (index) {
     case ActionHandler::NoActionHandler:
-        m_Handler = Q_NULLPTR;
         break;
     case ActionHandler::FileActionHandler:
         m_Handler = new FileHandler(this);
@@ -173,6 +177,12 @@ void SocketListener::on_cmbHandler_currentIndexChanged(int index)
         break;
     case ActionHandler::UdpActionHandler:
         m_Handler = new UdpHandler(this);
+        break;
+    case ActionHandler::TcpActionHandler:
+        m_Handler = new TcpHandler(this);
+        break;
+    case ActionHandler::SocketActionHandler:
+        m_Handler = new SockHandler(this);
         break;
     }
     if (m_Handler) {

@@ -49,12 +49,12 @@ public:
         }
     }
 
-    virtual void connect(bool binary = false) {
+    virtual void doConnect(bool binary = false) {
         Q_UNUSED(binary)
         m_Connected = true;
     }
 
-    virtual void disconnect() {
+    virtual void doDisconnect() {
         m_Connected = false;
     }
 
