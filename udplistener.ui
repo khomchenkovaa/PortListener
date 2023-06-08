@@ -175,6 +175,11 @@
               <string>CSV to DB</string>
              </property>
             </item>
+            <item>
+             <property name="text">
+              <string>Send to UDP</string>
+             </property>
+            </item>
            </widget>
           </item>
          </layout>

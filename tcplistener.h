@@ -26,7 +26,8 @@ class TcpListener : public QWidget
     enum ActionHandler {
         NoActionHandler,
         FileActionHandler,
-        DbActionHandler
+        DbActionHandler,
+        UdpActionHandler
     };
 
 public:

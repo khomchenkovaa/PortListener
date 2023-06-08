@@ -5,6 +5,7 @@
 #include "iodecoder.h"
 #include "filehandler.h"
 #include "dbhandler.h"
+#include "udphandler.h"
 
 #include <QTextCodec>
 
@@ -169,6 +170,9 @@ void SocketListener::on_cmbHandler_currentIndexChanged(int index)
         break;
     case ActionHandler::DbActionHandler:
         m_Handler = new DbHandler(this);
+        break;
+    case ActionHandler::UdpActionHandler:
+        m_Handler = new UdpHandler(this);
         break;
     }
     if (m_Handler) {
