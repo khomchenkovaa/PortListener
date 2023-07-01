@@ -3,5 +3,4 @@ DEPENDPATH += $$PWD
 
 HEADERS += \
     $$PWD/message.h \
-    $$PWD/messagehandler.h \
-    $$PWD/messagehandlerwgt.h
+    $$PWD/messagehandler.h

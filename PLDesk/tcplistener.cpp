@@ -1,13 +1,17 @@
 #include "tcplistener.h"
 #include "ui_tcplistener.h"
 
-#include "messagehandlerwgt.h"
-#include "iodecoder.h"
 #include "filehandler.h"
 #include "dbhandler.h"
 #include "udphandler.h"
 #include "tcphandler.h"
 #include "sockhandler.h"
+
+#include "filehandlerwidget.h"
+#include "dbhandlerwidget.h"
+#include "sockhandlerwidget.h"
+#include "tcphandlerwidget.h"
+#include "udphandlerwidget.h"
 
 #include <QHostAddress>
 #include <QTcpSocket>
@@ -171,22 +175,26 @@ void TcpListener::on_cmbHandler_currentIndexChanged(int index)
         break;
     case ActionHandler::FileActionHandler:
         m_Handler = new FileHandler(this);
+        editor = new FileHandlerWidget(this);
         break;
     case ActionHandler::DbActionHandler:
         m_Handler = new DbHandler(this);
+        editor = new DbHandlerWidget(this);
         break;
     case ActionHandler::UdpActionHandler:
         m_Handler = new UdpHandler(this);
+        editor = new UdpHandlerWidget(this);
         break;
     case ActionHandler::TcpActionHandler:
         m_Handler = new TcpHandler(this);
+        editor = new TcpHandlerWidget(this);
         break;
     case ActionHandler::SocketActionHandler:
         m_Handler = new SockHandler(this);
+        editor = new SockHandlerWidget(this);
         break;
     }
-    if (m_Handler) {
-        editor = m_Handler->settingsWidget(this);
+    if (editor) {
         ui->boxAction->layout()->addWidget(editor);
     }
 }

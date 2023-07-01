@@ -8,6 +8,10 @@ The PortListener boasts the following features:
  * display payloads as text or binary data
  * make reply (no reply, echo, predefined string)
 
+The PortListener contains:
+ * desktop application
+ * win-service / linux daemon
+
 To send an UDP packet to port:
 ```sh
 echo <packetContent> | socat -t 5 - udp:<dstIp>:<dstPort>

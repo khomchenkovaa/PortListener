@@ -1,7 +1,5 @@
 #include "sockhandler.h"
 
-#include "sockhandlerwidget.h"
-
 /********************************************************/
 
 SockHandler::SockHandler(QObject *parent)
@@ -71,13 +69,6 @@ void SockHandler::doDisconnect()
         m_LocalSocket = Q_NULLPTR;
     }
     m_Connected = false;
-}
-
-/********************************************************/
-
-MessageHandlerWgt *SockHandler::settingsWidget(QWidget *parent) const
-{
-    return new SockHandlerWidget(parent);
 }
 
 /********************************************************/

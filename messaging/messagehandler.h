@@ -58,11 +58,6 @@ public:
         m_Connected = false;
     }
 
-    virtual MessageHandlerWgt *settingsWidget(QWidget *parent = nullptr) const {
-        Q_UNUSED(parent)
-        return Q_NULLPTR;
-    }
-
     bool hasError() const {
         return !m_Error.isEmpty();
     }

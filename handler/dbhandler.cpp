@@ -1,7 +1,5 @@
 #include "dbhandler.h"
 
-#include "dbhandlerwidget.h"
-
 #include <QSqlQuery>
 #include <QSqlError>
 
@@ -119,13 +117,6 @@ void DbHandler::doDisconnect()
     mapper.clear();
 
     m_Connected = false;
-}
-
-/********************************************************/
-
-MessageHandlerWgt *DbHandler::settingsWidget(QWidget *parent) const
-{
-    return new DbHandlerWidget(parent);
 }
 
 /********************************************************/

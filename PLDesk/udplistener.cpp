@@ -1,14 +1,19 @@
-#include "socketlistener.h"
-#include "ui_socketlistener.h"
+#include "udplistener.h"
+#include "ui_udplistener.h"
 
-#include "messagehandlerwgt.h"
-#include "iodecoder.h"
 #include "filehandler.h"
 #include "dbhandler.h"
 #include "udphandler.h"
 #include "tcphandler.h"
 #include "sockhandler.h"
 
+#include "filehandlerwidget.h"
+#include "dbhandlerwidget.h"
+#include "sockhandlerwidget.h"
+#include "tcphandlerwidget.h"
+#include "udphandlerwidget.h"
+
+#include <QNetworkDatagram>
 #include <QTextCodec>
 
 #include <QMessageBox>
@@ -17,10 +22,10 @@
 
 /********************************************************/
 
-SocketListener::SocketListener(QWidget *parent) :
+UdpListener::UdpListener(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::SocketListener),
-    m_LocalServer(this),
+    ui(new Ui::UdpListener),
+    m_UdpSocket(Q_NULLPTR),
     m_Handler(Q_NULLPTR)
 {
     ui->setupUi(this);
@@ -34,77 +39,55 @@ SocketListener::SocketListener(QWidget *parent) :
     ui->splitter->setStretchFactor(1, 3);
 
     connect(ui->rbBinary, &QRadioButton::toggled,
-            this, &SocketListener::onInputFormatChanged);
+            this, &UdpListener::onInputFormatChanged);
     connect(ui->rbText, &QRadioButton::toggled,
-            this, &SocketListener::onInputFormatChanged);
+            this, &UdpListener::onInputFormatChanged);
 
-    updateStatus();
     updateCodecs();
+    updateStatus();
 }
 
 /********************************************************/
 
-SocketListener::~SocketListener()
+UdpListener::~UdpListener()
 {
-    m_LocalServer.close();
+    if (m_UdpSocket) {
+        m_UdpSocket->close();
+    }
     delete ui;
 }
 
 /********************************************************/
 
-void SocketListener::onNewConnection()
+void UdpListener::readPendingDatagrams()
 {
-    auto clientSocket = m_LocalServer.nextPendingConnection();
-    if (!clientSocket) return;
-
-    connect(clientSocket, &QLocalSocket::readyRead,
-           this, &SocketListener::onReadyRead);
-    connect(clientSocket, &QLocalSocket::stateChanged,
-           this, &SocketListener::onLocalSocketStateChanged);
-
-    ui->textLog->append(QString::number(clientSocket->socketDescriptor()) + " connected to server !\n");
-    ui->textLog->moveCursor(QTextCursor::End);
-}
-
-/********************************************************/
-
-void SocketListener::onLocalSocketStateChanged(QLocalSocket::LocalSocketState  socketState)
-{
-    if (socketState == QLocalSocket::UnconnectedState) {
-        QLocalSocket* clientSocket = static_cast<QLocalSocket*>(QObject::sender());
-        ui->textLog->append(QString::number(clientSocket->socketDescriptor()) + " disconnected from server !\n");
-        ui->textLog->moveCursor(QTextCursor::End);
-        clientSocket->deleteLater();
+    while (m_UdpSocket->hasPendingDatagrams()) {
+        QNetworkDatagram datagram = m_UdpSocket->receiveDatagram();
+        QByteArray replyData = processData(datagram.senderAddress(), datagram.data());
+        if (!replyData.isEmpty()) {
+            m_UdpSocket->writeDatagram(datagram.makeReply(replyData));
+        }
     }
 }
 
 /********************************************************/
 
-void SocketListener::onReadyRead()
+void UdpListener::on_btnConnect_clicked()
 {
-    QLocalSocket* sender = static_cast<QLocalSocket*>(QObject::sender());
-    QByteArray data = sender->readAll();
-    QByteArray replyData = processData(sender->socketDescriptor(), data);
-    if (!replyData.isEmpty()) {
-        sender->write(replyData);
-    }
-}
-
-/********************************************************/
-
-void SocketListener::on_btnConnect_clicked()
-{
-    QString socketName = ui->editSocket->text();
-    if (m_LocalServer.listen(socketName)) {
-        connect(&m_LocalServer, &QLocalServer::newConnection,
-                this, &SocketListener::onNewConnection);
+    quint16 port = ui->spinPort->value();
+    m_UdpSocket = new QUdpSocket(this);
+    if (m_UdpSocket->bind(QHostAddress::Any, port)) {
+        connect(m_UdpSocket, &QUdpSocket::readyRead,
+               this, &UdpListener::readPendingDatagrams);
     } else {
         QMessageBox::critical(this, QApplication::applicationDisplayName(),
-                              tr("Socket %1 connection error!\n%2")
-                              .arg(socketName)
-                              .arg(m_LocalServer.errorString()));
+                              tr("UDP Port %1 bind error!\n%2")
+                              .arg(port)
+                              .arg(m_UdpSocket->errorString()));
+        m_UdpSocket->deleteLater();
+        m_UdpSocket = Q_NULLPTR;
     }
-    if (m_LocalServer.isListening() && m_Handler) {
+    if (m_UdpSocket && m_Handler) {
         MessageHandlerWgt *editor = findChild<MessageHandlerWgt*>();
         if (editor) {
             m_Handler->setSettings(editor->settings());
@@ -121,9 +104,13 @@ void SocketListener::on_btnConnect_clicked()
 
 /********************************************************/
 
-void SocketListener::on_btnDisconnect_clicked()
+void UdpListener::on_btnDisconnect_clicked()
 {
-    m_LocalServer.close();
+    if (m_UdpSocket) {
+        m_UdpSocket->close();
+        m_UdpSocket->deleteLater();
+        m_UdpSocket = Q_NULLPTR;
+    }
     if (m_Handler) {
         m_Handler->doDisconnect();
     }
@@ -132,14 +119,14 @@ void SocketListener::on_btnDisconnect_clicked()
 
 /********************************************************/
 
-void SocketListener::onInputFormatChanged()
+void UdpListener::onInputFormatChanged()
 {
     ui->cmbCodec->setVisible(ui->rbText->isChecked());
 }
 
 /********************************************************/
 
-void SocketListener::on_cmbReplyType_currentIndexChanged(int index)
+void UdpListener::on_cmbReplyType_currentIndexChanged(int index)
 {
     switch (index) {
     case ReplyType::NoReply:
@@ -156,7 +143,7 @@ void SocketListener::on_cmbReplyType_currentIndexChanged(int index)
 
 /********************************************************/
 
-void SocketListener::on_cmbHandler_currentIndexChanged(int index)
+void UdpListener::on_cmbHandler_currentIndexChanged(int index)
 {
     MessageHandlerWgt *editor = findChild<MessageHandlerWgt*>();
     if (editor) {
@@ -171,50 +158,54 @@ void SocketListener::on_cmbHandler_currentIndexChanged(int index)
         break;
     case ActionHandler::FileActionHandler:
         m_Handler = new FileHandler(this);
+        editor = new FileHandlerWidget(this);
         break;
     case ActionHandler::DbActionHandler:
         m_Handler = new DbHandler(this);
+        editor = new DbHandlerWidget(this);
         break;
     case ActionHandler::UdpActionHandler:
         m_Handler = new UdpHandler(this);
+        editor = new UdpHandlerWidget(this);
         break;
     case ActionHandler::TcpActionHandler:
         m_Handler = new TcpHandler(this);
+        editor = new TcpHandlerWidget(this);
         break;
     case ActionHandler::SocketActionHandler:
         m_Handler = new SockHandler(this);
+        editor = new SockHandlerWidget(this);
         break;
     }
-    if (m_Handler) {
-        editor = m_Handler->settingsWidget(this);
+    if (editor) {
         ui->boxAction->layout()->addWidget(editor);
     }
 }
 
 /********************************************************/
 
-void SocketListener::updateStatus()
+void UdpListener::updateStatus()
 {
-    if (m_LocalServer.isListening()) {
-        ui->lblConnection->setText(tr("<font color=\"darkRed\">Listening the Socket</font>"));
-        ui->editSocket->setEnabled(false);
+    if (m_UdpSocket) {
+        ui->lblConnection->setText(tr("<font color=\"darkRed\">Listening the UDP port</font>"));
+        ui->spinPort->setEnabled(false);
         ui->btnConnect->setVisible(false);
         ui->btnDisconnect->setVisible(true);
         ui->boxAction->setEnabled(false);
-        emit tabText(QString("Socket [%1]").arg(ui->editSocket->text()));
+        emit tabText(QString("UDP [%1]").arg(ui->spinPort->value()));
     } else {
-        ui->lblConnection->setText(tr("Socket to listen"));
-        ui->editSocket->setEnabled(true);
+        ui->lblConnection->setText(tr("Choose UDP port to listen"));
+        ui->spinPort->setEnabled(true);
         ui->btnConnect->setVisible(true);
         ui->btnDisconnect->setVisible(false);
         ui->boxAction->setEnabled(true);
-        emit tabText(QString("Socket [-]"));
+        emit tabText(QString("UDP [-]"));
     }
 }
 
 /********************************************************/
 
-void SocketListener::updateCodecs()
+void UdpListener::updateCodecs()
 {
     ui->cmbCodec->clear();
     foreach (const QTextCodec *codec, IODecoder::findCodecs()) {
@@ -225,7 +216,7 @@ void SocketListener::updateCodecs()
 
 /********************************************************/
 
-QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArray &data)
+QByteArray UdpListener::processData(const QHostAddress &host, const QByteArray &data)
 {
     int mib = ui->cmbCodec->itemData(ui->cmbCodec->currentIndex()).toInt();
     ioDecoder.setMib(mib);
@@ -233,7 +224,7 @@ QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArr
 
     // log payload data
     ui->textLog->append(QString("%1 -> %2")
-                        .arg(QString::number(socketDescriptor))
+                        .arg(host.toString())
                         .arg(displayData));
     ui->textLog->moveCursor(QTextCursor::End);
 
@@ -247,7 +238,7 @@ QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArr
         }
         if (m_Handler->hasError()) {
             ui->textLog->append(QString("%1 -> %2")
-                                .arg(QString::number(socketDescriptor))
+                                .arg(host.toString())
                                 .arg(m_Handler->lastError()));
             ui->textLog->moveCursor(QTextCursor::End);
         }
@@ -260,10 +251,13 @@ QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArr
         break;
     case ReplyType::EchoReply:
         reply = data;
+        break;
     case ReplyType::TextReply:
         reply = ioDecoder.fromUnicode(ui->editReply->text());
+        break;
     case ReplyType::BinaryReply:
         reply = ioDecoder.fromUnicode(ui->editReply->text(), true);
+        break;
     }
     return reply;
 }

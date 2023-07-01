@@ -1,7 +1,5 @@
 #include "tcphandler.h"
 
-#include "tcphandlerwidget.h"
-
 #include <QNetworkDatagram>
 
 /********************************************************/
@@ -79,13 +77,6 @@ void TcpHandler::doDisconnect()
         m_TcpSocket->deleteLater();
         m_TcpSocket = Q_NULLPTR;
     }
-}
-
-/********************************************************/
-
-MessageHandlerWgt *TcpHandler::settingsWidget(QWidget *parent) const
-{
-    return new TcpHandlerWidget(parent);
 }
 
 /********************************************************/

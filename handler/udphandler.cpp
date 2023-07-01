@@ -1,7 +1,5 @@
 #include "udphandler.h"
 
-#include "udphandlerwidget.h"
-
 #include <QNetworkDatagram>
 
 /********************************************************/
@@ -75,13 +73,6 @@ void UdpHandler::doDisconnect()
         m_UdpSocket->deleteLater();
         m_UdpSocket = Q_NULLPTR;
     }
-}
-
-/********************************************************/
-
-MessageHandlerWgt *UdpHandler::settingsWidget(QWidget *parent) const
-{
-    return new UdpHandlerWidget(parent);
 }
 
 /********************************************************/

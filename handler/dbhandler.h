@@ -1,8 +1,8 @@
 #ifndef DBHANDLER_H
 #define DBHANDLER_H
 
-#include "dbhandlerconf.h"
 #include "messagehandler.h"
+#include "dbhandlerconf.h"
 
 #include <QSqlDatabase>
 
@@ -27,7 +27,6 @@ public:
     QByteArray processData(const QString& data);
     void doConnect(bool binary = false);
     void doDisconnect();
-    MessageHandlerWgt *settingsWidget(QWidget *parent = nullptr) const;
 
 private:
     QUuid		 dbuuid;

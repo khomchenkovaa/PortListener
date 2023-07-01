@@ -24,7 +24,6 @@ public:
     QByteArray processData(const QString& data);
     void doConnect(bool binary = false);
     void doDisconnect();
-    MessageHandlerWgt *settingsWidget(QWidget *parent = nullptr) const;
 
 private:
     QTcpSocket *m_TcpSocket;

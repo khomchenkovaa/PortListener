@@ -1,7 +1,5 @@
 #include "filehandler.h"
 
-#include "filehandlerwidget.h"
-
 #include <QTextStream>
 
 /********************************************************/
@@ -96,13 +94,6 @@ void FileHandler::doDisconnect()
         m_File.close();
     }
     m_Connected = false;
-}
-
-/********************************************************/
-
-MessageHandlerWgt *FileHandler::settingsWidget(QWidget *parent) const
-{
-    return new FileHandlerWidget(parent);
 }
 
 /********************************************************/
