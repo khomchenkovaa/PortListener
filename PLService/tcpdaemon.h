@@ -1,5 +1,5 @@
-#ifndef TCP_LISTENER_H
-#define TCP_LISTENER_H
+#ifndef TCP_DAEMON_H
+#define TCP_DAEMON_H
 
 #include "messagehandler.h"
 #include "qtservice.h"
@@ -42,4 +42,4 @@ private:
 
 };
 
-#endif // TCP_LISTENER_H
+#endif // TCP_DAEMON_H

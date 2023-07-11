@@ -5,6 +5,8 @@
 #include "udplistener.h"
 #include "socketlistener.h"
 
+#include <QTabBar>
+
 /********************************************************/
 
 MainWindow::MainWindow(QWidget *parent) :

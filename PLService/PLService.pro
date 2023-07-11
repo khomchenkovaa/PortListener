@@ -21,10 +21,14 @@ include(../handler/handler.pri)
 
 SOURCES += main.cpp \
     tcpdaemon.cpp \
-    tcpservice.cpp
+    tcpservice.cpp \
+    udpdaemon.cpp \
+    udpservice.cpp
 
 HEADERS += \
     tcpdaemon.h \
-    tcpservice.h
+    tcpservice.h \
+    udpdaemon.h \
+    udpservice.h
 
 

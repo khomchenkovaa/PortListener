@@ -1,5 +1,5 @@
-#ifndef QTDAEMON_H
-#define QTDAEMON_H
+#ifndef TCP_SERVICE_H
+#define TCP_SERVICE_H
 
 #include "tcpdaemon.h"
 
@@ -19,4 +19,4 @@ private:
     TcpDaemon *daemon;
 };
 
-#endif // QTDAEMON_H
+#endif // TCP_SERVICE_H
