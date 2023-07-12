@@ -5,6 +5,7 @@
 #include <QVariant>
 #include <QDateTime>
 #include <QFile>
+#include <QTextStream>
 
 #include <QJsonDocument>
 #include <QJsonArray>
@@ -16,8 +17,10 @@ struct DbFieldMapping {
     QString name;
     QString type;
     QString format;
+    QLocale locale;
 
-    DbFieldMapping (const QVariantMap& map) {
+    DbFieldMapping (const QVariantMap& map) :
+        locale(QLocale::C) {
         index  = map.value("index", 0).toInt();
         name   = map.value("name").toString();
         type   = map.value("type").toString();
@@ -27,8 +30,8 @@ struct DbFieldMapping {
     QVariant value(const QString& str) const {
         if (str.isEmpty())      return QVariant();
         if (type == "String")   return str;
-        if (type == "Int")      return str.toInt();
-        if (type == "Real")     return str.toDouble();
+        if (type == "Int")      return locale.toInt(str);
+        if (type == "Real")     return locale.toDouble(str);
         if (type == "DateTime") return QDateTime::fromString(str, format);
         return QVariant();
     }
@@ -134,7 +137,7 @@ public:
         return QString();
     }
 
-    QVariantMap bindValues(const QString& prefix, const QString& csv) {
+    QVariantMap bindValues(const QString& prefix, QString& csv) {
         int i = findByPrefix(prefix);
         if (i != -1) {
             QStringList parsedCsv = parseCsv(csv);
@@ -146,7 +149,7 @@ public:
 private:
     int findByPrefix(const QString& prefix) const {
         for (int i=0; i<datamapper.size(); ++i) {
-            if (prefix.compare(datamapper.at(i).prefix, Qt::CaseInsensitive)) {
+            if (prefix.compare(datamapper.at(i).prefix, Qt::CaseInsensitive) == 0) {
                 return i;
             }
         }
@@ -166,19 +169,47 @@ public:
         return result;
     }
 
-    static QStringList parseCsv(const QString& csv, const QString& delimiter = ";") {
-        bool inside = csv.startsWith("\""); //true if the first character is "
-        QStringList tmpList = csv.split("\"");
-        QStringList result;
-        foreach (const QString &s, tmpList) {
-            if (inside) { // If 's' is inside quotes ...
-                result.append(s); // ... get the whole string
-            } else {      // If 's' is outside quotes ...
-                result.append(s.split(delimiter)); // ... get the splitted string
+    static QStringList parseCsv(QString& csv, QChar separator = ';') {
+        QStringList row;
+        QString field;
+        QChar quote;
+        QChar ch, buffer(0);
+        QTextStream stream(&csv, QIODevice::ReadOnly);
+        while(!stream.atEnd()) {
+            if(buffer != QChar(0)) {
+                ch = buffer;
+                buffer = QChar(0);
+            } else {
+                stream >> ch;
             }
-            inside = !inside;
+            if(ch != separator && (ch.category() == QChar::Separator_Line || ch.category() == QChar::Separator_Paragraph || ch.category() == QChar::Other_Control)) {
+                row << field;
+                field.clear();
+                if(!row.isEmpty()) {
+                    break;
+                }
+                row.clear();
+            } else if(ch == '"') {
+                quote = ch;
+                do {
+                    stream >> ch;
+                    if(ch == quote) {
+                        break;
+                    }
+                    field.append(ch);
+                } while(!stream.atEnd());
+            } else if(ch == separator) {
+                row << field;
+                field.clear();
+            } else {
+                field.append(ch);
+            }
         }
-        return result;
+        if(!field.isEmpty()) {
+            row << field;
+        }
+
+        return row;
     }
 
     static QPair<QString, QString> splitToPrefixAndCsv(const QString& source, const QString& delimeter = ":") {
