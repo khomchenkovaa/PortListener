@@ -31,4 +31,5 @@ HEADERS += \
     udpdaemon.h \
     udpservice.h
 
-
+RESOURCES += \
+    ../PortListener.qrc

@@ -166,7 +166,7 @@ public:
         return result;
     }
 
-    static QStringList parseCsv(const QString& csv, const QString& delimiter = ",") {
+    static QStringList parseCsv(const QString& csv, const QString& delimiter = ";") {
         bool inside = csv.startsWith("\""); //true if the first character is "
         QStringList tmpList = csv.split("\"");
         QStringList result;
