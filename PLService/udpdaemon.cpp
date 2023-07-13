@@ -1,6 +1,7 @@
 #include "udpdaemon.h"
 
 #include "filehandler.h"
+#include "dbhandler.h"
 
 #include <QNetworkDatagram>
 
@@ -93,10 +94,18 @@ void UdpDaemon::readPendingDatagrams()
 
 void UdpDaemon::initHandler()
 {
-    m_Handler = new FileHandler(this);
+//    m_Handler = new FileHandler(this);
+//    SettingsMap map;
+//    map.insert(FileHandler::FileName, "/home/khoman/udp_log.txt");
+//    map.insert(FileHandler::FileAppend, true);
+    m_Handler = new DbHandler(this);
     SettingsMap map;
-    map.insert(FileHandler::FileName, "/home/khoman/udp_log.txt");
-    map.insert(FileHandler::FileAppend, true);
+    map.insert(DbHandler::DbHostname, "localhost");
+    map.insert(DbHandler::DbPort,     5432);
+    map.insert(DbHandler::DbDriver,   "QPSQL");
+    map.insert(DbHandler::DbUsername, "abn_user");
+    map.insert(DbHandler::DbPassword, "abn");
+    map.insert(DbHandler::DbDatabase, "abn_db");
     m_Handler->setSettings(map);
 }
 

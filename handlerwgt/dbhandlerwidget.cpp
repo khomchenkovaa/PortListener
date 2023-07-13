@@ -173,9 +173,9 @@ QString DbHandlerWidget::getDescription(const QString& drv)
     if (drv == "QODBC")	   return "ODBC";
     if (drv == "QODBC3")   return "ODBC";
     if (drv == "QTDS")	   return "Sybase Adaptive Server";
-    if (drv == "QMYSQL")   return "MySQL 4.x";
+    if (drv == "QMYSQL")   return "MySQL 4+";
     if (drv == "QMYSQL3")  return "MySQL 3.x";
-    if (drv == "QPSQL")	   return "PostgreSQL 8.x";
+    if (drv == "QPSQL")	   return "PostgreSQL 8+";
     if (drv == "QPSQL7")   return "PostgreSQL 7.x";
     if (drv == "QSQLITE")  return "SQLite 3.x";
     if (drv == "QSQLITE2") return "SQLite 2.x";

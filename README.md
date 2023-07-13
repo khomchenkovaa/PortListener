@@ -1,6 +1,12 @@
 # PortListener
 
-Listen the TCP/UDP ports and Sockets and print received data.
+Listen the TCP/UDP ports and Sockets and do something with received data.
+
+The PortListener contains:
+ * desktop application
+ * win-service / linux daemon
+
+## PortListener Desktop version (PLDesk)
 
 The PortListener boasts the following features:
 
@@ -8,9 +14,21 @@ The PortListener boasts the following features:
  * display payloads as text or binary data
  * make reply (no reply, echo, predefined string)
 
-The PortListener contains:
- * desktop application
- * win-service / linux daemon
+## PortListener Service version (PLService)
+
+Command line arguments:
+ * -i (-install) Install the service.
+ * -u (-uninstall) Uninstall the service.
+ * -e (-exec) Execute the service as a standalone application (useful for debug purposes). This is a blocking call, the service will be executed like a normal application. In this mode you will not be able to communicate with the service from the contoller.
+ * -t (-terminate) Stop the service.
+ * -p (-pause) Pause the service.
+ * -r (-resume) Resume a paused service.
+ * -c cmd (-command cmd) Send the user defined command code cmd to the service application.
+ * -v (-version) Display version and status information.
+
+Without arguments start the service
+
+## How to send packet to port
 
 To send an UDP packet to port:
 ```sh
