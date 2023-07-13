@@ -28,3 +28,8 @@ To send any packet to socket:
 ```sh
 echo <packetContent> | socat -t 5 - UNIX-CONNECT:/path/to/any.sock
 ```
+
+UDP packet csv-to-db example:
+```sh
+echo 'counters:"KBB20CQ001_D11";"1.0";"266466.2";"133233.1";"266466.0";"2023-04-24-13:45:54:222"' | socat -t 5 - udp:localhost:2424
+```
