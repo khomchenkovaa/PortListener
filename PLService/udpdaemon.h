@@ -32,7 +32,7 @@ private:
 private:
     bool disabled;
     QUdpSocket     *m_UdpSocket;
-    MessageHandler *m_Handler;
+    QList<MessageHandler*> m_Handlers;
 };
 
 #endif // UDP_DAEMON_H

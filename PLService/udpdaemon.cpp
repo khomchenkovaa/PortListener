@@ -10,8 +10,7 @@
 UdpDaemon::UdpDaemon(quint16 port, QObject *parent):
     QObject(parent),
     disabled(false),
-    m_UdpSocket(Q_NULLPTR),
-    m_Handler(Q_NULLPTR)
+    m_UdpSocket(Q_NULLPTR)
 {
     initHandler();
     startServer(port);
@@ -22,6 +21,8 @@ UdpDaemon::UdpDaemon(quint16 port, QObject *parent):
 UdpDaemon::~UdpDaemon()
 {
     stopServer();
+    qDeleteAll(m_Handlers);
+    m_Handlers.clear();
 }
 
 /*******************************************************************/
@@ -35,7 +36,10 @@ bool UdpDaemon::isListening() const
 
 void UdpDaemon::startServer(quint16 port)
 {
-    m_Handler->doConnect();
+    for(auto handler : m_Handlers) {
+        handler->doConnect();
+    }
+
     if (!isListening()) {
         m_UdpSocket = new QUdpSocket(this);
         if (m_UdpSocket->bind(QHostAddress::Any, port)) {
@@ -54,7 +58,10 @@ void UdpDaemon::startServer(quint16 port)
 
 void UdpDaemon::stopServer()
 {
-    m_Handler->doDisconnect();
+    for(auto handler : m_Handlers) {
+        handler->doDisconnect();
+    }
+
     if (isListening()) {
         m_UdpSocket->close();
         m_UdpSocket->deleteLater();
@@ -94,19 +101,23 @@ void UdpDaemon::readPendingDatagrams()
 
 void UdpDaemon::initHandler()
 {
-//    m_Handler = new FileHandler(this);
-//    SettingsMap map;
-//    map.insert(FileHandler::FileName, "/home/khoman/udp_log.txt");
-//    map.insert(FileHandler::FileAppend, true);
-    m_Handler = new DbHandler(this);
+    MessageHandler* fileHandler = new FileHandler(this);
     SettingsMap map;
+    map.insert(FileHandler::FileName, "/home/khoman/udp_log.txt");
+    map.insert(FileHandler::FileAppend, true);
+    fileHandler->setSettings(map);
+    m_Handlers.append(fileHandler);
+
+    MessageHandler* dbHandler = new DbHandler(this);
+    map.clear();
     map.insert(DbHandler::DbHostname, "localhost");
     map.insert(DbHandler::DbPort,     5432);
     map.insert(DbHandler::DbDriver,   "QPSQL");
     map.insert(DbHandler::DbUsername, "abn_user");
     map.insert(DbHandler::DbPassword, "abn");
     map.insert(DbHandler::DbDatabase, "abn_db");
-    m_Handler->setSettings(map);
+    dbHandler->setSettings(map);
+    m_Handlers.append(dbHandler);
 }
 
 /*******************************************************************/
@@ -114,14 +125,12 @@ void UdpDaemon::initHandler()
 QByteArray UdpDaemon::processData(const QByteArray &data)
 {
     QByteArray reply;
-    // Handler
-    if (m_Handler) {
-        reply = m_Handler->processData(QString(data));
-        if (m_Handler->hasError()) {
-            reply = m_Handler->lastError().toUtf8();
+    // Handlers
+    for(auto handler : m_Handlers) {
+        reply.append(handler->processData(QString(data)));
+        if (handler->hasError()) {
+            reply.append(handler->lastError().toUtf8());
         }
-    } else {
-        reply = "No handler\n";
     }
 
     // make reply
