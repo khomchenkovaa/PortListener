@@ -19,6 +19,6 @@
 #define DATE_FORMAT      "yyyy-MM-dd"
 
 // config
-#define APP_CFG "config"
+#define APP_CFG "PLConfig"
 
 #endif // SETTINGS_H

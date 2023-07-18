@@ -106,14 +106,15 @@ void UdpDaemon::initHandler()
 {
     MessageHandler* fileHandler = new FileHandler(this);
     SettingsMap map;
-    auto fileOptions = Settings::FileOptions::get();
+    auto fileOptions = Settings::FileOptions::get(QSettings::SystemScope);
     map.insert(FileHandler::FileName, fileOptions.fileName);
     map.insert(FileHandler::FileAppend, fileOptions.fileAppend);
     fileHandler->setSettings(map);
     m_Handlers.append(fileHandler);
 
     MessageHandler* dbHandler = new DbHandler(this);
-    auto dbOptions = Settings::DatabaseOptions::get();
+    auto dbOptions = Settings::DatabaseOptions::get(QSettings::SystemScope);
+
     map.clear();
     map.insert(DbHandler::DbHostname, dbOptions.host);
     map.insert(DbHandler::DbPort,     dbOptions.port);
@@ -123,6 +124,9 @@ void UdpDaemon::initHandler()
     map.insert(DbHandler::DbDatabase, dbOptions.database);
     dbHandler->setSettings(map);
     m_Handlers.append(dbHandler);
+
+//    fileOptions.save(QSettings::SystemScope);
+//    dbOptions.save(QSettings::SystemScope);
 }
 
 /*******************************************************************/

@@ -16,7 +16,7 @@
 #define DEF_DBPORT   5432
 #define DEF_DBDRIVER "QPSQL"
 #define DEF_DBUSER   "abn_user"
-#define DEF_DBPASS   "abn"
+#define DEF_DBPASS   "abnn"
 #define DEF_DATABASE "abn_db"
 
 namespace Settings {
@@ -31,8 +31,8 @@ struct DatabaseOptions {
     QString password;
     QString database;
 
-    void load() {
-        QSettings s(QSettings::SystemScope, ORGANIZATION_NAME, APP_CFG);
+    void load(QSettings::Scope scope = QSettings::UserScope) {
+        QSettings s(scope, ORGANIZATION_NAME, APP_CFG);
         s.beginGroup(GRP_DBHANDLER);
         host     = s.value(APP_DBHOST,   DEF_DBHOST).toString();
         port     = s.value(APP_DBPORT,   DEF_DBPORT).toInt();
@@ -43,8 +43,8 @@ struct DatabaseOptions {
         s.endGroup();
     };
 
-    void save() {
-        QSettings s(QSettings::SystemScope, ORGANIZATION_NAME, APP_CFG);
+    void save(QSettings::Scope scope = QSettings::UserScope) {
+        QSettings s(scope, ORGANIZATION_NAME, APP_CFG);
         s.beginGroup(GRP_DBHANDLER);
         s.setValue(APP_DBHOST,   host);
         s.setValue(APP_DBPORT,   port);
@@ -56,9 +56,9 @@ struct DatabaseOptions {
         s.sync();
     };
 
-    static DatabaseOptions get() {
+    static DatabaseOptions get(QSettings::Scope scope = QSettings::UserScope) {
         DatabaseOptions opt;
-        opt.load();
+        opt.load(scope);
         return opt;
     }
 };

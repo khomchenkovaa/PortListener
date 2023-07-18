@@ -19,16 +19,16 @@ struct FileOptions {
     QString fileName;
     bool    fileAppend;
 
-    void load() {
-        QSettings s(QSettings::SystemScope, ORGANIZATION_NAME, APP_CFG);
+    void load(QSettings::Scope scope = QSettings::UserScope) {
+        QSettings s(scope, ORGANIZATION_NAME, APP_CFG);
         s.beginGroup(GRP_FILEHANDLER);
         fileName   = s.value(APP_FILENAME,   DEF_FILENAME).toString();
         fileAppend = s.value(APP_FILEAPPEND, DEF_FILEAPPEND).toBool();
         s.endGroup();
     };
 
-    void save() {
-        QSettings s(QSettings::SystemScope, ORGANIZATION_NAME, APP_CFG);
+    void save(QSettings::Scope scope = QSettings::UserScope) {
+        QSettings s(scope, ORGANIZATION_NAME, APP_CFG);
         s.beginGroup(GRP_FILEHANDLER);
         s.setValue(APP_FILENAME,   fileName);
         s.setValue(APP_FILEAPPEND, fileAppend);
@@ -36,9 +36,9 @@ struct FileOptions {
         s.sync();
     };
 
-    static FileOptions get() {
+    static FileOptions get(QSettings::Scope scope = QSettings::UserScope) {
         FileOptions opt;
-        opt.load();
+        opt.load(scope);
         return opt;
     }
 };

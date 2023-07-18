@@ -16,11 +16,6 @@ The PortListener boasts the following features:
 
 ## PortListener Service version (PLService)
 
-Usage:
-```sh
-   ./PLService [Command line arguments] [Port]
-```
-
 Command line arguments:
  * -i (-install) Install the service.
  * -u (-uninstall) Uninstall the service.
@@ -54,5 +49,5 @@ echo <packetContent> | socat -t 5 - UNIX-CONNECT:/path/to/any.sock
 
 UDP packet csv-to-db example:
 ```sh
-echo 'counters:"KBB20CQ001_D11";"1.0";"266466.2";"133233.1";"266466.0";"2023-04-24-13:45:54:222"' | socat -t 5 - udp:localhost:2424
+echo 'counters:"KBB20CQ001_D11";"1.0";"266466.2";"133233.1";"266466.0";"2023-07-18-10:47:54:222"' | socat -t 5 - udp:localhost:2424
 ```
