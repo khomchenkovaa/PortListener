@@ -1,6 +1,8 @@
 #include "tcpservice.h"
 #include "udpservice.h"
 
+#include "settings.h"
+
 #include <QDir>
 #include <QSettings>
 
@@ -18,6 +20,10 @@
  */
 
 int main(int argc, char *argv[]) {
+    QCoreApplication::setOrganizationName(ORGANIZATION_NAME);
+    QCoreApplication::setOrganizationDomain(ORGANIZATION_DOMAIN);
+    QCoreApplication::setApplicationName(APPLICATION_NAME);
+
 #if !defined(Q_OS_WIN)
     // QtService stores service settings in SystemScope, which normally require root privileges.
     // To allow testing this example as non-root, we change the directory of the SystemScope settings file.

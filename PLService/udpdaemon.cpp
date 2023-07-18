@@ -3,6 +3,9 @@
 #include "filehandler.h"
 #include "dbhandler.h"
 
+#include "FileOptions.h"
+#include "DatabaseOptions.h"
+
 #include <QNetworkDatagram>
 
 /*******************************************************************/
@@ -103,19 +106,21 @@ void UdpDaemon::initHandler()
 {
     MessageHandler* fileHandler = new FileHandler(this);
     SettingsMap map;
-    map.insert(FileHandler::FileName, "/home/khoman/udp_log.txt");
-    map.insert(FileHandler::FileAppend, true);
+    auto fileOptions = Settings::FileOptions::get();
+    map.insert(FileHandler::FileName, fileOptions.fileName);
+    map.insert(FileHandler::FileAppend, fileOptions.fileAppend);
     fileHandler->setSettings(map);
     m_Handlers.append(fileHandler);
 
     MessageHandler* dbHandler = new DbHandler(this);
+    auto dbOptions = Settings::DatabaseOptions::get();
     map.clear();
-    map.insert(DbHandler::DbHostname, "localhost");
-    map.insert(DbHandler::DbPort,     5432);
-    map.insert(DbHandler::DbDriver,   "QPSQL");
-    map.insert(DbHandler::DbUsername, "abn_user");
-    map.insert(DbHandler::DbPassword, "abn");
-    map.insert(DbHandler::DbDatabase, "abn_db");
+    map.insert(DbHandler::DbHostname, dbOptions.host);
+    map.insert(DbHandler::DbPort,     dbOptions.port);
+    map.insert(DbHandler::DbDriver,   dbOptions.driver);
+    map.insert(DbHandler::DbUsername, dbOptions.username);
+    map.insert(DbHandler::DbPassword, dbOptions.password);
+    map.insert(DbHandler::DbDatabase, dbOptions.database);
     dbHandler->setSettings(map);
     m_Handlers.append(dbHandler);
 }

@@ -16,6 +16,11 @@ The PortListener boasts the following features:
 
 ## PortListener Service version (PLService)
 
+Usage:
+```sh
+   ./PLService [Command line arguments] [Port]
+```
+
 Command line arguments:
  * -i (-install) Install the service.
  * -u (-uninstall) Uninstall the service.
