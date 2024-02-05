@@ -270,10 +270,13 @@ QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArr
         break;
     case ReplyType::EchoReply:
         reply = data;
+        break;
     case ReplyType::TextReply:
         reply = ioDecoder.fromUnicode(ui->editReply->text());
+        break;
     case ReplyType::BinaryReply:
         reply = ioDecoder.fromUnicode(ui->editReply->text(), true);
+        break;
     }
     return reply;
 }

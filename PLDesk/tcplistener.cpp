@@ -268,10 +268,13 @@ QByteArray TcpListener::processData(const QHostAddress &host, const QByteArray &
         break;
     case ReplyType::EchoReply:
         reply = data;
+        break;
     case ReplyType::TextReply:
         reply = ioDecoder.fromUnicode(ui->editReply->text());
+        break;
     case ReplyType::BinaryReply:
         reply = ioDecoder.fromUnicode(ui->editReply->text(), true);
+        break;
     }
     return reply;
 }
