@@ -4,8 +4,8 @@
 
 /*******************************************************************/
 
-TcpDaemon::TcpDaemon(quint16 port, QObject* parent):
-    QTcpServer(parent), disabled(false), m_Handler(Q_NULLPTR)
+TcpDaemon::TcpDaemon(quint16 port, QObject* parent) :
+    QTcpServer(parent)
 {
     initHandler();
     startServer(port);
@@ -20,7 +20,7 @@ TcpDaemon::~TcpDaemon() {
 /*******************************************************************/
 
 void TcpDaemon::startServer(quint16 port) {
-    m_Handler->doConnect();
+    d.handler->doConnect();
 	if(!isListening()) {
         if(listen(QHostAddress::Any, port)) {
             QtServiceBase::instance()->logMessage("Sevice started");
@@ -35,7 +35,7 @@ void TcpDaemon::startServer(quint16 port) {
 /*******************************************************************/
 
 void TcpDaemon::stopServer() {
-    m_Handler->doDisconnect();
+    d.handler->doDisconnect();
     if(isListening()) {
 		close();
         QtServiceBase::instance()->logMessage("Sevice stopped");
@@ -46,20 +46,20 @@ void TcpDaemon::stopServer() {
 
 void TcpDaemon::pauseServer()
 {
-    disabled = true;
+    d.disabled = true;
 }
 
 /*******************************************************************/
 
 void TcpDaemon::resumeServer()
 {
-    disabled = false;
+    d.disabled = false;
 }
 
 /*******************************************************************/
 
 void TcpDaemon::incomingConnection(qintptr handle) {
-    if (disabled) return;
+    if (d.disabled) return;
 
 	QTcpSocket* socket = new QTcpSocket(this);
     connect(socket, &QTcpSocket::readyRead,
@@ -106,11 +106,11 @@ void TcpDaemon::discardClient(QTcpSocket *socket)
 
 void TcpDaemon::initHandler()
 {
-    m_Handler = new FileHandler(this);
+    d.handler = new FileHandler(this);
     SettingsMap map;
     map.insert(FileHandler::FileName, "/home/khoman/tcp_log.txt");
     map.insert(FileHandler::FileAppend, true);
-    m_Handler->setSettings(map);
+    d.handler->setSettings(map);
 }
 
 /********************************************************/
@@ -119,10 +119,10 @@ QByteArray TcpDaemon::processData(const QByteArray &data)
 {
     QByteArray reply;
     // Handler
-    if (m_Handler) {
-        reply = m_Handler->processData(QString(data));
-        if (m_Handler->hasError()) {
-            reply = m_Handler->lastError().toUtf8();
+    if (d.handler) {
+        reply = d.handler->processData(QString(data));
+        if (d.handler->hasError()) {
+            reply = d.handler->lastError().toUtf8();
         }
     } else {
         reply = "No handler\n";

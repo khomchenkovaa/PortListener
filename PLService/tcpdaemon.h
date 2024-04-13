@@ -13,6 +13,12 @@
 class TcpDaemon: public QTcpServer
 {
 	Q_OBJECT
+
+    struct TcpDaemonPrivate {
+        bool disabled = false;
+        MessageHandler *handler = Q_NULLPTR;
+    };
+
 public:
     TcpDaemon(quint16 port, QObject* parent = 0);
     ~TcpDaemon();
@@ -37,9 +43,7 @@ private:
     QByteArray processData(const QByteArray &data);
 
 private:
-    bool disabled;
-    MessageHandler *m_Handler;
-
+    TcpDaemonPrivate d;
 };
 
 #endif // TCP_DAEMON_H

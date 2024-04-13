@@ -11,9 +11,7 @@
 /*******************************************************************/
 
 UdpDaemon::UdpDaemon(quint16 port, QObject *parent):
-    QObject(parent),
-    disabled(false),
-    m_UdpSocket(Q_NULLPTR)
+    QObject(parent)
 {
     initHandler();
     startServer(port);
@@ -24,33 +22,33 @@ UdpDaemon::UdpDaemon(quint16 port, QObject *parent):
 UdpDaemon::~UdpDaemon()
 {
     stopServer();
-    qDeleteAll(m_Handlers);
-    m_Handlers.clear();
+    qDeleteAll(d.handlers);
+    d.handlers.clear();
 }
 
 /*******************************************************************/
 
 bool UdpDaemon::isListening() const
 {
-    return m_UdpSocket;
+    return d.socket;
 }
 
 /*******************************************************************/
 
 void UdpDaemon::startServer(quint16 port)
 {
-    for(auto handler : m_Handlers) {
+    for(auto handler : d.handlers) {
         handler->doConnect();
     }
 
     if (!isListening()) {
-        m_UdpSocket = new QUdpSocket(this);
-        if (m_UdpSocket->bind(QHostAddress::Any, port)) {
-            connect(m_UdpSocket, &QUdpSocket::readyRead,
+        d.socket = new QUdpSocket(this);
+        if (d.socket->bind(QHostAddress::Any, port)) {
+            connect(d.socket, &QUdpSocket::readyRead,
                    this, &UdpDaemon::readPendingDatagrams);
             QtServiceBase::instance()->logMessage("Sevice started");
         } else {
-            QtServiceBase::instance()->logMessage(tr("Sevice startup error: %1").arg(m_UdpSocket->errorString()));
+            QtServiceBase::instance()->logMessage(tr("Sevice startup error: %1").arg(d.socket->errorString()));
         }
     } else {
         QtServiceBase::instance()->logMessage("Sevice already started");
@@ -61,14 +59,14 @@ void UdpDaemon::startServer(quint16 port)
 
 void UdpDaemon::stopServer()
 {
-    for(auto handler : m_Handlers) {
+    for(auto handler : d.handlers) {
         handler->doDisconnect();
     }
 
     if (isListening()) {
-        m_UdpSocket->close();
-        m_UdpSocket->deleteLater();
-        m_UdpSocket = Q_NULLPTR;
+        d.socket->close();
+        d.socket->deleteLater();
+        d.socket = Q_NULLPTR;
         QtServiceBase::instance()->logMessage("Sevice stopped");
     }
 }
@@ -77,25 +75,25 @@ void UdpDaemon::stopServer()
 
 void UdpDaemon::pauseServer()
 {
-    disabled = true;
+    d.disabled = true;
 }
 
 /*******************************************************************/
 
 void UdpDaemon::resumeServer()
 {
-    disabled = false;
+    d.disabled = false;
 }
 
 /*******************************************************************/
 
 void UdpDaemon::readPendingDatagrams()
 {
-    while (m_UdpSocket->hasPendingDatagrams()) {
-        QNetworkDatagram datagram = m_UdpSocket->receiveDatagram();
+    while (d.socket->hasPendingDatagrams()) {
+        QNetworkDatagram datagram = d.socket->receiveDatagram();
         QByteArray replyData = processData(datagram.data());
         if (!replyData.isEmpty()) {
-            m_UdpSocket->writeDatagram(datagram.makeReply(replyData));
+            d.socket->writeDatagram(datagram.makeReply(replyData));
         }
     }
 }
@@ -110,7 +108,7 @@ void UdpDaemon::initHandler()
     map.insert(FileHandler::FileName, fileOptions.fileName);
     map.insert(FileHandler::FileAppend, fileOptions.fileAppend);
     fileHandler->setSettings(map);
-    m_Handlers.append(fileHandler);
+    d.handlers.append(fileHandler);
 
     MessageHandler* dbHandler = new DbHandler(this);
     auto dbOptions = Settings::DatabaseOptions::get(QSettings::SystemScope);
@@ -123,7 +121,7 @@ void UdpDaemon::initHandler()
     map.insert(DbHandler::DbPassword, dbOptions.password);
     map.insert(DbHandler::DbDatabase, dbOptions.database);
     dbHandler->setSettings(map);
-    m_Handlers.append(dbHandler);
+    d.handlers.append(dbHandler);
 
 //    fileOptions.save(QSettings::SystemScope);
 //    dbOptions.save(QSettings::SystemScope);
@@ -135,7 +133,7 @@ QByteArray UdpDaemon::processData(const QByteArray &data)
 {
     QByteArray reply;
     // Handlers
-    for(auto handler : m_Handlers) {
+    for(auto handler : d.handlers) {
         reply.append(handler->processData(QString(data)));
         if (handler->hasError()) {
             reply.append(handler->lastError().toUtf8());

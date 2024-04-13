@@ -16,7 +16,7 @@
 #define DEF_DBPORT   5432
 #define DEF_DBDRIVER "QPSQL"
 #define DEF_DBUSER   "abn_user"
-#define DEF_DBPASS   "abnn"
+#define DEF_DBPASS   "abn"
 #define DEF_DATABASE "abn_db"
 
 namespace Settings {

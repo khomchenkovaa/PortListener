@@ -10,6 +10,12 @@ class UdpDaemon: public QObject
 {
     Q_OBJECT
 
+    struct UdpDaemonPrivate {
+        bool        disabled = false;
+        QUdpSocket *socket   = Q_NULLPTR;
+        QList<MessageHandler*> handlers;
+    };
+
 public:
     UdpDaemon(quint16 port, QObject* parent = 0);
     ~UdpDaemon();
@@ -30,9 +36,7 @@ private:
     QByteArray processData(const QByteArray &data);
 
 private:
-    bool disabled;
-    QUdpSocket     *m_UdpSocket;
-    QList<MessageHandler*> m_Handlers;
+    UdpDaemonPrivate d;
 };
 
 #endif // UDP_DAEMON_H
