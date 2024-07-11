@@ -107,8 +107,7 @@ void SocketListener::on_btnConnect_clicked()
     } else {
         QMessageBox::critical(this, QApplication::applicationDisplayName(),
                               tr("Socket %1 connection error!\n%2")
-                              .arg(socketName)
-                              .arg(m_LocalServer.errorString()));
+                              .arg(socketName, m_LocalServer.errorString()));
     }
     if (m_LocalServer.isListening() && m_Handler) {
         MessageHandlerWgt *editor = findChild<MessageHandlerWgt*>();
@@ -117,9 +116,7 @@ void SocketListener::on_btnConnect_clicked()
         }
         m_Handler->doConnect(ui->rbBinary->isChecked());
         if (m_Handler->hasError()) {
-            ui->textLog->append(QString("%1 : %2")
-                                .arg(m_Handler->name())
-                                .arg(m_Handler->lastError()));
+            ui->textLog->append(QString("%1 : %2").arg(m_Handler->name(), m_Handler->lastError()));
         }
     }
     updateStatus();
@@ -243,8 +240,7 @@ QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArr
 
     // log payload data
     ui->textLog->append(QString("%1 -> %2")
-                        .arg(QString::number(socketDescriptor))
-                        .arg(displayData));
+                        .arg(QString::number(socketDescriptor), displayData));
     ui->textLog->moveCursor(QTextCursor::End);
 
     QByteArray reply;
@@ -257,8 +253,7 @@ QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArr
         }
         if (m_Handler->hasError()) {
             ui->textLog->append(QString("%1 -> %2")
-                                .arg(QString::number(socketDescriptor))
-                                .arg(m_Handler->lastError()));
+                                .arg(QString::number(socketDescriptor), m_Handler->lastError()));
             ui->textLog->moveCursor(QTextCursor::End);
         }
     }

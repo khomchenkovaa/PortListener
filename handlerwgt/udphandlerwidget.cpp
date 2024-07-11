@@ -8,7 +8,7 @@ UdpHandlerWidget::UdpHandlerWidget(QWidget *parent) :
     ui(new Ui::UdpHandlerWidget)
 {
     ui->setupUi(this);
-    setSettings(SettingsMap());
+    UdpHandlerWidget::setSettings(SettingsMap());
 }
 
 /********************************************************/

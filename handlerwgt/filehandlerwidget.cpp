@@ -10,7 +10,7 @@ FileHandlerWidget::FileHandlerWidget(QWidget *parent) :
     ui(new Ui::FileHandlerWidget)
 {
     ui->setupUi(this);
-    setSettings(SettingsMap());
+    FileHandlerWidget::setSettings(SettingsMap());
 }
 
 /********************************************************/

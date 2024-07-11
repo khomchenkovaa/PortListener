@@ -31,7 +31,7 @@ void MainWindow::addTcpListener()
     auto widget = new TcpListener(this);
     ui->tabWidget->addTab(widget, tr("TCP [-]"));
     ui->tabWidget->setCurrentWidget(widget);
-    connect(widget, &TcpListener::tabText, [this, widget](const QString &label){
+    connect(widget, &TcpListener::tabText, this, [this, widget](const QString &label){
         int idx = ui->tabWidget->indexOf(widget);
         ui->tabWidget->setTabText(idx, label);
     });
@@ -44,7 +44,7 @@ void MainWindow::addUdpListener()
     auto widget = new UdpListener(this);
     ui->tabWidget->addTab(widget, tr("UDP [-]"));
     ui->tabWidget->setCurrentWidget(widget);
-    connect(widget, &UdpListener::tabText, [this, widget](const QString &label){
+    connect(widget, &UdpListener::tabText, this, [this, widget](const QString &label){
         int idx = ui->tabWidget->indexOf(widget);
         ui->tabWidget->setTabText(idx, label);
     });
@@ -57,7 +57,7 @@ void MainWindow::addSocketListener()
     auto widget = new SocketListener(this);
     ui->tabWidget->addTab(widget, tr("Socket [-]"));
     ui->tabWidget->setCurrentWidget(widget);
-    connect(widget, &SocketListener::tabText, [this, widget](const QString &label){
+    connect(widget, &SocketListener::tabText, this, [this, widget](const QString &label){
         int idx = ui->tabWidget->indexOf(widget);
         ui->tabWidget->setTabText(idx, label);
     });

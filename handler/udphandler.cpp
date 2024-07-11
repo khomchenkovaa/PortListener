@@ -15,7 +15,7 @@ UdpHandler::UdpHandler(QObject *parent)
 
 UdpHandler::~UdpHandler()
 {
-    doDisconnect();
+    UdpHandler::doDisconnect();
 }
 
 /********************************************************/

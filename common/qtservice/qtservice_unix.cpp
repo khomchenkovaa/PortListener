@@ -260,7 +260,7 @@ private:
 };
 
 QtServiceSysPrivate::QtServiceSysPrivate()
-    : QtUnixServerSocket(), ident(0), serviceFlags(0)
+    : QtUnixServerSocket(), ident(0), serviceFlags(QtServiceBase::Default)
 {
 }
 

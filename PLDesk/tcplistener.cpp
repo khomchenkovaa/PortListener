@@ -116,8 +116,7 @@ void TcpListener::on_btnConnect_clicked()
         m_Handler->doConnect(ui->rbBinary->isChecked());
         if (m_Handler->hasError()) {
             ui->textLog->append(QString("%1 : %2")
-                                .arg(m_Handler->name())
-                                .arg(m_Handler->lastError()));
+                                .arg(m_Handler->name(), m_Handler->lastError()));
         }
     }
     updateStatus();
@@ -241,8 +240,7 @@ QByteArray TcpListener::processData(const QHostAddress &host, const QByteArray &
 
     // log payload data
     ui->textLog->append(QString("%1 -> %2")
-                        .arg(host.toString())
-                        .arg(displayData));
+                        .arg(host.toString(), displayData));
     ui->textLog->moveCursor(QTextCursor::End);
 
     QByteArray reply;
@@ -255,8 +253,7 @@ QByteArray TcpListener::processData(const QHostAddress &host, const QByteArray &
         }
         if (m_Handler->hasError()) {
             ui->textLog->append(QString("%1 -> %2")
-                                .arg(host.toString())
-                                .arg(m_Handler->lastError()));
+                                .arg(host.toString(), m_Handler->lastError()));
             ui->textLog->moveCursor(QTextCursor::End);
         }
     }

@@ -15,7 +15,7 @@ TcpHandler::TcpHandler(QObject *parent)
 
 TcpHandler::~TcpHandler()
 {
-    doDisconnect();
+    TcpHandler::doDisconnect();
 }
 
 /********************************************************/
@@ -54,16 +54,23 @@ void TcpHandler::doConnect(bool binary)
     Q_UNUSED(binary)
 
     m_Error.clear();
-    QString host = m_Settings.value(Settings::Host, "localhost").toString();
-    int port = m_Settings.value(Settings::Port, "2424").toInt();
+    const QString host = m_Settings.value(Settings::Host, "localhost").toString();
+    const quint16 port = m_Settings.value(Settings::Port, "2424").toUInt();
 
     m_TcpSocket = new QTcpSocket(this);
+#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
     QObject::connect(m_TcpSocket, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error), this, [this](){
+            m_Error = m_TcpSocket->errorString();
+            qDebug() << m_TcpSocket->errorString();
+        });
+#else
+    QObject::connect(m_TcpSocket, &QAbstractSocket::errorOccurred, this, [this](){
         m_Error = m_TcpSocket->errorString();
         qDebug() << m_TcpSocket->errorString();
     });
+#endif
     m_TcpSocket->connectToHost(host, port);
-    m_TcpSocket->setSocketOption(QAbstractSocket::KeepAliveOption,1);
+    m_TcpSocket->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
 
     m_Connected = true;
 }

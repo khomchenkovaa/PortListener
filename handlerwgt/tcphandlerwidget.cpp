@@ -8,7 +8,7 @@ TcpHandlerWidget::TcpHandlerWidget(QWidget *parent) :
     ui(new Ui::TcpHandlerWidget)
 {
     ui->setupUi(this);
-    setSettings(SettingsMap());
+    TcpHandlerWidget::setSettings(SettingsMap());
 }
 
 /********************************************************/

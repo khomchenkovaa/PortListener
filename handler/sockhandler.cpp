@@ -13,7 +13,7 @@ SockHandler::SockHandler(QObject *parent)
 
 SockHandler::~SockHandler()
 {
-    doDisconnect();
+    SockHandler::doDisconnect();
 }
 
 /********************************************************/
@@ -31,7 +31,6 @@ void SockHandler::handleMessage(Message *msg)
 
 QByteArray SockHandler::processData(const QByteArray &data)
 {
-    QString socket = m_Settings.value(Settings::Socket).toString();
     m_LocalSocket->write(data);
     return QByteArray();
 }
@@ -40,7 +39,6 @@ QByteArray SockHandler::processData(const QByteArray &data)
 
 QByteArray SockHandler::processData(const QString &data)
 {
-    QString socket = m_Settings.value(Settings::Socket).toString();
     m_LocalSocket->write(data.toUtf8());
     return QByteArray();
 }

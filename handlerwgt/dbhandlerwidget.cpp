@@ -15,7 +15,15 @@ DbHandlerWidget::DbHandlerWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    for (QString drv : QSqlDatabase::drivers()) {
+    connect(ui->btnTest, &QPushButton::clicked,
+            this, &DbHandlerWidget::checkDbConnection);
+    connect(ui->buttonSelectFile, &QToolButton::clicked,
+            this, &DbHandlerWidget::chooseSqliteFile);
+    connect(ui->comboType, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &DbHandlerWidget::changeDbDriver);
+
+    const auto drivers = QSqlDatabase::drivers();
+    for (auto drv : drivers) {
         QString desc = getDescription(drv);
         if (desc.isNull()) {
             ui->comboType->addItem(drv, drv);
@@ -75,15 +83,15 @@ void DbHandlerWidget::setSettings(const SettingsMap &map)
 
 /********************************************************/
 
-void DbHandlerWidget::on_comboType_currentIndexChanged(int index)
+void DbHandlerWidget::changeDbDriver(int index)
 {
-    QString driver = ui->comboType->itemData(index).toString();
+    const QString driver = ui->comboType->itemData(index).toString();
     updateFields(driver);
 }
 
 /********************************************************/
 
-void DbHandlerWidget::on_buttonSelectFile_clicked()
+void DbHandlerWidget::chooseSqliteFile()
 {
     QString filename = QFileDialog::getOpenFileName(this, tr("Choose a SQLite database file"),
                                                         QString(),
@@ -94,7 +102,7 @@ void DbHandlerWidget::on_buttonSelectFile_clicked()
 
 /********************************************************/
 
-void DbHandlerWidget::on_btnTest_clicked()
+void DbHandlerWidget::checkDbConnection()
 {
     const QString driver   = ui->comboType->itemData( ui->comboType->currentIndex() ).toString();
     const QString hostname = ui->editHostname->text();

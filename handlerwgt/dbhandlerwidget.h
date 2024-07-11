@@ -20,9 +20,9 @@ public:
     void setSettings(const SettingsMap& map);
 
 private slots:
-    void on_comboType_currentIndexChanged(int index);
-    void on_buttonSelectFile_clicked();
-    void on_btnTest_clicked();
+    void changeDbDriver(int index);
+    void chooseSqliteFile();
+    void checkDbConnection();
 
 private:
     void updateFields(const QString& drv);

@@ -37,7 +37,7 @@ bool UdpDaemon::isListening() const
 
 void UdpDaemon::startServer(quint16 port)
 {
-    for(auto handler : d.handlers) {
+    for(auto handler : qAsConst(d.handlers)) {
         handler->doConnect();
     }
 
@@ -59,7 +59,7 @@ void UdpDaemon::startServer(quint16 port)
 
 void UdpDaemon::stopServer()
 {
-    for(auto handler : d.handlers) {
+    for(auto handler : qAsConst(d.handlers)) {
         handler->doDisconnect();
     }
 
@@ -133,7 +133,7 @@ QByteArray UdpDaemon::processData(const QByteArray &data)
 {
     QByteArray reply;
     // Handlers
-    for(auto handler : d.handlers) {
+    for(auto handler : qAsConst(d.handlers)) {
         reply.append(handler->processData(QString(data)));
         if (handler->hasError()) {
             reply.append(handler->lastError().toUtf8());

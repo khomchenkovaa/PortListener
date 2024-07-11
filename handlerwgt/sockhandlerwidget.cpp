@@ -8,7 +8,7 @@ SockHandlerWidget::SockHandlerWidget(QWidget *parent) :
     ui(new Ui::SockHandlerWidget)
 {
     ui->setupUi(this);
-    setSettings(SettingsMap());
+    SockHandlerWidget::setSettings(SettingsMap());
 }
 
 /********************************************************/

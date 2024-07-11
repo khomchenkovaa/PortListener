@@ -14,7 +14,7 @@ FileHandler::FileHandler(QObject *parent)
 
 FileHandler::~FileHandler()
 {
-    doDisconnect();
+    FileHandler::doDisconnect();
 }
 
 /********************************************************/
