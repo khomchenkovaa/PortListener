@@ -46,11 +46,11 @@ public slots:
     void onReadyRead();
 
 private slots:
-    void on_btnConnect_clicked();
-    void on_btnDisconnect_clicked();
+    void doConnect();
+    void doDisconnect();
     void onInputFormatChanged();
-    void on_cmbReplyType_currentIndexChanged(int index);
-    void on_cmbHandler_currentIndexChanged(int index);
+    void changeReplyType(int index);
+    void changeHandler(int index);
 
 private:
     void updateStatus();

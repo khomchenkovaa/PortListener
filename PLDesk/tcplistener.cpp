@@ -30,6 +30,15 @@ TcpListener::TcpListener(QWidget *parent) :
     m_Handler(Q_NULLPTR)
 {
     ui->setupUi(this);
+
+    connect(ui->btnConnect, &QAbstractButton::clicked,
+            this, &TcpListener::doConnect);
+    connect(ui->btnDisconnect, &QAbstractButton::clicked,
+            this, &TcpListener::doDisconnect);
+    connect(ui->cmbReplyType, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &TcpListener::changeReplyType);
+    connect(ui->cmbHandler, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &TcpListener::changeHandler);
     // configure UI default state
     ui->rbBinary->setChecked(false);
     ui->rbText->setChecked(true);
@@ -96,7 +105,7 @@ void TcpListener::onReadyRead()
 
 /********************************************************/
 
-void TcpListener::on_btnConnect_clicked()
+void TcpListener::doConnect()
 {
     quint16 port = ui->spinPort->value();
     if (m_TcpServer.listen(QHostAddress::Any, port)) {
@@ -124,7 +133,7 @@ void TcpListener::on_btnConnect_clicked()
 
 /********************************************************/
 
-void TcpListener::on_btnDisconnect_clicked()
+void TcpListener::doDisconnect()
 {
     m_TcpServer.close();
     if (m_Handler) {
@@ -142,7 +151,7 @@ void TcpListener::onInputFormatChanged()
 
 /********************************************************/
 
-void TcpListener::on_cmbReplyType_currentIndexChanged(int index)
+void TcpListener::changeReplyType(int index)
 {
     switch (index) {
     case ReplyType::NoReply:
@@ -159,7 +168,7 @@ void TcpListener::on_cmbReplyType_currentIndexChanged(int index)
 
 /********************************************************/
 
-void TcpListener::on_cmbHandler_currentIndexChanged(int index)
+void TcpListener::changeHandler(int index)
 {
     MessageHandlerWgt *editor = findChild<MessageHandlerWgt*>();
     if (editor) {

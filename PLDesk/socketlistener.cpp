@@ -30,6 +30,15 @@ SocketListener::SocketListener(QWidget *parent) :
     m_Handler(Q_NULLPTR)
 {
     ui->setupUi(this);
+
+    connect(ui->btnConnect, &QAbstractButton::clicked,
+            this, &SocketListener::doConnect);
+    connect(ui->btnDisconnect, &QAbstractButton::clicked,
+            this, &SocketListener::doDisconnect);
+    connect(ui->cmbReplyType, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &SocketListener::changeReplyType);
+    connect(ui->cmbHandler, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &SocketListener::changeHandler);
     // configure UI default state
     ui->rbBinary->setChecked(false);
     ui->rbText->setChecked(true);
@@ -98,7 +107,7 @@ void SocketListener::onReadyRead()
 
 /********************************************************/
 
-void SocketListener::on_btnConnect_clicked()
+void SocketListener::doConnect()
 {
     QString socketName = ui->editSocket->text();
     if (m_LocalServer.listen(socketName)) {
@@ -124,7 +133,7 @@ void SocketListener::on_btnConnect_clicked()
 
 /********************************************************/
 
-void SocketListener::on_btnDisconnect_clicked()
+void SocketListener::doDisconnect()
 {
     m_LocalServer.close();
     if (m_Handler) {
@@ -142,7 +151,7 @@ void SocketListener::onInputFormatChanged()
 
 /********************************************************/
 
-void SocketListener::on_cmbReplyType_currentIndexChanged(int index)
+void SocketListener::changeReplyType(int index)
 {
     switch (index) {
     case ReplyType::NoReply:
@@ -159,7 +168,7 @@ void SocketListener::on_cmbReplyType_currentIndexChanged(int index)
 
 /********************************************************/
 
-void SocketListener::on_cmbHandler_currentIndexChanged(int index)
+void SocketListener::changeHandler(int index)
 {
     MessageHandlerWgt *editor = findChild<MessageHandlerWgt*>();
     if (editor) {

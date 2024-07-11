@@ -29,6 +29,15 @@ UdpListener::UdpListener(QWidget *parent) :
     m_Handler(Q_NULLPTR)
 {
     ui->setupUi(this);
+
+    connect(ui->btnConnect, &QAbstractButton::clicked,
+            this, &UdpListener::doConnect);
+    connect(ui->btnDisconnect, &QAbstractButton::clicked,
+            this, &UdpListener::doDisconnect);
+    connect(ui->cmbReplyType, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &UdpListener::changeReplyType);
+    connect(ui->cmbHandler, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &UdpListener::changeHandler);
     // configure UI default state
     ui->rbBinary->setChecked(false);
     ui->rbText->setChecked(true);
@@ -72,7 +81,7 @@ void UdpListener::readPendingDatagrams()
 
 /********************************************************/
 
-void UdpListener::on_btnConnect_clicked()
+void UdpListener::doConnect()
 {
     quint16 port = ui->spinPort->value();
     m_UdpSocket = new QUdpSocket(this);
@@ -103,7 +112,7 @@ void UdpListener::on_btnConnect_clicked()
 
 /********************************************************/
 
-void UdpListener::on_btnDisconnect_clicked()
+void UdpListener::doDisconnect()
 {
     if (m_UdpSocket) {
         m_UdpSocket->close();
@@ -125,7 +134,7 @@ void UdpListener::onInputFormatChanged()
 
 /********************************************************/
 
-void UdpListener::on_cmbReplyType_currentIndexChanged(int index)
+void UdpListener::changeReplyType(int index)
 {
     switch (index) {
     case ReplyType::NoReply:
@@ -142,7 +151,7 @@ void UdpListener::on_cmbReplyType_currentIndexChanged(int index)
 
 /********************************************************/
 
-void UdpListener::on_cmbHandler_currentIndexChanged(int index)
+void UdpListener::changeHandler(int index)
 {
     MessageHandlerWgt *editor = findChild<MessageHandlerWgt*>();
     if (editor) {
