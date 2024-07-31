@@ -12,14 +12,16 @@ class MessageHandlerWgt;
 class MessageHandler : public QObject {
     Q_OBJECT
 
-public:
-    explicit MessageHandler(QObject *parent = nullptr) : QObject(parent) {
-        m_Name = tr("Empty handler");
-        m_Connected = false;
-    }
+    struct MessageHandlerPrivate {
+        QString     name;              ///< Handler's name
+        SettingsMap settings;          ///< Handler's settings
+        bool        connected = false; ///< Connected flag
+        QStringList errors;            ///< Error strings
+    };
 
-    QString name() const {
-        return m_Name;
+public:
+    explicit MessageHandler(const QString &name = tr("Empty handler"), QObject *parent = nullptr) : QObject(parent) {
+        d.name = name;
     }
 
     virtual void handleMessage(Message *msg) {
@@ -36,41 +38,63 @@ public:
         return QByteArray();
     }
 
-    SettingsMap settings() const {
-        return m_Settings;
-    }
-
-    void setSettings(const SettingsMap& map) {
-        m_Settings.clear();
-        QMapIterator<int, QVariant> i(map);
-        while (i.hasNext()) {
-            i.next();
-            m_Settings.insert(i.key(), i.value());
-        }
-    }
-
     virtual void doConnect(bool binary = false) {
         Q_UNUSED(binary)
-        m_Connected = true;
+        setConnected();
     }
 
     virtual void doDisconnect() {
-        m_Connected = false;
+        setDisconnected();
+    }
+
+    QString name() const {
+        return d.name;
+    }
+
+    SettingsMap *settings() {
+        return &(d.settings);
+    }
+
+    void setSettings(const SettingsMap& map) {
+        d.settings.clear();
+        for (auto i = map.constBegin(); i != map.constEnd(); i++) {
+            d.settings.insert(i.key(), i.value());
+        }
+    }
+
+    bool isConnected() const {
+        return d.connected;
+    }
+
+    void setConnected() {
+        d.connected = true;
+    }
+
+    void setDisconnected() {
+        d.connected = false;
     }
 
     bool hasError() const {
-        return !m_Error.isEmpty();
+        return !d.errors.isEmpty();
     }
 
     QString lastError() const {
-        return m_Error;
+        if (hasError()) {
+            return d.errors.constLast();
+        }
+        return QString();
     }
 
-protected:
-    QString m_Name;
-    SettingsMap m_Settings;
-    bool m_Connected;
-    QString m_Error;
+    void addError(const QString &error) {
+        d.errors << error;
+    }
+
+    void clearErrors() {
+        d.errors.clear();
+    }
+
+private:
+    MessageHandlerPrivate d;
 };
 
 #endif // MESSAGEHANDLER_H

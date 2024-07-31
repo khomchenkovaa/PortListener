@@ -3,10 +3,9 @@
 /********************************************************/
 
 SockHandler::SockHandler(QObject *parent)
-    : MessageHandler(parent)
+    : MessageHandler(tr("Socket handler"), parent)
     , m_LocalSocket(Q_NULLPTR)
 {
-    m_Name = tr("Socket handler");
 }
 
 /********************************************************/
@@ -49,12 +48,12 @@ void SockHandler::doConnect(bool binary)
 {
     Q_UNUSED(binary)
 
-    m_Error.clear();
-    QString socket = m_Settings.value(Settings::Socket).toString();
+    clearErrors();
+    const auto socket = settings()->value(Settings::Socket).toString();
 
     m_LocalSocket = new QLocalSocket(this);
     m_LocalSocket->connectToServer(socket, QIODevice::WriteOnly);
-    m_Connected = true;
+    setConnected();
 }
 
 /********************************************************/
@@ -66,7 +65,7 @@ void SockHandler::doDisconnect()
         m_LocalSocket->deleteLater();
         m_LocalSocket = Q_NULLPTR;
     }
-    m_Connected = false;
+    setDisconnected();
 }
 
 /********************************************************/

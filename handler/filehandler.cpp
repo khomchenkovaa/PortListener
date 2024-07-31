@@ -5,9 +5,8 @@
 /********************************************************/
 
 FileHandler::FileHandler(QObject *parent)
-    : MessageHandler(parent)
+    : MessageHandler(tr("File handler"), parent)
 {
-    m_Name = tr("File handler");
 }
 
 /********************************************************/
@@ -21,9 +20,9 @@ FileHandler::~FileHandler()
 
 void FileHandler::handleMessage(Message *msg)
 {
-    m_Error.clear();
-    if (!m_Connected || !m_File.isOpen()) {
-        m_Error = tr("Cannot write data to file");
+    clearErrors();
+    if (!isConnected() || !m_File.isOpen()) {
+        addError(tr("Cannot write data to file"));
         return;
     }
     if (msg->payload.type() == QVariant::ByteArray) {
@@ -38,11 +37,11 @@ void FileHandler::handleMessage(Message *msg)
 
 QByteArray FileHandler::processData(const QByteArray &data)
 {
-    m_Error.clear();
-    if (m_Connected && m_File.isOpen()) {
+    clearErrors();
+    if (isConnected() && m_File.isOpen()) {
         m_File.write(data);
     } else {
-        m_Error = tr("Cannot write binary data to file");
+        addError(tr("Cannot write binary data to file"));
     }
     return QByteArray();
 }
@@ -51,12 +50,12 @@ QByteArray FileHandler::processData(const QByteArray &data)
 
 QByteArray FileHandler::processData(const QString &data)
 {
-    m_Error.clear();
-    if (m_Connected && m_File.isOpen()) {
+    clearErrors();
+    if (isConnected() && m_File.isOpen()) {
         QTextStream out(&m_File);
         out << data;
     } else {
-        m_Error = tr("Cannot write text data to file");
+        addError(tr("Cannot write text data to file"));
     }
     return QByteArray();
 }
@@ -65,14 +64,14 @@ QByteArray FileHandler::processData(const QString &data)
 
 void FileHandler::doConnect(bool binary)
 {
-    m_Error.clear();
-    QString fileName = m_Settings.value(Settings::FileName).toString();
+    clearErrors();
+    const auto fileName = settings()->value(Settings::FileName).toString();
     if (fileName.isEmpty()) {
-        m_Error = tr("No file to open");
+        addError(tr("No file to open"));
     }
     m_File.setFileName(fileName);
     QIODevice::OpenMode flags;
-    if (m_Settings.value(Settings::FileAppend, true).toBool()) {
+    if (settings()->value(Settings::FileAppend, true).toBool()) {
         flags = QIODevice::Append;
     } else {
         flags = QIODevice::WriteOnly;
@@ -81,9 +80,9 @@ void FileHandler::doConnect(bool binary)
         flags |= QIODevice::Text;
     }
     if (!m_File.open(flags)) {
-        m_Error = tr("Could not open file");
+        addError(tr("Could not open file"));
     }
-    m_Connected = true;
+    setConnected();
 }
 
 /********************************************************/
@@ -93,7 +92,7 @@ void FileHandler::doDisconnect()
     if (m_File.isOpen()) {
         m_File.close();
     }
-    m_Connected = false;
+    setDisconnected();
 }
 
 /********************************************************/

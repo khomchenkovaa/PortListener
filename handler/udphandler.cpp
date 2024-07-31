@@ -5,10 +5,9 @@
 /********************************************************/
 
 UdpHandler::UdpHandler(QObject *parent)
-    : MessageHandler(parent)
+    : MessageHandler(tr("UDP handler"), parent)
     , m_UdpSocket(Q_NULLPTR)
 {
-    m_Name = tr("UDP handler");
 }
 
 /********************************************************/
@@ -33,8 +32,8 @@ void UdpHandler::handleMessage(Message *msg)
 
 QByteArray UdpHandler::processData(const QByteArray &data)
 {
-    QString host = m_Settings.value(Settings::Host, "localhost").toString();
-    int port = m_Settings.value(Settings::Port, "2424").toInt();
+    const QString host = settings()->value(Settings::Host, "localhost").toString();
+    const quint16 port = settings()->value(Settings::Port, "2424").toUInt();
     m_UdpSocket->writeDatagram(QNetworkDatagram(data, QHostAddress(host), port));
     return QByteArray();
 }
@@ -43,8 +42,8 @@ QByteArray UdpHandler::processData(const QByteArray &data)
 
 QByteArray UdpHandler::processData(const QString &data)
 {
-    QString host = m_Settings.value(Settings::Host, "localhost").toString();
-    int port = m_Settings.value(Settings::Port, "2424").toInt();
+    const QString host = settings()->value(Settings::Host, "localhost").toString();
+    const quint16 port = settings()->value(Settings::Port, "2424").toUInt();
     m_UdpSocket->writeDatagram(QNetworkDatagram(data.toUtf8(), QHostAddress(host), port));
     return QByteArray();
 }
@@ -55,13 +54,13 @@ void UdpHandler::doConnect(bool binary)
 {
     Q_UNUSED(binary)
 
-    m_Error.clear();
-    QString host = m_Settings.value(Settings::Host, "localhost").toString();
-    int port = m_Settings.value(Settings::Port, "2424").toInt();
+    clearErrors();
+    const QString host = settings()->value(Settings::Host, "localhost").toString();
+    const quint16 port = settings()->value(Settings::Port, "2424").toUInt();
 
     m_UdpSocket = new QUdpSocket(this);
     m_UdpSocket->connectToHost(QHostAddress(host), port, QIODevice::WriteOnly);
-    m_Connected = true;
+    setConnected();
 }
 
 /********************************************************/
@@ -73,6 +72,7 @@ void UdpHandler::doDisconnect()
         m_UdpSocket->deleteLater();
         m_UdpSocket = Q_NULLPTR;
     }
+    setDisconnected();
 }
 
 /********************************************************/

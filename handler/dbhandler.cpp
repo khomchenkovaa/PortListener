@@ -6,9 +6,8 @@
 /********************************************************/
 
 DbHandler::DbHandler(QObject *parent)
-    : MessageHandler(parent)
+    : MessageHandler(tr("DB handler"), parent)
 {
-    m_Name = tr("DB handler");
     dbuuid = QUuid::createUuid();
 }
 
@@ -16,7 +15,7 @@ DbHandler::DbHandler(QObject *parent)
 
 DbHandler::~DbHandler()
 {
-    doDisconnect();
+    DbHandler::doDisconnect();
 }
 
 /********************************************************/
@@ -30,9 +29,9 @@ void DbHandler::handleMessage(Message *msg)
 
 QByteArray DbHandler::processData(const QString &data)
 {
-    m_Error.clear();
-    if (!m_Connected || !db.isOpen()) {
-        m_Error = tr("Cannot write data to the closed database");
+    clearErrors();
+    if (!isConnected() || !db.isOpen()) {
+        addError(tr("Cannot write data to the closed database"));
         return QByteArray();
     }
 
@@ -40,7 +39,7 @@ QByteArray DbHandler::processData(const QString &data)
     const QString sql = mapper.sqlInsert(pair.first);
     QVariantMap values = mapper.bindValues(pair.first, pair.second);
     if (sql.isEmpty()) {
-        m_Error = tr("Cannot create sql statement");
+        addError(tr("Cannot create sql statement"));
         return QByteArray();
     }
 
@@ -52,7 +51,7 @@ QByteArray DbHandler::processData(const QString &data)
         query.bindValue(i.key(), i.value());
     }
     if (!query.exec()) {
-        m_Error = query.lastError().text();
+        addError(query.lastError().text());
     }
     return QByteArray();
 }
@@ -63,28 +62,28 @@ void DbHandler::doConnect(bool binary)
 {
     assert(!dbuuid.isNull());
 
-    m_Error.clear();
+    clearErrors();
 
     if (binary) {
-        m_Error = "Unable to use binary mode";
+        addError("Unable to use binary mode");
         return;
     }
 
     mapper.load();
     if (mapper.hasError()) {
-        m_Error = mapper.loadError();
+        addError(mapper.loadError());
         return;
     }
 
-    const QString driver   = m_Settings.value(Settings::DbDriver, "QPSQL").toString();
-    const QString hostname = m_Settings.value(Settings::DbHostname, "localhost").toString();
-    const int     port     = m_Settings.value(Settings::DbPort, 0).toInt();
-    const QString username = m_Settings.value(Settings::DbUsername).toString();
-    const QString password = m_Settings.value(Settings::DbPassword).toString();
-    const QString database = m_Settings.value(Settings::DbDatabase).toString();
+    const QString driver   = settings()->value(Settings::DbDriver, "QPSQL").toString();
+    const QString hostname = settings()->value(Settings::DbHostname, "localhost").toString();
+    const int     port     = settings()->value(Settings::DbPort, 0).toInt();
+    const QString username = settings()->value(Settings::DbUsername).toString();
+    const QString password = settings()->value(Settings::DbPassword).toString();
+    const QString database = settings()->value(Settings::DbDatabase).toString();
 
     if (!QSqlDatabase::isDriverAvailable(driver)) {
-        m_Error = QString("Database driver %1 is not available.").arg(driver);
+        addError(tr("Database driver %1 is not available.").arg(driver));
         return;
     }
 
@@ -96,13 +95,13 @@ void DbHandler::doConnect(bool binary)
     db.setPassword(password);
 
     if (!db.open()) {
-        m_Error = db.lastError().text();
+        addError(db.lastError().text());
         db = QSqlDatabase();
         QSqlDatabase::removeDatabase(dbuuid.toString());
         return;
     }
 
-    m_Connected = true;
+    setConnected();
 }
 
 /********************************************************/
@@ -116,7 +115,7 @@ void DbHandler::doDisconnect()
     }
     mapper.clear();
 
-    m_Connected = false;
+    setDisconnected();
 }
 
 /********************************************************/
