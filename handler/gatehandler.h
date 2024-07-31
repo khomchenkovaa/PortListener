@@ -11,14 +11,16 @@ class GateHandler : public MessageHandler
     Q_OBJECT
 
     struct GateHandlerPrivate {
-        QFile outFile;
+        GateCsvConf csvConf;
+        GateDefConf defConf;
+        QFile       outFile;
     };
 public:
     enum Settings {
         CsvFileName,
         DefFileName,
         OutFileName,
-        OutFileAppend
+        FileAppend
     };
 
     explicit GateHandler(QObject *parent = nullptr);

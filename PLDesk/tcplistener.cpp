@@ -6,12 +6,14 @@
 #include "udphandler.h"
 #include "tcphandler.h"
 #include "sockhandler.h"
+#include "gatehandler.h"
 
 #include "filehandlerwidget.h"
 #include "dbhandlerwidget.h"
 #include "sockhandlerwidget.h"
 #include "tcphandlerwidget.h"
 #include "udphandlerwidget.h"
+#include "gatehandlerwidget.h"
 
 #include <QHostAddress>
 #include <QTcpSocket>
@@ -200,6 +202,10 @@ void TcpListener::changeHandler(int index)
     case ActionHandler::SocketActionHandler:
         m_Handler = new SockHandler(this);
         editor = new SockHandlerWidget(this);
+        break;
+    case ActionHandler::GateActionHandler:
+        m_Handler = new GateHandler(this);
+        editor = new GateHandlerWidget(this);
         break;
     }
     if (editor) {

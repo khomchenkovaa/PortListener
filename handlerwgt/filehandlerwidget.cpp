@@ -11,6 +11,8 @@ FileHandlerWidget::FileHandlerWidget(QWidget *parent) :
 {
     ui->setupUi(this);
     FileHandlerWidget::setSettings(SettingsMap());
+    connect(ui->btnFile, &QAbstractButton::clicked,
+            this, &FileHandlerWidget::openFileDialog);
 }
 
 /********************************************************/
@@ -40,7 +42,7 @@ void FileHandlerWidget::setSettings(const SettingsMap &map)
 
 /********************************************************/
 
-void FileHandlerWidget::on_btnFile_clicked()
+void FileHandlerWidget::openFileDialog()
 {
     QString dirPath = QCoreApplication::applicationDirPath();
     QString fileName = ui->editFile->text();

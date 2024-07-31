@@ -190,6 +190,11 @@
               <string>Send to Soket</string>
              </property>
             </item>
+            <item>
+             <property name="text">
+              <string>Sacor Gate</string>
+             </property>
+            </item>
            </widget>
           </item>
          </layout>

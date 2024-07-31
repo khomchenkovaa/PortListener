@@ -20,7 +20,7 @@ public:
     void setSettings(const SettingsMap& map);
 
 private slots:
-    void on_btnFile_clicked();
+    void openFileDialog();
 
 private:
     Ui::FileHandlerWidget *ui;

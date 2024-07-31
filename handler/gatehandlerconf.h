@@ -69,7 +69,7 @@ class GateDefConf {
 
     struct GateDefConfItemPrivate {
         quint32 fields = 0;  ///< Count of fields
-        quint64 size   = 4;  ///< Size in bytes
+        int     size   = 4;  ///< Size in bytes
         QList<GateDefConfItem> items;
     };
 
@@ -90,7 +90,7 @@ public:
                 continue;
             }
             if (state == 1) {
-                d.size = line.toUInt();
+                d.size = line.toInt();
                 state = 2;
                 continue;
             }
@@ -107,6 +107,30 @@ public:
 
         file.close();
     }
+
+    int size() const {
+        return d.size;
+    }
+
+    int fields() const {
+        return d.fields;
+    }
+
+    QString name(int idx) const {
+        if (idx < d.items.size()) return d.items.at(idx).name;
+        return QString();
+    }
+
+    QString type(int idx) const {
+        if (idx < d.items.size()) return d.items.at(idx).type;
+        return QString();
+    }
+
+    quint64 offset(int idx) const {
+        if (idx < d.items.size()) return d.items.at(idx).offset;
+        return 0;
+    }
+
 
 private:
     GateDefConfItemPrivate d;

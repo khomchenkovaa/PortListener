@@ -29,7 +29,8 @@ class TcpListener : public QWidget
         DbActionHandler,
         UdpActionHandler,
         TcpActionHandler,
-        SocketActionHandler
+        SocketActionHandler,
+        GateActionHandler
     };
 
 public:
