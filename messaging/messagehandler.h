@@ -25,16 +25,22 @@ public:
     }
 
     virtual void handleMessage(Message *msg) {
-        Q_UNUSED(msg)
+        if (msg->payload.type() == QVariant::ByteArray) {
+            processData(msg->payload.toByteArray());
+        } else {
+            processData(msg->payload.toString());
+        }
     }
 
     virtual QByteArray processData(const QByteArray& data) {
         Q_UNUSED(data)
+        clearErrors();
         return QByteArray();
     }
 
     virtual QByteArray processData(const QString& data) {
         Q_UNUSED(data)
+        clearErrors();
         return QByteArray();
     }
 

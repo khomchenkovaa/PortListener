@@ -19,17 +19,6 @@ TcpHandler::~TcpHandler()
 
 /********************************************************/
 
-void TcpHandler::handleMessage(Message *msg)
-{
-    if (msg->payload.type() == QVariant::ByteArray) {
-        processData(msg->payload.toByteArray());
-    } else {
-        processData(msg->payload.toString());
-    }
-}
-
-/********************************************************/
-
 QByteArray TcpHandler::processData(const QByteArray &data)
 {
     int sent = m_TcpSocket->write(data, data.length());

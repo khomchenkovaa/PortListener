@@ -18,7 +18,6 @@ public:
 
     ~SockHandler();
 
-    void handleMessage(Message *msg);
     QByteArray processData(const QByteArray& data);
     QByteArray processData(const QString& data);
     void doConnect(bool binary = false);

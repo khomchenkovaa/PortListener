@@ -23,7 +23,6 @@ public:
     explicit DbHandler(QObject *parent = nullptr);
     ~DbHandler();
 
-    void handleMessage(Message *msg);
     QByteArray processData(const QString& data);
     void doConnect(bool binary = false);
     void doDisconnect();

@@ -19,17 +19,6 @@ UdpHandler::~UdpHandler()
 
 /********************************************************/
 
-void UdpHandler::handleMessage(Message *msg)
-{
-    if (msg->payload.type() == QVariant::ByteArray) {
-        processData(msg->payload.toByteArray());
-    } else {
-        processData(msg->payload.toString());
-    }
-}
-
-/********************************************************/
-
 QByteArray UdpHandler::processData(const QByteArray &data)
 {
     const QString host = settings()->value(Settings::Host, "localhost").toString();

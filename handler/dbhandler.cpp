@@ -20,13 +20,6 @@ DbHandler::~DbHandler()
 
 /********************************************************/
 
-void DbHandler::handleMessage(Message *msg)
-{
-    processData(msg->payload.toString());
-}
-
-/********************************************************/
-
 QByteArray DbHandler::processData(const QString &data)
 {
     clearErrors();

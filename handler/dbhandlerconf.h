@@ -45,9 +45,10 @@ struct DbTableMapping {
     QList<DbFieldMapping> fields;
 
     DbTableMapping (const QVariantMap& map) {
-        prefix   = map.value("prefix").toString();
-        table   = map.value("table").toString();
-        for (auto item : map.value("fields").toList()) {
+        prefix = map.value("prefix").toString();
+        table  = map.value("table").toString();
+        const auto items = map.value("fields").toList();
+        for (const auto &item : items) {
             const DbFieldMapping field(item.toMap());
             fields << field;
         }
@@ -56,7 +57,7 @@ struct DbTableMapping {
     QString sqlInsert() const {
         QStringList columns;
         QStringList values;
-        for(auto item : fields) {
+        for(const auto &item : fields) {
             columns << item.name;
             values  << QString(":%1").arg(item.name);
         }
@@ -109,7 +110,8 @@ public:
             error = jsonError.errorString();
             return false;
         }
-        for (auto item : doc.array().toVariantList()) {
+        const auto items = doc.array().toVariantList();
+        for (const auto &item : items) {
             const DbTableMapping table(item.toMap());
             datamapper << table;
         }

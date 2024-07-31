@@ -18,23 +18,6 @@ FileHandler::~FileHandler()
 
 /********************************************************/
 
-void FileHandler::handleMessage(Message *msg)
-{
-    clearErrors();
-    if (!isConnected() || !m_File.isOpen()) {
-        addError(tr("Cannot write data to file"));
-        return;
-    }
-    if (msg->payload.type() == QVariant::ByteArray) {
-        m_File.write(msg->payload.toByteArray());
-    } else {
-        QTextStream out(&m_File);
-        out << msg->payload.toString();
-    }
-}
-
-/********************************************************/
-
 QByteArray FileHandler::processData(const QByteArray &data)
 {
     clearErrors();

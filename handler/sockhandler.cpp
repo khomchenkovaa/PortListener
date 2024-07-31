@@ -17,17 +17,6 @@ SockHandler::~SockHandler()
 
 /********************************************************/
 
-void SockHandler::handleMessage(Message *msg)
-{
-    if (msg->payload.type() == QVariant::ByteArray) {
-        processData(msg->payload.toByteArray());
-    } else {
-        processData(msg->payload.toString());
-    }
-}
-
-/********************************************************/
-
 QByteArray SockHandler::processData(const QByteArray &data)
 {
     m_LocalSocket->write(data);

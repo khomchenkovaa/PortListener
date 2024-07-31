@@ -19,12 +19,10 @@ public:
 
     ~UdpHandler();
 
-    void handleMessage(Message *msg);
     QByteArray processData(const QByteArray& data);
     QByteArray processData(const QString& data);
     void doConnect(bool binary = false);
     void doDisconnect();
-    MessageHandlerWgt *settingsWidget(QWidget *parent = nullptr) const;
 
 private:
     QUdpSocket *m_UdpSocket;
