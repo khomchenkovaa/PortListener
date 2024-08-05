@@ -91,6 +91,10 @@ public:
         return QString();
     }
 
+    QStringList errors() const {
+        return d.errors;
+    }
+
     void addError(const QString &error) {
         d.errors << error;
     }

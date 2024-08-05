@@ -1,36 +1,17 @@
 #ifndef UDPLISTENER_H
 #define UDPLISTENER_H
 
-#include "messagehandler.h"
-#include "iodecoder.h"
+#include "listenerwidget.h"
 
-#include <QWidget>
 #include <QUdpSocket>
 
 namespace Ui {
 class UdpListener;
 }
 
-class UdpListener : public QWidget
+class UdpListener : public ListenerWidget
 {
     Q_OBJECT
-
-    enum ReplyType {
-        NoReply,
-        EchoReply,
-        TextReply,
-        BinaryReply,
-        ActionReply
-    };
-
-    enum ActionHandler {
-        NoActionHandler,
-        FileActionHandler,
-        DbActionHandler,
-        UdpActionHandler,
-        TcpActionHandler,
-        SocketActionHandler
-    };
 
 public:
     explicit UdpListener(QWidget *parent = nullptr);
@@ -57,8 +38,6 @@ private:
 private:
     Ui::UdpListener *ui;
     QUdpSocket      *m_UdpSocket;
-    IODecoder        ioDecoder;
-    MessageHandler  *m_Handler;
 };
 
 #endif // UDPLISTENER_H

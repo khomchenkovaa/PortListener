@@ -200,7 +200,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QTextEdit" name="textLog"/>
+     <widget class="QTextBrowser" name="textLog"/>
     </widget>
    </item>
   </layout>

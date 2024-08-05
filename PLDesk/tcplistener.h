@@ -1,37 +1,17 @@
 #ifndef TCPLISTENER_H
 #define TCPLISTENER_H
 
-#include "messagehandler.h"
-#include "iodecoder.h"
+#include "listenerwidget.h"
 
-#include <QWidget>
 #include <QTcpServer>
 
 namespace Ui {
 class TcpListener;
 }
 
-class TcpListener : public QWidget
+class TcpListener : public ListenerWidget
 {
     Q_OBJECT
-
-    enum ReplyType {
-        NoReply,
-        EchoReply,
-        TextReply,
-        BinaryReply,
-        ActionReply
-    };
-
-    enum ActionHandler {
-        NoActionHandler,
-        FileActionHandler,
-        DbActionHandler,
-        UdpActionHandler,
-        TcpActionHandler,
-        SocketActionHandler,
-        GateActionHandler
-    };
 
 public:
     explicit TcpListener(QWidget *parent = nullptr);
@@ -60,8 +40,6 @@ private:
 private:
     Ui::TcpListener *ui;
     QTcpServer m_TcpServer;
-    IODecoder  ioDecoder;
-    MessageHandler  *m_Handler;
 };
 
 #endif // TCPLISTENER_H

@@ -1,19 +1,7 @@
 #include "socketlistener.h"
 #include "ui_socketlistener.h"
 
-#include "iodecoder.h"
-
-#include "filehandler.h"
-#include "dbhandler.h"
-#include "udphandler.h"
-#include "tcphandler.h"
-#include "sockhandler.h"
-
-#include "filehandlerwidget.h"
-#include "dbhandlerwidget.h"
-#include "sockhandlerwidget.h"
-#include "tcphandlerwidget.h"
-#include "udphandlerwidget.h"
+#include "messagehandlerwgt.h"
 
 #include <QTextCodec>
 
@@ -24,10 +12,9 @@
 /********************************************************/
 
 SocketListener::SocketListener(QWidget *parent) :
-    QWidget(parent),
+    ListenerWidget(parent),
     ui(new Ui::SocketListener),
-    m_LocalServer(this),
-    m_Handler(Q_NULLPTR)
+    m_LocalServer(this)
 {
     ui->setupUi(this);
 
@@ -119,15 +106,18 @@ void SocketListener::doConnect()
                               .arg(socketName, m_LocalServer.errorString()));
     }
     if (m_LocalServer.isListening() && m_Handler) {
-        MessageHandlerWgt *editor = findChild<MessageHandlerWgt*>();
+        auto editor = findChild<MessageHandlerWgt*>();
         if (editor) {
             m_Handler->setSettings(editor->settings());
         }
         m_Handler->doConnect(ui->rbBinary->isChecked());
-        if (m_Handler->hasError()) {
-            ui->textLog->append(QString("%1 : %2").arg(m_Handler->name(), m_Handler->lastError()));
+        const auto handlerErrors = m_Handler->errors();
+        for (const auto &error : handlerErrors) {
+            ui->textLog->append(QString("%1 -> <font color=\"red\">%2</font>")
+                                .arg(m_Handler->name(), error));
         }
     }
+    ui->textLog->moveCursor(QTextCursor::End);
     updateStatus();
 }
 
@@ -170,38 +160,11 @@ void SocketListener::changeReplyType(int index)
 
 void SocketListener::changeHandler(int index)
 {
-    MessageHandlerWgt *editor = findChild<MessageHandlerWgt*>();
+    auto editor = findChild<MessageHandlerWgt*>();
     if (editor) {
         editor->deleteLater();
     }
-    if (m_Handler) {
-        m_Handler->deleteLater();
-        m_Handler = Q_NULLPTR;
-    }
-    switch (index) {
-    case ActionHandler::NoActionHandler:
-        break;
-    case ActionHandler::FileActionHandler:
-        m_Handler = new FileHandler(this);
-        editor = new FileHandlerWidget(this);
-        break;
-    case ActionHandler::DbActionHandler:
-        m_Handler = new DbHandler(this);
-        editor = new DbHandlerWidget(this);
-        break;
-    case ActionHandler::UdpActionHandler:
-        m_Handler = new UdpHandler(this);
-        editor = new UdpHandlerWidget(this);
-        break;
-    case ActionHandler::TcpActionHandler:
-        m_Handler = new TcpHandler(this);
-        editor = new TcpHandlerWidget(this);
-        break;
-    case ActionHandler::SocketActionHandler:
-        m_Handler = new SockHandler(this);
-        editor = new SockHandlerWidget(this);
-        break;
-    }
+    editor = updateHandler(index);
     if (editor) {
         ui->boxAction->layout()->addWidget(editor);
     }
@@ -248,9 +211,8 @@ QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArr
     QString displayData = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
 
     // log payload data
-    ui->textLog->append(QString("%1 -> %2")
+    ui->textLog->append(QString("%1 -> <font color=\"darkgreen\">%2</font>")
                         .arg(QString::number(socketDescriptor), displayData));
-    ui->textLog->moveCursor(QTextCursor::End);
 
     QByteArray reply;
     // Handler
@@ -260,12 +222,13 @@ QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArr
         } else {
             reply = m_Handler->processData(data);
         }
-        if (m_Handler->hasError()) {
-            ui->textLog->append(QString("%1 -> %2")
-                                .arg(QString::number(socketDescriptor), m_Handler->lastError()));
-            ui->textLog->moveCursor(QTextCursor::End);
+        const auto handlerErrors = m_Handler->errors();
+        for (const auto &error : handlerErrors) {
+            ui->textLog->append(QString("%1 -> <font color=\"red\">%2</font>")
+                                .arg(QString::number(socketDescriptor), error));
         }
     }
+    ui->textLog->moveCursor(QTextCursor::End);
 
     // make reply
     switch (ui->cmbReplyType->currentIndex()) {

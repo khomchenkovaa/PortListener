@@ -1,10 +1,8 @@
 #ifndef SOCKETLISTENER_H
 #define SOCKETLISTENER_H
 
-#include "messagehandler.h"
-#include "iodecoder.h"
+#include "listenerwidget.h"
 
-#include <QWidget>
 #include <QLocalServer>
 #include <QLocalSocket>
 
@@ -12,26 +10,9 @@ namespace Ui {
 class SocketListener;
 }
 
-class SocketListener : public QWidget
+class SocketListener : public ListenerWidget
 {
     Q_OBJECT
-
-    enum ReplyType {
-        NoReply,
-        EchoReply,
-        TextReply,
-        BinaryReply,
-        ActionReply
-    };
-
-    enum ActionHandler {
-        NoActionHandler,
-        FileActionHandler,
-        DbActionHandler,
-        UdpActionHandler,
-        TcpActionHandler,
-        SocketActionHandler
-    };
 
 public:
     explicit SocketListener(QWidget *parent = nullptr);
@@ -60,8 +41,6 @@ private:
 private:
     Ui::SocketListener *ui;
     QLocalServer m_LocalServer;
-    IODecoder  ioDecoder;
-    MessageHandler  *m_Handler;
 };
 
 #endif // SOCKETLISTENER_H
