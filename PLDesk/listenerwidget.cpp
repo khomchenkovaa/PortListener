@@ -14,49 +14,121 @@
 #include "udphandlerwidget.h"
 #include "gatehandlerwidget.h"
 
+/********************************************************/
+
 ListenerWidget::ListenerWidget(QWidget *parent)
     : QWidget(parent)
-    , m_Handler(Q_NULLPTR)
 {
 
 }
 
 /********************************************************/
 
+QString ListenerWidget::handlerName() const
+{
+    if (d.handler) return d.handler->name();
+    return "Unknown";
+}
+
+/********************************************************/
+
+void ListenerWidget::initHandler(bool binaryInput)
+{
+    if (!d.handler) return;
+    if (d.editor) {
+        d.handler->setSettings(d.editor->settings());
+    }
+    d.handler->doConnect(binaryInput);
+}
+
+/********************************************************/
+
+void ListenerWidget::disconnectHandler()
+{
+    if (d.handler) {
+        d.handler->doDisconnect();
+    }
+}
+
+/********************************************************/
+
 MessageHandlerWgt *ListenerWidget::updateHandler(int index)
 {
-    MessageHandlerWgt *editor = Q_NULLPTR;
-    if (m_Handler) {
-        m_Handler->deleteLater();
-        m_Handler = Q_NULLPTR;
+    if (d.editor) {
+        d.editor->deleteLater();
+        d.editor = Q_NULLPTR;
+    }
+    if (d.handler) {
+        d.handler->deleteLater();
+        d.handler = Q_NULLPTR;
     }
     switch (index) {
     case ActionHandler::NoActionHandler:
         break;
     case ActionHandler::FileActionHandler:
-        m_Handler = new FileHandler(this);
-        editor = new FileHandlerWidget(this);
+        d.handler = new FileHandler(this);
+        d.editor  = new FileHandlerWidget(this);
         break;
     case ActionHandler::DbActionHandler:
-        m_Handler = new DbHandler(this);
-        editor = new DbHandlerWidget(this);
+        d.handler = new DbHandler(this);
+        d.editor  = new DbHandlerWidget(this);
         break;
     case ActionHandler::UdpActionHandler:
-        m_Handler = new UdpHandler(this);
-        editor = new UdpHandlerWidget(this);
+        d.handler = new UdpHandler(this);
+        d.editor  = new UdpHandlerWidget(this);
         break;
     case ActionHandler::TcpActionHandler:
-        m_Handler = new TcpHandler(this);
-        editor = new TcpHandlerWidget(this);
+        d.handler = new TcpHandler(this);
+        d.editor  = new TcpHandlerWidget(this);
         break;
     case ActionHandler::SocketActionHandler:
-        m_Handler = new SockHandler(this);
-        editor = new SockHandlerWidget(this);
+        d.handler = new SockHandler(this);
+        d.editor  = new SockHandlerWidget(this);
         break;
     case ActionHandler::GateActionHandler:
-        m_Handler = new GateHandler(this);
-        editor = new GateHandlerWidget(this);
+        d.handler = new GateHandler(this);
+        d.editor  = new GateHandlerWidget(this);
         break;
     }
-    return editor;
+    return d.editor;
 }
+
+/********************************************************/
+
+QByteArray ListenerWidget::doHandle(const QByteArray &data)
+{
+    if (d.handler) return d.handler->processData(data);
+    return QByteArray();
+}
+
+/********************************************************/
+
+QByteArray ListenerWidget::doHandle(const QString &data)
+{
+    if (d.handler) return d.handler->processData(data);
+    return QByteArray();
+}
+
+/********************************************************/
+
+QStringList ListenerWidget::handlerErrors() const
+{
+    if (d.handler) return d.handler->errors();
+    return QStringList();
+}
+
+/********************************************************/
+
+QStringList ListenerWidget::handlers()
+{
+    return QStringList()
+            << tr("No Action")
+            << tr("Save to File")
+            << tr("CSV to DB")
+            << tr("Send to UDP")
+            << tr("Send to TCP")
+            << tr("Send to Socket")
+            << tr("Sacor Gate");
+}
+
+/********************************************************/

@@ -1,10 +1,10 @@
 #include "socketlistener.h"
 #include "ui_socketlistener.h"
 
+#include "iodecoder.h"
 #include "messagehandlerwgt.h"
 
 #include <QTextCodec>
-
 #include <QMessageBox>
 
 #include <QDebug>
@@ -17,6 +17,7 @@ SocketListener::SocketListener(QWidget *parent) :
     m_LocalServer(this)
 {
     ui->setupUi(this);
+    ui->cmbHandler->addItems(handlers());
 
     connect(ui->btnConnect, &QAbstractButton::clicked,
             this, &SocketListener::doConnect);
@@ -64,7 +65,8 @@ void SocketListener::onNewConnection()
     connect(clientSocket, &QLocalSocket::stateChanged,
            this, &SocketListener::onLocalSocketStateChanged);
 
-    ui->textLog->append(QString::number(clientSocket->socketDescriptor()) + " connected to server !\n");
+    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkblue\">connected to server !</font>")
+                        .arg(clientSocket->socketDescriptor()));
     ui->textLog->moveCursor(QTextCursor::End);
 }
 
@@ -73,8 +75,10 @@ void SocketListener::onNewConnection()
 void SocketListener::onLocalSocketStateChanged(QLocalSocket::LocalSocketState  socketState)
 {
     if (socketState == QLocalSocket::UnconnectedState) {
-        QLocalSocket* clientSocket = static_cast<QLocalSocket*>(QObject::sender());
-        ui->textLog->append(QString::number(clientSocket->socketDescriptor()) + " disconnected from server !\n");
+        QLocalSocket* clientSocket = qobject_cast<QLocalSocket*>(QObject::sender());
+        if (!clientSocket) return;
+        ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkblue\">disconnected to server !</font>")
+                            .arg(clientSocket->socketDescriptor()));
         ui->textLog->moveCursor(QTextCursor::End);
         clientSocket->deleteLater();
     }
@@ -84,7 +88,8 @@ void SocketListener::onLocalSocketStateChanged(QLocalSocket::LocalSocketState  s
 
 void SocketListener::onReadyRead()
 {
-    QLocalSocket* sender = static_cast<QLocalSocket*>(QObject::sender());
+    QLocalSocket* sender = qobject_cast<QLocalSocket*>(QObject::sender());
+    if (!sender) return;
     QByteArray data = sender->readAll();
     QByteArray replyData = processData(sender->socketDescriptor(), data);
     if (!replyData.isEmpty()) {
@@ -105,17 +110,13 @@ void SocketListener::doConnect()
                               tr("Socket %1 connection error!\n%2")
                               .arg(socketName, m_LocalServer.errorString()));
     }
-    if (m_LocalServer.isListening() && m_Handler) {
-        auto editor = findChild<MessageHandlerWgt*>();
-        if (editor) {
-            m_Handler->setSettings(editor->settings());
-        }
-        m_Handler->doConnect(ui->rbBinary->isChecked());
-        const auto handlerErrors = m_Handler->errors();
-        for (const auto &error : handlerErrors) {
-            ui->textLog->append(QString("%1 -> <font color=\"red\">%2</font>")
-                                .arg(m_Handler->name(), error));
-        }
+    if (m_LocalServer.isListening()) {
+        initHandler(ui->rbBinary->isChecked());
+    }
+    const auto errors = handlerErrors();
+    for (const auto &error : errors) {
+        ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
+                            .arg(handlerName(), error));
     }
     ui->textLog->moveCursor(QTextCursor::End);
     updateStatus();
@@ -126,9 +127,7 @@ void SocketListener::doConnect()
 void SocketListener::doDisconnect()
 {
     m_LocalServer.close();
-    if (m_Handler) {
-        m_Handler->doDisconnect();
-    }
+    disconnectHandler();
     updateStatus();
 }
 
@@ -160,11 +159,7 @@ void SocketListener::changeReplyType(int index)
 
 void SocketListener::changeHandler(int index)
 {
-    auto editor = findChild<MessageHandlerWgt*>();
-    if (editor) {
-        editor->deleteLater();
-    }
-    editor = updateHandler(index);
+    auto editor = updateHandler(index);
     if (editor) {
         ui->boxAction->layout()->addWidget(editor);
     }
@@ -182,7 +177,7 @@ void SocketListener::updateStatus()
         ui->boxAction->setEnabled(false);
         emit tabText(QString("Socket [%1]").arg(ui->editSocket->text()));
     } else {
-        ui->lblConnection->setText(tr("Socket to listen"));
+        ui->lblConnection->setText(tr("<font color=\"black\">Socket to listen</font>"));
         ui->editSocket->setEnabled(true);
         ui->btnConnect->setVisible(true);
         ui->btnDisconnect->setVisible(false);
@@ -207,26 +202,24 @@ void SocketListener::updateCodecs()
 QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArray &data)
 {
     int mib = ui->cmbCodec->itemData(ui->cmbCodec->currentIndex()).toInt();
-    ioDecoder.setMib(mib);
+    IODecoder ioDecoder(mib);
     QString displayData = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
 
     // log payload data
-    ui->textLog->append(QString("%1 -> <font color=\"darkgreen\">%2</font>")
+    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkgreen\">%2</font>")
                         .arg(QString::number(socketDescriptor), displayData));
 
     QByteArray reply;
     // Handler
-    if (m_Handler) {
-        if (ui->rbText->isChecked()) {
-            reply = m_Handler->processData(displayData);
-        } else {
-            reply = m_Handler->processData(data);
-        }
-        const auto handlerErrors = m_Handler->errors();
-        for (const auto &error : handlerErrors) {
-            ui->textLog->append(QString("%1 -> <font color=\"red\">%2</font>")
-                                .arg(QString::number(socketDescriptor), error));
-        }
+    if (ui->rbText->isChecked()) {
+        reply = doHandle(displayData);
+    } else {
+        reply = doHandle(data);
+    }
+    const auto errors = handlerErrors();
+    for (const auto &error : errors) {
+        ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
+                            .arg(QString::number(socketDescriptor), error));
     }
     ui->textLog->moveCursor(QTextCursor::End);
 

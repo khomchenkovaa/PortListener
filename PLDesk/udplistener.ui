@@ -159,38 +159,7 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_4">
           <item>
-           <widget class="QComboBox" name="cmbHandler">
-            <item>
-             <property name="text">
-              <string>No Action</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Save to File</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>CSV to DB</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Send to UDP</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Send to TCP</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Send to Socket</string>
-             </property>
-            </item>
-           </widget>
+           <widget class="QComboBox" name="cmbHandler"/>
           </item>
          </layout>
         </widget>

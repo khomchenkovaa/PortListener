@@ -44,14 +44,14 @@ QByteArray GateHandler::processData(const QByteArray &data)
             QDataStream ds(ba);
             qint64 value = 0;
             ds >> value;
-            out << d.defConf.name(i) << value << Qt::endl;
+            out << d.defConf.name(i) << " " << value << Qt::endl;
         }
         if (d.defConf.type(i).compare("type_rval") == 0) {
             const QByteArray ba = data.mid(d.defConf.offset(i), 8);
             QDataStream ds(ba);
             qreal value = 0.0;
             ds >> value;
-            out << d.defConf.name(i) << value << Qt::endl;
+            out << d.defConf.name(i) << " " << value << Qt::endl;
         }
     }
 

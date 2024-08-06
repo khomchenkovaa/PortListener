@@ -1,11 +1,11 @@
 #include "udplistener.h"
 #include "ui_udplistener.h"
 
+#include "iodecoder.h"
 #include "messagehandlerwgt.h"
 
 #include <QNetworkDatagram>
 #include <QTextCodec>
-
 #include <QMessageBox>
 
 #include <QDebug>
@@ -18,6 +18,7 @@ UdpListener::UdpListener(QWidget *parent) :
     m_UdpSocket(Q_NULLPTR)
 {
     ui->setupUi(this);
+    ui->cmbHandler->addItems(handlers());
 
     connect(ui->btnConnect, &QAbstractButton::clicked,
             this, &UdpListener::doConnect);
@@ -85,17 +86,13 @@ void UdpListener::doConnect()
         m_UdpSocket->deleteLater();
         m_UdpSocket = Q_NULLPTR;
     }
-    if (m_UdpSocket && m_Handler) {
-        auto editor = findChild<MessageHandlerWgt*>();
-        if (editor) {
-            m_Handler->setSettings(editor->settings());
-        }
-        m_Handler->doConnect(ui->rbBinary->isChecked());
-        const auto handlerErrors = m_Handler->errors();
-        for (const auto &error : handlerErrors) {
-            ui->textLog->append(QString("%1 -> <font color=\"red\">%2</font>")
-                                .arg(m_Handler->name(), error));
-        }
+    if (m_UdpSocket) {
+        initHandler(ui->rbBinary->isChecked());
+    }
+    const auto errors = handlerErrors();
+    for (const auto &error : errors) {
+        ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
+                            .arg(handlerName(), error));
     }
     ui->textLog->moveCursor(QTextCursor::End);
     updateStatus();
@@ -110,9 +107,7 @@ void UdpListener::doDisconnect()
         m_UdpSocket->deleteLater();
         m_UdpSocket = Q_NULLPTR;
     }
-    if (m_Handler) {
-        m_Handler->doDisconnect();
-    }
+    disconnectHandler();
     updateStatus();
 }
 
@@ -144,11 +139,7 @@ void UdpListener::changeReplyType(int index)
 
 void UdpListener::changeHandler(int index)
 {
-    auto editor = findChild<MessageHandlerWgt*>();
-    if (editor) {
-        editor->deleteLater();
-    }
-    editor = updateHandler(index);
+    auto editor = updateHandler(index);
     if (editor) {
         ui->boxAction->layout()->addWidget(editor);
     }
@@ -166,7 +157,7 @@ void UdpListener::updateStatus()
         ui->boxAction->setEnabled(false);
         emit tabText(QString("UDP [%1]").arg(ui->spinPort->value()));
     } else {
-        ui->lblConnection->setText(tr("Choose UDP port to listen"));
+        ui->lblConnection->setText(tr("<font color=\"black\">Choose UDP port to listen</font>"));
         ui->spinPort->setEnabled(true);
         ui->btnConnect->setVisible(true);
         ui->btnDisconnect->setVisible(false);
@@ -191,26 +182,24 @@ void UdpListener::updateCodecs()
 QByteArray UdpListener::processData(const QHostAddress &host, const QByteArray &data)
 {
     int mib = ui->cmbCodec->itemData(ui->cmbCodec->currentIndex()).toInt();
-    ioDecoder.setMib(mib);
+    IODecoder ioDecoder(mib);
     QString displayData = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
 
     // log payload data
-    ui->textLog->append(QString("%1 -> <font color=\"darkgreen\">%2</font>")
+    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkgreen\">%2</font>")
                         .arg(host.toString(), displayData));
 
     QByteArray reply;
     // Handler
-    if (m_Handler) {
-        if (ui->rbText->isChecked()) {
-            reply = m_Handler->processData(displayData);
-        } else {
-            reply = m_Handler->processData(data);
-        }
-        const auto handlerErrors = m_Handler->errors();
-        for (const auto &error : handlerErrors) {
-            ui->textLog->append(QString("%1 -> <font color=\"red\">%2</font>")
-                                .arg(host.toString(), error));
-        }
+    if (ui->rbText->isChecked()) {
+        reply = doHandle(displayData);
+    } else {
+        reply = doHandle(data);
+    }
+    const auto errors = handlerErrors();
+    for (const auto &error : errors) {
+        ui->textLog->append(QString("%<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
+                            .arg(host.toString(), error));
     }
     ui->textLog->moveCursor(QTextCursor::End);
 

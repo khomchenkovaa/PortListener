@@ -3,17 +3,15 @@
 
 #include <QString>
 
+#define MIB_UNICODE 1000
+
 class IODecoder
 {
 public:
-    explicit IODecoder();
+    explicit IODecoder(int mib = MIB_UNICODE);
 
     QString toUnicode(const QByteArray& data, bool binary = false) const;
     QByteArray fromUnicode(const QString& data, bool binary = false) const;
-
-    void setMib(int mib) {
-        this->mib = mib;
-    }
 
 public:
     static QList<QTextCodec *> findCodecs();
