@@ -67,7 +67,6 @@ void SocketListener::onNewConnection()
 
     ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkblue\">connected to server !</font>")
                         .arg(clientSocket->socketDescriptor()));
-    ui->textLog->moveCursor(QTextCursor::End);
 }
 
 /********************************************************/
@@ -79,7 +78,6 @@ void SocketListener::onLocalSocketStateChanged(QLocalSocket::LocalSocketState  s
         if (!clientSocket) return;
         ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkblue\">disconnected to server !</font>")
                             .arg(clientSocket->socketDescriptor()));
-        ui->textLog->moveCursor(QTextCursor::End);
         clientSocket->deleteLater();
     }
 }
@@ -118,7 +116,6 @@ void SocketListener::doConnect()
         ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
                             .arg(handlerName(), error));
     }
-    ui->textLog->moveCursor(QTextCursor::End);
     updateStatus();
 }
 
@@ -221,7 +218,6 @@ QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArr
         ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
                             .arg(QString::number(socketDescriptor), error));
     }
-    ui->textLog->moveCursor(QTextCursor::End);
 
     // make reply
     switch (ui->cmbReplyType->currentIndex()) {

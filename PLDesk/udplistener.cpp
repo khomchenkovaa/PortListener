@@ -94,7 +94,6 @@ void UdpListener::doConnect()
         ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
                             .arg(handlerName(), error));
     }
-    ui->textLog->moveCursor(QTextCursor::End);
     updateStatus();
 }
 
@@ -201,7 +200,6 @@ QByteArray UdpListener::processData(const QHostAddress &host, const QByteArray &
         ui->textLog->append(QString("%<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
                             .arg(host.toString(), error));
     }
-    ui->textLog->moveCursor(QTextCursor::End);
 
     // make reply
     switch (ui->cmbReplyType->currentIndex()) {

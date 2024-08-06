@@ -67,7 +67,6 @@ void TcpListener::onNewConnection()
 
     ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkblue\">connected to server !</font>")
                         .arg(clientSocket->peerAddress().toString()));
-    ui->textLog->moveCursor(QTextCursor::End);
 }
 
 /********************************************************/
@@ -78,7 +77,6 @@ void TcpListener::onTcpSocketStateChanged(QAbstractSocket::SocketState socketSta
         QTcpSocket* clientSocket = static_cast<QTcpSocket*>(QObject::sender());
         ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkblue\">disconnected to server !</font>")
                             .arg(clientSocket->peerAddress().toString()));
-        ui->textLog->moveCursor(QTextCursor::End);
         clientSocket->deleteLater();
     }
 }
@@ -117,7 +115,6 @@ void TcpListener::doConnect()
         ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
                             .arg(handlerName(), error));
     }
-    ui->textLog->moveCursor(QTextCursor::End);
     updateStatus();
 }
 
@@ -220,7 +217,6 @@ QByteArray TcpListener::processData(const QHostAddress &host, const QByteArray &
         ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
                             .arg(host.toString(), error));
     }
-    ui->textLog->moveCursor(QTextCursor::End);
 
     // make reply
     switch (ui->cmbReplyType->currentIndex()) {
