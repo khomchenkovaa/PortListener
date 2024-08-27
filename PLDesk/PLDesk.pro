@@ -2,6 +2,8 @@ QT       += core gui network sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
+QT += serialbus
+
 CONFIG += c++11
 
 # The following define makes your compiler emit warnings if you use
@@ -35,6 +37,12 @@ FORMS += \
     socketlistener.ui \
     tcplistener.ui \
     udplistener.ui
+
+contains(QT, serialbus) {
+    SOURCES += modbustcplistener.cpp
+    HEADERS += modbustcplistener.h
+    FORMS   += modbustcplistener.ui
+}
 
 include("../common/ext/ext.pri")
 include("../messaging/messaging.pri")

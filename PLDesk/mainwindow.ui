@@ -107,6 +107,26 @@
            </spacer>
           </item>
           <item>
+           <widget class="QPushButton" name="btnModbus">
+            <property name="text">
+             <string>Modbus TCP</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_5">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
            <widget class="QPushButton" name="btnSocket">
             <property name="text">
              <string>Socket</string>
@@ -154,7 +174,7 @@
      <x>0</x>
      <y>0</y>
      <width>683</width>
-     <height>30</height>
+     <height>29</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuConnect">
@@ -163,6 +183,7 @@
     </property>
     <addaction name="actionTCP_port"/>
     <addaction name="actionUDP_port"/>
+    <addaction name="actionModbus_TCP"/>
     <addaction name="actionSocket"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
@@ -187,6 +208,11 @@
   <action name="actionSocket">
    <property name="text">
     <string>&amp;Socket</string>
+   </property>
+  </action>
+  <action name="actionModbus_TCP">
+   <property name="text">
+    <string>Modbus TCP</string>
    </property>
   </action>
  </widget>

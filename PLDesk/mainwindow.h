@@ -18,6 +18,7 @@ public:
 private slots:
     void addTcpListener();
     void addUdpListener();
+    void addModbusTcpListener();
     void addSocketListener();
 
 private:
