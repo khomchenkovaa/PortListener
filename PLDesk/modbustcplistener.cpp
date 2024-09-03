@@ -192,6 +192,14 @@ void ModbusTcpListener::processCoils(int address, int size, const QBitArray &dat
 
     ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkgreen\">{%2}</font>")
                         .arg(host, displayData.join(",")));
+
+    doHandle(displayData.join(",").append("\n"));
+
+    const auto errors = handlerErrors();
+    for (const auto &error : errors) {
+        ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
+                            .arg(host, error));
+    }
 }
 
 /********************************************************/
@@ -206,6 +214,14 @@ void ModbusTcpListener::processHoldingRegisters(int address, int size, const QLi
 
     ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkgreen\">{%2}</font>")
                         .arg(host, displayData.join(",")));
+
+    doHandle(displayData.join(",").append("\n"));
+
+    const auto errors = handlerErrors();
+    for (const auto &error : errors) {
+        ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
+                            .arg(host, error));
+    }
 }
 
 /********************************************************/
