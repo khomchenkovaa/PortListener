@@ -8,6 +8,8 @@ HEADERS += \
     $$PWD/gatehandler.h \
     $$PWD/gatehandlerconf.h \
     $$PWD/iodecoder.h \
+    $$PWD/modbushandler.h \
+    $$PWD/modbushandlerconf.h \
     $$PWD/sockhandler.h \
     $$PWD/tcphandler.h \
     $$PWD/udphandler.h
@@ -17,6 +19,7 @@ SOURCES += \
     $$PWD/filehandler.cpp \
     $$PWD/gatehandler.cpp \
     $$PWD/iodecoder.cpp \
+    $$PWD/modbushandler.cpp \
     $$PWD/sockhandler.cpp \
     $$PWD/tcphandler.cpp \
     $$PWD/udphandler.cpp
