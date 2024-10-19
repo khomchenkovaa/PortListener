@@ -6,6 +6,7 @@
 #include "tcphandler.h"
 #include "sockhandler.h"
 #include "gatehandler.h"
+#include "modbushandler.h"
 
 #include "filehandlerwidget.h"
 #include "dbhandlerwidget.h"
@@ -13,6 +14,7 @@
 #include "tcphandlerwidget.h"
 #include "udphandlerwidget.h"
 #include "gatehandlerwidget.h"
+#include "modbushandlerwidget.h"
 
 /********************************************************/
 
@@ -89,6 +91,10 @@ MessageHandlerWgt *ListenerWidget::updateHandler(int index)
         d.handler = new GateHandler(this);
         d.editor  = new GateHandlerWidget(this);
         break;
+    case ActionHandler::ModbusActionHandler:
+        d.handler = new ModbusHandler(this);
+        d.editor  = new ModbusHandlerWidget(this);
+        break;
     }
     return d.editor;
 }
@@ -128,7 +134,8 @@ QStringList ListenerWidget::handlers()
             << tr("Send to UDP")
             << tr("Send to TCP")
             << tr("Send to Socket")
-            << tr("Sacor Gate");
+            << tr("Sacor Gate")
+            << tr("Modbus L2COM");
 }
 
 /********************************************************/
