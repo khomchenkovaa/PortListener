@@ -12,11 +12,10 @@
  */
 struct Message {
     QUuid           id        = QUuid::createUuid();
-    QDateTime       timestamp = QDateTime::currentDateTime();
-    QString         sender;
+    QDateTime       timestamp = QDateTime::currentDateTime();  
+    QObject        *logger    = Q_NULLPTR;
     QVariant        payload;
     QMetaType::Type payloadType;
-    QVariant        original;
     QVariantMap     headers;
 };
 

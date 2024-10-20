@@ -8,7 +8,7 @@
 #include <QTextCodec>
 
 /// Communication list description
-class ModbusCsvConf
+struct ModbusCsvConf
 {
     enum {
         KksColumn = 1,
@@ -88,7 +88,6 @@ class ModbusCsvConf
         }
     };
 
-public:
     void load(const QString &fileName) {
         XCsvModel csv;
         csv.setSource(fileName, true, ';', QTextCodec::codecForName("Windows-1251"));
@@ -111,7 +110,6 @@ public:
         }
     }
 
-private:
     QList<ModbusCsvConfItem> items;
 };
 

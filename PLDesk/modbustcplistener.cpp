@@ -185,23 +185,14 @@ void ModbusTcpListener::onHoldingRegistersUpdated(int address, int size)
 void ModbusTcpListener::processCoils(int address, int size, const QBitArray &data)
 {
     auto msg = PMessage::create();
+    msg->logger = ui->textLog;
     msg->payload = data;
     msg->payloadType = QMetaType::QBitArray;
     msg->headers.insert("address", address);
     msg->headers.insert("size", size);
     doHandle(msg);
 
-    auto host = QString("Updated from %1 size %2").arg(address).arg(size);
-    QStringList displayData;
-    for (int i = 0; i < size; ++i) {
-        displayData << (data.testBit(i) ? "1" : "0");
-    }
-
-    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkgreen\">{%2}</font>")
-                        .arg(host, displayData.join(",")));
-
-    doHandle(displayData.join(",").append("\n"));
-
+    auto host = QString("Coils from %1 size %2").arg(address).arg(size);
     const auto errors = handlerErrors();
     for (const auto &error : errors) {
         ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
@@ -214,23 +205,14 @@ void ModbusTcpListener::processCoils(int address, int size, const QBitArray &dat
 void ModbusTcpListener::processHoldingRegisters(int address, int size, const QVariantList &data)
 {
     auto msg = PMessage::create();
+    msg->logger = ui->textLog;
     msg->payload = data;
     msg->payloadType = QMetaType::QVariantList;
     msg->headers.insert("address", address);
     msg->headers.insert("size", size);
     doHandle(msg);
 
-    auto host = QString("Updated from %1 size %2").arg(address).arg(size);
-    QStringList displayData;
-    for (const auto &num : data) {
-        displayData << QString::number(num.toUInt(), 16).prepend("0x");
-    }
-
-    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkgreen\">{%2}</font>")
-                        .arg(host, displayData.join(",")));
-
-    doHandle(displayData.join(",").append("\n"));
-
+    auto host = QString("Holding registers from %1 size %2").arg(address).arg(size);
     const auto errors = handlerErrors();
     for (const auto &error : errors) {
         ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")

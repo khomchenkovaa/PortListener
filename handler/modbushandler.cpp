@@ -2,6 +2,11 @@
 
 #include <QTextStream>
 #include <QDataStream>
+#include <QBitArray>
+
+#ifdef QT_GUI_LIB
+#include <QTextBrowser>
+#endif
 
 /********************************************************/
 
@@ -22,46 +27,52 @@ ModbusHandler::~ModbusHandler()
 
 QByteArray ModbusHandler::handleMessage(PMessage msg)
 {
-    Q_UNUSED(msg)
+    switch (msg->payloadType) {
+    case QMetaType::QBitArray:
+        processCoils(msg);
+        break;
+    case QMetaType::QVariantList:
+        processHoldingRegisters(msg);
+        break;
+    default:
+        break;
+    }
     return QByteArray();
 }
 
 /********************************************************/
 
-QByteArray ModbusHandler::processData(const QByteArray &data)
+void ModbusHandler::processCoils(PMessage msg)
 {
-    clearErrors();
+    int  address = msg->headers.value("address").toInt();
+    int  size    = msg->headers.value("size").toInt();
+    auto data    = msg->payload.toBitArray();
+    auto host    = QString("Coils from %1 size %2").arg(address).arg(size);
 
-//    if (data.size() != d.defConf.size()) {
-//        addError(tr("Wrong size of the incomming packet"));
-//    }
+#ifdef QT_GUI_LIB
+    auto logger  = qobject_cast<QTextBrowser*>(msg->logger);
+#endif
+
+    QStringList displayData;
+    displayData << host;
+    displayData << msg->timestamp.toString();
+    for (const auto &item : qAsConst(d.doConf.items)) {
+        int idx = item.ad - address;
+        if (idx >=0 && idx < size) {
+            displayData << QString("%1 : %2").arg(item.pin, data.testBit(idx) ? "1" : "0");
+        }
+    }
+
+    clearErrors();
 
     QString output;
     QTextStream out(&output);
-
-//    for (int i=0; i<d.defConf.fields(); ++i) {
-//        if (d.defConf.type(i).compare("type_timeval") == 0) {
-//            const QByteArray ba = data.mid(d.defConf.offset(i), 8);
-//            QDataStream ds(ba);
-//            int time = 0;
-//            ds >> time;
-//            out << time << Qt::endl;
-//        }
-//        if (d.defConf.type(i).compare("type_ival") == 0) {
-//            const QByteArray ba = data.mid(d.defConf.offset(i), 8);
-//            QDataStream ds(ba);
-//            qint64 value = 0;
-//            ds >> value;
-//            out << d.defConf.name(i) << " " << value << Qt::endl;
-//        }
-//        if (d.defConf.type(i).compare("type_rval") == 0) {
-//            const QByteArray ba = data.mid(d.defConf.offset(i), 8);
-//            QDataStream ds(ba);
-//            qreal value = 0.0;
-//            ds >> value;
-//            out << d.defConf.name(i) << " " << value << Qt::endl;
-//        }
-//    }
+    for (const auto &str : qAsConst(displayData)) {
+        out << str << Qt::endl;
+#ifdef QT_GUI_LIB
+        if (logger) logger->append(str);
+#endif
+    }
 
     if (isConnected() && d.outFile.isOpen()) {
         QTextStream fout(&d.outFile);
@@ -69,7 +80,64 @@ QByteArray ModbusHandler::processData(const QByteArray &data)
     } else {
         addError(tr("Cannot write data to file"));
     }
-    return MessageHandler::processData(data);
+}
+
+/********************************************************/
+
+union ModbusValue {
+    struct {
+        quint16 last;
+        quint16 first;
+    } in;
+    float out;
+};
+
+void ModbusHandler::processHoldingRegisters(PMessage msg)
+{
+
+    int  address = msg->headers.value("address").toInt();
+    int  size    = msg->headers.value("size").toInt();
+    auto data    = msg->payload.toList();
+    auto host    = QString("Holding registers from %1 size %2").arg(address).arg(size);
+
+#ifdef QT_GUI_LIB
+    auto logger  = qobject_cast<QTextBrowser*>(msg->logger);
+#endif
+
+    QStringList displayData;
+    displayData << host;
+    displayData << msg->timestamp.toString();
+    for (const auto &item : qAsConst(d.doConf.items)) {
+        int idx = item.ad - address;
+        if (idx >=0 && idx < size) {
+            ModbusValue v;
+            v.in.first = data.at(idx).toUInt();
+            v.in.last  = data.at(idx+1).toUInt();
+            displayData << QString("%1 [%2 %3]: %4")
+                           .arg(item.pin)
+                           .arg(v.in.first, 4, 16)
+                           .arg(v.in.last, 4, 16)
+                           .arg(v.out, 3, 'f');
+        }
+    }
+
+    clearErrors();
+
+    QString output;
+    QTextStream out(&output);
+    for (const auto &str : qAsConst(displayData)) {
+        out << str << Qt::endl;
+#ifdef QT_GUI_LIB
+        if (logger) logger->append(str);
+#endif
+    }
+
+    if (isConnected() && d.outFile.isOpen()) {
+        QTextStream fout(&d.outFile);
+        fout << output;
+    } else {
+        addError(tr("Cannot write data to file"));
+    }
 }
 
 /********************************************************/

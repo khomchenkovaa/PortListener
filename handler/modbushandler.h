@@ -28,7 +28,8 @@ public:
     ~ModbusHandler();
 
     QByteArray handleMessage(PMessage msg);
-    QByteArray processData(const QByteArray& data);
+    void processCoils(PMessage msg);
+    void processHoldingRegisters(PMessage msg);
     void doConnect(bool binary = false);
     void doDisconnect();
 
