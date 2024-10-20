@@ -24,11 +24,11 @@ public:
         d.name = name;
     }
 
-    virtual void handleMessage(Message *msg) {
+    virtual QByteArray handleMessage(PMessage msg) {
         if (msg->payload.type() == QVariant::ByteArray) {
-            processData(msg->payload.toByteArray());
+            return processData(msg->payload.toByteArray());
         } else {
-            processData(msg->payload.toString());
+            return processData(msg->payload.toString());
         }
     }
 

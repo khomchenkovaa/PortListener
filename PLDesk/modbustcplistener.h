@@ -37,7 +37,7 @@ private:
     void onCoilsUpdated(int address, int size);
     void onHoldingRegistersUpdated(int address, int size);
     void processCoils(int address, int size, const QBitArray &data);
-    void processHoldingRegisters(int address, int size, const QList<quint16> &data);
+    void processHoldingRegisters(int address, int size, const QVariantList &data);
 
 private:
     Ui::ModbusTcpListener *ui;

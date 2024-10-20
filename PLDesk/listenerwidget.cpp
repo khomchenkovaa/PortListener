@@ -101,6 +101,14 @@ MessageHandlerWgt *ListenerWidget::updateHandler(int index)
 
 /********************************************************/
 
+QByteArray ListenerWidget::doHandle(PMessage data)
+{
+    if (d.handler) return d.handler->handleMessage(data);
+    return QByteArray();
+}
+
+/********************************************************/
+
 QByteArray ListenerWidget::doHandle(const QByteArray &data)
 {
     if (d.handler) return d.handler->processData(data);

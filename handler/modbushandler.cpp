@@ -20,6 +20,14 @@ ModbusHandler::~ModbusHandler()
 
 /********************************************************/
 
+QByteArray ModbusHandler::handleMessage(PMessage msg)
+{
+    Q_UNUSED(msg)
+    return QByteArray();
+}
+
+/********************************************************/
+
 QByteArray ModbusHandler::processData(const QByteArray &data)
 {
     clearErrors();

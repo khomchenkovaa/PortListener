@@ -41,6 +41,7 @@ protected:
     void initHandler(bool binaryInput);
     void disconnectHandler();
     MessageHandlerWgt *updateHandler(int index);
+    QByteArray doHandle(PMessage data);
     QByteArray doHandle(const QByteArray& data);
     QByteArray doHandle(const QString& data);
     QStringList handlerErrors() const;

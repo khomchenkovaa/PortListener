@@ -27,6 +27,7 @@ public:
 
     ~ModbusHandler();
 
+    QByteArray handleMessage(PMessage msg);
     QByteArray processData(const QByteArray& data);
     void doConnect(bool binary = false);
     void doDisconnect();

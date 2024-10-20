@@ -5,28 +5,21 @@
 #include <QVariant>
 #include <QUuid>
 #include <QDateTime>
+#include <QSharedPointer>
 
 /**
  * A message representation with headers and body
  */
 struct Message {
-
-    QUuid       id;
-    QDateTime   timestamp;
-    QString     sender;
-    QVariant    payload;
-    QVariant    original;
-    QVariantMap headers;
-
-    explicit Message(const QString& sndr, const QVariant& value, const QVariantMap& hdrs = QVariantMap())
-        : id(QUuid::createUuid())
-        , timestamp(QDateTime::currentDateTime())
-        , sender(sndr)
-        , payload(value)
-        , original(value)
-        , headers(hdrs)
-    {
-    }
+    QUuid           id        = QUuid::createUuid();
+    QDateTime       timestamp = QDateTime::currentDateTime();
+    QString         sender;
+    QVariant        payload;
+    QMetaType::Type payloadType;
+    QVariant        original;
+    QVariantMap     headers;
 };
+
+typedef QSharedPointer<Message> PMessage;
 
 #endif // MESSAGE_H

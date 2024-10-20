@@ -171,7 +171,7 @@ void ModbusTcpListener::onCoilsUpdated(int address, int size)
 
 void ModbusTcpListener::onHoldingRegistersUpdated(int address, int size)
 {
-    QList<quint16> regs;
+    QVariantList regs;
     for (int i = 0; i < size; ++i) {
         quint16 value = 0;
         m_ModbusDevice.data(QModbusDataUnit::HoldingRegisters, quint16(address + i), &value);
@@ -184,6 +184,13 @@ void ModbusTcpListener::onHoldingRegistersUpdated(int address, int size)
 
 void ModbusTcpListener::processCoils(int address, int size, const QBitArray &data)
 {
+    auto msg = PMessage::create();
+    msg->payload = data;
+    msg->payloadType = QMetaType::QBitArray;
+    msg->headers.insert("address", address);
+    msg->headers.insert("size", size);
+    doHandle(msg);
+
     auto host = QString("Updated from %1 size %2").arg(address).arg(size);
     QStringList displayData;
     for (int i = 0; i < size; ++i) {
@@ -204,12 +211,19 @@ void ModbusTcpListener::processCoils(int address, int size, const QBitArray &dat
 
 /********************************************************/
 
-void ModbusTcpListener::processHoldingRegisters(int address, int size, const QList<quint16> &data)
+void ModbusTcpListener::processHoldingRegisters(int address, int size, const QVariantList &data)
 {
+    auto msg = PMessage::create();
+    msg->payload = data;
+    msg->payloadType = QMetaType::QVariantList;
+    msg->headers.insert("address", address);
+    msg->headers.insert("size", size);
+    doHandle(msg);
+
     auto host = QString("Updated from %1 size %2").arg(address).arg(size);
     QStringList displayData;
     for (const auto &num : data) {
-        displayData << QString::number(num, 16).prepend("0x");
+        displayData << QString::number(num.toUInt(), 16).prepend("0x");
     }
 
     ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkgreen\">{%2}</font>")
