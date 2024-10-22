@@ -92,8 +92,10 @@ struct ModbusCsvConf
         XCsvModel csv;
         csv.setSource(fileName, true, ';', QTextCodec::codecForName("Windows-1251"));
         for (int i = 0; i < csv.rowCount(); ++i) {
+            auto kks = csv.data(csv.index(i, KksColumn)).toString().trimmed();
+            if (kks.isEmpty()) continue;
             ModbusCsvConfItem item;
-            item.pin    = csv.data(csv.index(i, KksColumn)).toString();
+            item.pin    = kks;
             item.dn     = csv.data(csv.index(i, DeviceNumberColumn)).toUInt();
             item.dt     = csv.data(csv.index(i, DataTypeColumn)).toUInt();
             item.dl     = csv.data(csv.index(i, DataLengthColumn)).toUInt();
@@ -102,10 +104,10 @@ struct ModbusCsvConf
             item.iot    = csv.data(csv.index(i, IOTypeColumn)).toUInt();
             item.pt     = csv.data(csv.index(i, SignalTypeColumn)).toUInt();
             item.lp     = csv.data(csv.index(i, LPColumn)).toString();
-            item.descr  = csv.data(csv.index(i, DescrColumn)).toString();
-            item.minVal = csv.data(csv.index(i, MinColumn)).toString();
-            item.maxVal = csv.data(csv.index(i, MaxColumn)).toString();
-            item.units  = csv.data(csv.index(i, UnitsColumn)).toString();
+            item.descr  = csv.data(csv.index(i, DescrColumn)).toString().trimmed();
+            item.minVal = csv.data(csv.index(i, MinColumn)).toString().trimmed();
+            item.maxVal = csv.data(csv.index(i, MaxColumn)).toString().trimmed();
+            item.units  = csv.data(csv.index(i, UnitsColumn)).toString().trimmed();
             items << item;
         }
     }

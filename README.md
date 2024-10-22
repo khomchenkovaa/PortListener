@@ -51,3 +51,8 @@ UDP packet csv-to-db example:
 ```sh
 echo 'counters:"KBB20CQ001_D11";"1.0";"266466.2";"133233.1";"266466.0";"2023-07-18-10:47:54:222"' | socat -t 5 - udp:localhost:2424
 ```
+
+To send modbus packet use any ModbusMasterClient. Values to test:
+ * [41f2 6666] -> 30.300
+ * [4221 999a] -> 40.400
+ * [4121 999a] -> 10.100

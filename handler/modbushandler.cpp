@@ -45,13 +45,14 @@ void ModbusHandler::processCoils(PMessage msg)
     auto data    = msg->payload.toBitArray();
 
     QStringList displayData;
-    displayData << msg->timestamp.toString();
+    displayData << QString::number(msg->timestamp.time().msecsSinceStartOfDay() / 1000);
+    emit logMessage(msg->timestamp.date().toString(), msg->timestamp.time().toString());
     for (const auto &item : qAsConst(d.doConf.items)) {
         int idx = item.ad - address;
         if (idx >=0 && idx < size) {
             auto host = item.pin;
             auto info = data.testBit(idx) ? "1" : "0";
-            displayData << QString("%1 : %2").arg(host, info);
+            displayData << QString("%1;%2").arg(host, info);
             emit logMessage(host, info);
         }
     }
@@ -77,7 +78,8 @@ union ModbusValue {
         quint16 last;
         quint16 first;
     } in;
-    float out;
+    float   outFloat;
+    quint32 outInt;
 };
 
 void ModbusHandler::processHoldingRegisters(PMessage msg)
@@ -87,20 +89,48 @@ void ModbusHandler::processHoldingRegisters(PMessage msg)
     auto data    = msg->payload.toList();
 
     QStringList displayData;
-    displayData << msg->timestamp.toString();
-    for (const auto &item : qAsConst(d.doConf.items)) {
+    displayData << QString::number(msg->timestamp.time().msecsSinceStartOfDay() / 1000);
+    emit logMessage(msg->timestamp.date().toString(), msg->timestamp.time().toString());
+    for (const auto &item : qAsConst(d.aoConf.items)) {
         int idx = item.ad - address;
         if (idx >=0 && idx < size) {
-            ModbusValue v;
-            v.in.first = data.at(idx).toUInt();
-            v.in.last  = data.at(idx+1).toUInt();
-            auto host = QString("%1 [%2 %3]")
-                    .arg(item.pin)
-                    .arg(v.in.first, 4, 16)
-                    .arg(v.in.last, 4, 16);
-            auto info = QString::number(v.out, 'f', 3);
-            displayData << QString("%1 : %2").arg(host, info);
-            emit logMessage(host, info);
+            switch(item.dataType()) {
+            case ModbusCsvConf::RealType: {
+                ModbusValue v;
+                v.in.first = data.at(idx).toUInt();
+                v.in.last  = data.at(idx+1).toUInt();
+                auto host = QString("%1 [%2 %3]")
+                        .arg(item.pin)
+                        .arg(v.in.first, 4, 16, QLatin1Char('0'))
+                        .arg(v.in.last, 4, 16, QLatin1Char('0'));
+                auto info = QString::number(v.outFloat, 'f', 3);
+                displayData << QString("%1;%2").arg(item.pin, info);
+                emit logMessage(host, info);
+            } break;
+            case ModbusCsvConf::DWordType: {
+                ModbusValue v;
+                v.in.first = data.at(idx).toUInt();
+                v.in.last  = data.at(idx+1).toUInt();
+                auto host = QString("%1 [%2 %3]")
+                        .arg(item.pin)
+                        .arg(v.in.first, 4, 16, QLatin1Char('0'))
+                        .arg(v.in.last, 4, 16, QLatin1Char('0'));
+                auto info = QString::number(v.outInt);
+                displayData << QString("%1;%2").arg(item.pin, info);
+                emit logMessage(host, info);
+            } break;
+            case ModbusCsvConf::IntType: {
+                quint16 val = data.at(idx).toUInt();
+                auto host = QString("%1 [%2]")
+                        .arg(item.pin)
+                        .arg(val, 4, 16, QLatin1Char('0'));
+                auto info = QString::number(val);
+                displayData << QString("%1;%2").arg(item.pin, info);
+                emit logMessage(host, info);
+            } break;
+            default:
+                break;
+            }
         }
     }
 
