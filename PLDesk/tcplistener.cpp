@@ -29,14 +29,8 @@ TcpListener::TcpListener(QWidget *parent) :
             this, &TcpListener::changeReplyType);
     connect(ui->cmbHandler, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &TcpListener::changeHandler);
-    // configure UI default state
-    ui->rbBinary->setChecked(false);
-    ui->rbText->setChecked(true);
-    ui->cmbReplyType->setCurrentIndex(ReplyType::NoReply);
-    ui->editReply->setHidden(true);
 
-    ui->splitter->setStretchFactor(0, 1);
-    ui->splitter->setStretchFactor(1, 3);
+    setupUiDefaultState();
 
     connect(ui->rbBinary, &QRadioButton::toggled,
             this, &TcpListener::onInputFormatChanged);
@@ -65,8 +59,8 @@ void TcpListener::onNewConnection()
     connect(clientSocket, &QTcpSocket::stateChanged,
            this, &TcpListener::onTcpSocketStateChanged);
 
-    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkblue\">connected to server !</font>")
-                        .arg(clientSocket->peerAddress().toString()));
+    printInfo(clientSocket->peerAddress().toString(),
+              "connected to server !");
 }
 
 /********************************************************/
@@ -75,8 +69,8 @@ void TcpListener::onTcpSocketStateChanged(QAbstractSocket::SocketState socketSta
 {
     if (socketState == QAbstractSocket::UnconnectedState) {
         QTcpSocket* clientSocket = static_cast<QTcpSocket*>(QObject::sender());
-        ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkblue\">disconnected to server !</font>")
-                            .arg(clientSocket->peerAddress().toString()));
+        printInfo(clientSocket->peerAddress().toString(),
+                  "disconnected from server !");
         clientSocket->deleteLater();
     }
 }
@@ -109,11 +103,14 @@ void TcpListener::doConnect()
     }
     if (m_TcpServer.isListening()) {
         initHandler(ui->rbBinary->isChecked());
+        connect(handler(), &MessageHandler::logMessage,
+                this, &TcpListener::printMessage);
+        connect(handler(), &MessageHandler::logError,
+                this, &TcpListener::printError);
     }
     const auto errors = handlerErrors();
     for (const auto &error : errors) {
-        ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
-                            .arg(handlerName(), error));
+        printError(handlerName(), error);
     }
     updateStatus();
 }
@@ -163,6 +160,43 @@ void TcpListener::changeHandler(int index)
 
 /********************************************************/
 
+void TcpListener::printInfo(const QString &host, const QString &msg)
+{
+    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkblue\">%2</font>")
+                        .arg(host, msg));
+}
+
+/********************************************************/
+
+void TcpListener::printMessage(const QString &host, const QString &msg)
+{
+    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkgreen\">%2</font>")
+                        .arg(host, msg));
+}
+
+/********************************************************/
+
+void TcpListener::printError(const QString &host, const QString &msg)
+{
+    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
+                        .arg(host, msg));
+}
+
+/********************************************************/
+
+void TcpListener::setupUiDefaultState()
+{
+    ui->rbBinary->setChecked(false);
+    ui->rbText->setChecked(true);
+    ui->cmbReplyType->setCurrentIndex(ReplyType::NoReply);
+    ui->editReply->setHidden(true);
+
+    ui->splitter->setStretchFactor(0, 1);
+    ui->splitter->setStretchFactor(1, 3);
+}
+
+/********************************************************/
+
 void TcpListener::updateStatus()
 {
     if (m_TcpServer.isListening()) {
@@ -202,8 +236,7 @@ QByteArray TcpListener::processData(const QHostAddress &host, const QByteArray &
     QString displayData = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
 
     // log payload data
-    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkgreen\">%2</font>")
-                        .arg(host.toString(), displayData));
+    printMessage(host.toString(), displayData);
 
     QByteArray reply;
     // Handler
@@ -214,8 +247,7 @@ QByteArray TcpListener::processData(const QHostAddress &host, const QByteArray &
     }
     const auto errors = handlerErrors();
     for (const auto &error : errors) {
-        ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
-                            .arg(host.toString(), error));
+        printError(host.toString(), error);
     }
 
     // make reply

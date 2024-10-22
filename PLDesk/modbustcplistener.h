@@ -31,8 +31,13 @@ private slots:
     void doConnect();
     void doDisconnect();
     void changeHandler(int index);
+    void printInfo(const QString& host, const QString& msg);
+    void printMessage(const QString& host, const QString& msg);
+    void printError(const QString& host, const QString& msg);
 
 private:
+    /// configure UI default state
+    void setupUiDefaultState();
     void updateStatus();
     void onCoilsUpdated(int address, int size);
     void onHoldingRegistersUpdated(int address, int size);

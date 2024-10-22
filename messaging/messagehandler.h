@@ -5,6 +5,7 @@
 
 #include <QObject>
 #include <QVariant>
+#include <QMetaMethod>
 
 typedef QMap<int, QVariant> SettingsMap;
 class MessageHandlerWgt;
@@ -78,6 +79,7 @@ public:
 
     void setDisconnected() {
         d.connected = false;
+        disconnect(this, QMetaMethod(), Q_NULLPTR, QMetaMethod());
     }
 
     bool hasError() const {
@@ -102,6 +104,10 @@ public:
     void clearErrors() {
         d.errors.clear();
     }
+
+Q_SIGNALS:
+    void logMessage(const QString &msgHandler, const QString &msg);
+    void logError(const QString &msgHandler, const QString &msg);
 
 private:
     MessageHandlerPrivate d;

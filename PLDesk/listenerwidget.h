@@ -40,11 +40,13 @@ protected:
     QString handlerName() const;
     void initHandler(bool binaryInput);
     void disconnectHandler();
+    MessageHandler *handler() const;
     MessageHandlerWgt *updateHandler(int index);
     QByteArray doHandle(PMessage data);
     QByteArray doHandle(const QByteArray& data);
     QByteArray doHandle(const QString& data);
     QStringList handlerErrors() const;
+    void clearErrors();
 
 protected:
     static QStringList handlers();

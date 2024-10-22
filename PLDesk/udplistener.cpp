@@ -28,14 +28,8 @@ UdpListener::UdpListener(QWidget *parent) :
             this, &UdpListener::changeReplyType);
     connect(ui->cmbHandler, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &UdpListener::changeHandler);
-    // configure UI default state
-    ui->rbBinary->setChecked(false);
-    ui->rbText->setChecked(true);
-    ui->cmbReplyType->setCurrentIndex(ReplyType::NoReply);
-    ui->editReply->setHidden(true);
 
-    ui->splitter->setStretchFactor(0, 1);
-    ui->splitter->setStretchFactor(1, 3);
+    setupUiDefaultState();
 
     connect(ui->rbBinary, &QRadioButton::toggled,
             this, &UdpListener::onInputFormatChanged);
@@ -88,11 +82,14 @@ void UdpListener::doConnect()
     }
     if (m_UdpSocket) {
         initHandler(ui->rbBinary->isChecked());
+        connect(handler(), &MessageHandler::logMessage,
+                this, &UdpListener::printMessage);
+        connect(handler(), &MessageHandler::logError,
+                this, &UdpListener::printError);
     }
     const auto errors = handlerErrors();
     for (const auto &error : errors) {
-        ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
-                            .arg(handlerName(), error));
+        printError(handlerName(), error);
     }
     updateStatus();
 }
@@ -146,6 +143,35 @@ void UdpListener::changeHandler(int index)
 
 /********************************************************/
 
+void UdpListener::printMessage(const QString &host, const QString &msg)
+{
+    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkgreen\">%2</font>")
+                        .arg(host, msg));
+}
+
+/********************************************************/
+
+void UdpListener::printError(const QString &host, const QString &msg)
+{
+    ui->textLog->append(QString("%<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
+                        .arg(host, msg));
+}
+
+/********************************************************/
+
+void UdpListener::setupUiDefaultState()
+{
+    ui->rbBinary->setChecked(false);
+    ui->rbText->setChecked(true);
+    ui->cmbReplyType->setCurrentIndex(ReplyType::NoReply);
+    ui->editReply->setHidden(true);
+
+    ui->splitter->setStretchFactor(0, 1);
+    ui->splitter->setStretchFactor(1, 3);
+}
+
+/********************************************************/
+
 void UdpListener::updateStatus()
 {
     if (m_UdpSocket) {
@@ -185,8 +211,7 @@ QByteArray UdpListener::processData(const QHostAddress &host, const QByteArray &
     QString displayData = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
 
     // log payload data
-    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkgreen\">%2</font>")
-                        .arg(host.toString(), displayData));
+    printMessage(host.toString(), displayData);
 
     QByteArray reply;
     // Handler
@@ -197,8 +222,7 @@ QByteArray UdpListener::processData(const QHostAddress &host, const QByteArray &
     }
     const auto errors = handlerErrors();
     for (const auto &error : errors) {
-        ui->textLog->append(QString("%<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
-                            .arg(host.toString(), error));
+        printError(host.toString(), error);
     }
 
     // make reply

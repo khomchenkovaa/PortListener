@@ -20,17 +20,21 @@ public:
 signals:
     void tabText(const QString &label);
 
-public slots:
+public Q_SLOTS:
     void readPendingDatagrams();
 
-private slots:
+private Q_SLOTS:
     void doConnect();
     void doDisconnect();
     void onInputFormatChanged();
     void changeReplyType(int index);
     void changeHandler(int index);
+    void printMessage(const QString& host, const QString& msg);
+    void printError(const QString& host, const QString& msg);
 
 private:
+    /// configure UI default state
+    void setupUiDefaultState();
     void updateStatus();
     void updateCodecs();
     QByteArray processData(const QHostAddress &host, const QByteArray &data);

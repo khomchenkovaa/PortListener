@@ -27,14 +27,8 @@ SocketListener::SocketListener(QWidget *parent) :
             this, &SocketListener::changeReplyType);
     connect(ui->cmbHandler, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &SocketListener::changeHandler);
-    // configure UI default state
-    ui->rbBinary->setChecked(false);
-    ui->rbText->setChecked(true);
-    ui->cmbReplyType->setCurrentIndex(ReplyType::NoReply);
-    ui->editReply->setHidden(true);
 
-    ui->splitter->setStretchFactor(0, 1);
-    ui->splitter->setStretchFactor(1, 3);
+    setupUiDefaultState();
 
     connect(ui->rbBinary, &QRadioButton::toggled,
             this, &SocketListener::onInputFormatChanged);
@@ -65,8 +59,8 @@ void SocketListener::onNewConnection()
     connect(clientSocket, &QLocalSocket::stateChanged,
            this, &SocketListener::onLocalSocketStateChanged);
 
-    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkblue\">connected to server !</font>")
-                        .arg(clientSocket->socketDescriptor()));
+    printInfo(QString::number(clientSocket->socketDescriptor()),
+              "connected to server !");
 }
 
 /********************************************************/
@@ -74,10 +68,10 @@ void SocketListener::onNewConnection()
 void SocketListener::onLocalSocketStateChanged(QLocalSocket::LocalSocketState  socketState)
 {
     if (socketState == QLocalSocket::UnconnectedState) {
-        QLocalSocket* clientSocket = qobject_cast<QLocalSocket*>(QObject::sender());
+        auto clientSocket = qobject_cast<QLocalSocket*>(QObject::sender());
         if (!clientSocket) return;
-        ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkblue\">disconnected to server !</font>")
-                            .arg(clientSocket->socketDescriptor()));
+        printInfo(QString::number(clientSocket->socketDescriptor()),
+                  "disconnected from server !");
         clientSocket->deleteLater();
     }
 }
@@ -110,11 +104,14 @@ void SocketListener::doConnect()
     }
     if (m_LocalServer.isListening()) {
         initHandler(ui->rbBinary->isChecked());
+        connect(handler(), &MessageHandler::logMessage,
+                this, &SocketListener::printMessage);
+        connect(handler(), &MessageHandler::logError,
+                this, &SocketListener::printError);
     }
     const auto errors = handlerErrors();
     for (const auto &error : errors) {
-        ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
-                            .arg(handlerName(), error));
+        printError(handlerName(), error);
     }
     updateStatus();
 }
@@ -164,6 +161,43 @@ void SocketListener::changeHandler(int index)
 
 /********************************************************/
 
+void SocketListener::printInfo(const QString &host, const QString &msg)
+{
+    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkblue\">%2</font>")
+                        .arg(host, msg));
+}
+
+/********************************************************/
+
+void SocketListener::printMessage(const QString &host, const QString &msg)
+{
+    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkgreen\">%2</font>")
+                        .arg(host, msg));
+}
+
+/********************************************************/
+
+void SocketListener::printError(const QString &host, const QString &msg)
+{
+    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
+                        .arg(host, msg));
+}
+
+/********************************************************/
+
+void SocketListener::setupUiDefaultState()
+{
+    ui->rbBinary->setChecked(false);
+    ui->rbText->setChecked(true);
+    ui->cmbReplyType->setCurrentIndex(ReplyType::NoReply);
+    ui->editReply->setHidden(true);
+
+    ui->splitter->setStretchFactor(0, 1);
+    ui->splitter->setStretchFactor(1, 3);
+}
+
+/********************************************************/
+
 void SocketListener::updateStatus()
 {
     if (m_LocalServer.isListening()) {
@@ -203,8 +237,7 @@ QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArr
     QString displayData = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
 
     // log payload data
-    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkgreen\">%2</font>")
-                        .arg(QString::number(socketDescriptor), displayData));
+    printMessage(QString::number(socketDescriptor), displayData);
 
     QByteArray reply;
     // Handler
@@ -215,8 +248,7 @@ QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArr
     }
     const auto errors = handlerErrors();
     for (const auto &error : errors) {
-        ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
-                            .arg(QString::number(socketDescriptor), error));
+        printError(QString::number(socketDescriptor), error);
     }
 
     // make reply

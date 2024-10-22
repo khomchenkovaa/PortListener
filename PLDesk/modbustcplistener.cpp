@@ -43,9 +43,8 @@ ModbusTcpListener::ModbusTcpListener(QWidget *parent) :
             this, &ModbusTcpListener::doDisconnect);
     connect(ui->cmbHandler, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &ModbusTcpListener::changeHandler);
-    // configure UI default state
-    ui->splitter->setStretchFactor(0, 1);
-    ui->splitter->setStretchFactor(1, 3);
+
+    setupUiDefaultState();
 
     updateStatus();
 }
@@ -80,11 +79,9 @@ void ModbusTcpListener::onDataUpdated(QModbusDataUnit::RegisterType table, int a
 
 void ModbusTcpListener::handleDeviceError(QModbusDevice::Error newError)
 {
-    if (newError == QModbusDevice::NoError)
-        return;
-    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
-                        .arg("Modbus TCP error", m_ModbusDevice.errorString()));
-
+    if (newError != QModbusDevice::NoError) {
+        printError("Modbus TCP error", m_ModbusDevice.errorString());
+    }
 }
 
 /********************************************************/
@@ -103,12 +100,16 @@ void ModbusTcpListener::doConnect()
     }
     if (m_ModbusDevice.state() == QModbusDevice::ConnectedState) {
         initHandler(true);
+        connect(handler(), &MessageHandler::logMessage,
+                this, &ModbusTcpListener::printMessage);
+        connect(handler(), &MessageHandler::logError,
+                this, &ModbusTcpListener::printError);
     }
     const auto errors = handlerErrors();
     for (const auto &error : errors) {
-        ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
-                            .arg(handlerName(), error));
+        printError(handlerName(), error);
     }
+    clearErrors();
     updateStatus();
 }
 
@@ -129,6 +130,38 @@ void ModbusTcpListener::changeHandler(int index)
     if (editor) {
         ui->boxAction->layout()->addWidget(editor);
     }
+}
+
+/********************************************************/
+
+void ModbusTcpListener::printInfo(const QString &host, const QString &msg)
+{
+    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkblue\">%2</font>")
+                        .arg(host, msg));
+}
+
+/********************************************************/
+
+void ModbusTcpListener::printMessage(const QString &host, const QString &msg)
+{
+    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkgreen\">%2</font>")
+                        .arg(host, msg));
+}
+
+/********************************************************/
+
+void ModbusTcpListener::printError(const QString &host, const QString &msg)
+{
+    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
+                        .arg(host, msg));
+}
+
+/********************************************************/
+
+void ModbusTcpListener::setupUiDefaultState()
+{
+    ui->splitter->setStretchFactor(0, 1);
+    ui->splitter->setStretchFactor(1, 3);
 }
 
 /********************************************************/
@@ -171,6 +204,15 @@ void ModbusTcpListener::onCoilsUpdated(int address, int size)
 
 void ModbusTcpListener::onHoldingRegistersUpdated(int address, int size)
 {
+    // check if address is not even
+    if (address % 2 == 1) {
+        address--;
+        size++;
+    }
+
+    // check size shout be not even too
+    if (size % 2 == 1) size++;
+
     QVariantList regs;
     for (int i = 0; i < size; ++i) {
         quint16 value = 0;
@@ -184,40 +226,32 @@ void ModbusTcpListener::onHoldingRegistersUpdated(int address, int size)
 
 void ModbusTcpListener::processCoils(int address, int size, const QBitArray &data)
 {
+    auto host = "Coils";
+    auto info = QString("from %1 size %2").arg(address).arg(size);
+    printInfo(host, info);
+
     auto msg = PMessage::create();
-    msg->logger = ui->textLog;
     msg->payload = data;
     msg->payloadType = QMetaType::QBitArray;
     msg->headers.insert("address", address);
     msg->headers.insert("size", size);
     doHandle(msg);
-
-    auto host = QString("Coils from %1 size %2").arg(address).arg(size);
-    const auto errors = handlerErrors();
-    for (const auto &error : errors) {
-        ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
-                            .arg(host, error));
-    }
 }
 
 /********************************************************/
 
 void ModbusTcpListener::processHoldingRegisters(int address, int size, const QVariantList &data)
 {
+    auto host = "Holding registers";
+    auto info = QString("from %1 size %2").arg(address).arg(size);
+    printInfo(host, info);
+
     auto msg = PMessage::create();
-    msg->logger = ui->textLog;
     msg->payload = data;
     msg->payloadType = QMetaType::QVariantList;
     msg->headers.insert("address", address);
     msg->headers.insert("size", size);
     doHandle(msg);
-
-    auto host = QString("Holding registers from %1 size %2").arg(address).arg(size);
-    const auto errors = handlerErrors();
-    for (const auto &error : errors) {
-        ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
-                            .arg(host, error));
-    }
 }
 
 /********************************************************/

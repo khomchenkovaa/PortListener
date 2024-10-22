@@ -54,6 +54,13 @@ void ListenerWidget::disconnectHandler()
 
 /********************************************************/
 
+MessageHandler *ListenerWidget::handler() const
+{
+    return d.handler;
+}
+
+/********************************************************/
+
 MessageHandlerWgt *ListenerWidget::updateHandler(int index)
 {
     if (d.editor) {
@@ -129,6 +136,13 @@ QStringList ListenerWidget::handlerErrors() const
 {
     if (d.handler) return d.handler->errors();
     return QStringList();
+}
+
+/********************************************************/
+
+void ListenerWidget::clearErrors()
+{
+    if (d.handler) d.handler->clearErrors();
 }
 
 /********************************************************/
