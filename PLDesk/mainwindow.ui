@@ -94,26 +94,6 @@
            </widget>
           </item>
           <item>
-           <spacer name="horizontalSpacer_3">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item>
-           <widget class="QPushButton" name="btnModbus">
-            <property name="text">
-             <string>Modbus TCP</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <spacer name="horizontalSpacer_5">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -135,6 +115,73 @@
           </item>
           <item>
            <spacer name="horizontalSpacer_4">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QLabel" name="lblAboutModbus">
+          <property name="text">
+           <string>To deal with Modbus TCP press:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <spacer name="horizontalSpacer_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnModbusTcpServer">
+            <property name="text">
+             <string>Modbus TCP Server</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_6">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnModbusTcpClient">
+            <property name="text">
+             <string>Modbus TCP Client</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_7">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
@@ -183,8 +230,10 @@
     </property>
     <addaction name="actionTCP_port"/>
     <addaction name="actionUDP_port"/>
-    <addaction name="actionModbus_TCP"/>
     <addaction name="actionSocket"/>
+    <addaction name="separator"/>
+    <addaction name="actionModbusTcpServer"/>
+    <addaction name="actionModbusTcpClient"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
@@ -210,9 +259,14 @@
     <string>&amp;Socket</string>
    </property>
   </action>
-  <action name="actionModbus_TCP">
+  <action name="actionModbusTcpServer">
    <property name="text">
-    <string>Modbus TCP</string>
+    <string>Modbus TCP Server</string>
+   </property>
+  </action>
+  <action name="actionModbusTcpClient">
+   <property name="text">
+    <string>Modbus TCP Client</string>
    </property>
   </action>
  </widget>

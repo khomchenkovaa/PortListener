@@ -1,17 +1,19 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>ModbusTcpListener</class>
- <widget class="QWidget" name="ModbusTcpListener">
+ <author/>
+ <comment/>
+ <exportmacro/>
+ <class>ModbusTcpClient</class>
+ <widget name="ModbusTcpClient" class="QWidget">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>734</width>
-    <height>442</height>
+    <width>400</width>
+    <height>300</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Modbus Tcp Server</string>
+   <string>Modbus Tcp Client</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_5">
    <item>
@@ -81,14 +83,14 @@
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_2">
             <item>
-             <widget class="QLabel" name="lblServerId">
+             <widget class="QLabel" name="lblServerAddress">
               <property name="text">
-               <string>Server ID</string>
+               <string>Server Address</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QSpinBox" name="spinServerId">
+             <widget class="QSpinBox" name="spinServerAddress">
               <property name="minimum">
                <number>1</number>
               </property>
@@ -134,6 +136,6 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <pixmapfunction/>
  <connections/>
 </ui>

@@ -89,7 +89,7 @@ void ModbusTcpListener::handleDeviceError(QModbusDevice::Error newError)
 void ModbusTcpListener::doConnect()
 {
     quint16 port = ui->spinPort->value();
-    quint16 addr = ui->spinServerAddress->value();
+    quint16 addr = ui->spinServerId->value();
     m_ModbusDevice.setConnectionParameter(QModbusDevice::NetworkPortParameter, port);
     m_ModbusDevice.setServerAddress(addr);
     if (!m_ModbusDevice.connectDevice()) {

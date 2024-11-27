@@ -39,9 +39,17 @@ FORMS += \
     udplistener.ui
 
 contains(QT, serialbus) {
-    SOURCES += modbustcplistener.cpp
-    HEADERS += modbustcplistener.h
-    FORMS   += modbustcplistener.ui
+    SOURCES += \
+        modbustcpclient.cpp \
+        modbustcplistener.cpp
+
+    HEADERS += \
+        modbustcpclient.h \
+        modbustcplistener.h
+
+    FORMS += \
+        modbustcpclient.ui \
+        modbustcplistener.ui
 }
 
 include("../common/ext/ext.pri")

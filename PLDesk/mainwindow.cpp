@@ -6,6 +6,7 @@
 #include "socketlistener.h"
 
 #ifdef QT_SERIALBUS_LIB
+#include "modbustcpclient.h"
 #include "modbustcplistener.h"
 #endif
 
@@ -56,7 +57,20 @@ void MainWindow::addUdpListener()
 
 /********************************************************/
 
-void MainWindow::addModbusTcpListener()
+void MainWindow::addSocketListener()
+{
+    auto widget = new SocketListener(this);
+    ui->tabWidget->addTab(widget, tr("Socket [-]"));
+    ui->tabWidget->setCurrentWidget(widget);
+    connect(widget, &SocketListener::tabText, this, [this, widget](const QString &label){
+        int idx = ui->tabWidget->indexOf(widget);
+        ui->tabWidget->setTabText(idx, label);
+    });
+}
+
+/********************************************************/
+
+void MainWindow::addModbusTcpServer()
 {
 #ifdef QT_SERIALBUS_LIB
     auto widget = new ModbusTcpListener(this);
@@ -71,15 +85,17 @@ void MainWindow::addModbusTcpListener()
 
 /********************************************************/
 
-void MainWindow::addSocketListener()
+void MainWindow::addModbusTcpClient()
 {
-    auto widget = new SocketListener(this);
-    ui->tabWidget->addTab(widget, tr("Socket [-]"));
+#ifdef QT_SERIALBUS_LIB
+    auto widget = new ModbusTcpClient(this);
+    ui->tabWidget->addTab(widget, tr("Modbus Client [-]"));
     ui->tabWidget->setCurrentWidget(widget);
-    connect(widget, &SocketListener::tabText, this, [this, widget](const QString &label){
+    connect(widget, &ModbusTcpClient::tabText, this, [this, widget](const QString &label){
         int idx = ui->tabWidget->indexOf(widget);
         ui->tabWidget->setTabText(idx, label);
     });
+#endif
 }
 
 /********************************************************/
@@ -90,23 +106,29 @@ void MainWindow::setupUI()
             ui->actionTCP_port, &QAction::triggered);
     connect(ui->btnUdp, &QPushButton::clicked,
             ui->actionUDP_port, &QAction::triggered);
-    connect(ui->btnModbus, &QPushButton::clicked,
-            ui->actionModbus_TCP, &QAction::triggered);
     connect(ui->btnSocket, &QPushButton::clicked,
             ui->actionSocket, &QAction::triggered);
+    connect(ui->btnModbusTcpServer, &QPushButton::clicked,
+            ui->actionModbusTcpServer, &QAction::triggered);
+    connect(ui->btnModbusTcpClient, &QPushButton::clicked,
+            ui->actionModbusTcpClient, &QAction::triggered);
 
     connect(ui->actionTCP_port, &QAction::triggered,
             this, &MainWindow::addTcpListener);
     connect(ui->actionUDP_port, &QAction::triggered,
             this, &MainWindow::addUdpListener);
-    connect(ui->actionModbus_TCP, &QAction::triggered,
-            this, &MainWindow::addModbusTcpListener);
     connect(ui->actionSocket, &QAction::triggered,
             this, &MainWindow::addSocketListener);
+    connect(ui->actionModbusTcpServer, &QAction::triggered,
+            this, &MainWindow::addModbusTcpServer);
+    connect(ui->actionModbusTcpClient, &QAction::triggered,
+            this, &MainWindow::addModbusTcpClient);
 
 #ifndef QT_SERIALBUS_LIB
-    ui->btnModbus->setDisabled(true);
-    ui->actionModbus_TCP->setDisabled(true);
+    ui->btnModbusTcpServer->setDisabled(true);
+    ui->actionModbusTcpServer->setDisabled(true);
+    ui->btnModbusTcpClient->setDisabled(true);
+    ui->actionModbusTcpClient->setDisabled(true);
 #endif
 
     connect(ui->tabWidget->tabBar(), &QTabBar::tabCloseRequested, this, [this](int index){
