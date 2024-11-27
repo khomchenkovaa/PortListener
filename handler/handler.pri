@@ -8,6 +8,7 @@ HEADERS += \
     $$PWD/gatehandler.h \
     $$PWD/gatehandlerconf.h \
     $$PWD/iodecoder.h \
+    $$PWD/modbusclientconf.h \
     $$PWD/modbushandler.h \
     $$PWD/modbushandlerconf.h \
     $$PWD/sockhandler.h \

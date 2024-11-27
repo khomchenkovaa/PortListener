@@ -2,6 +2,7 @@
 #define MODBUSTCPCLIENT_H
 
 #include "listenerwidget.h"
+#include "modbusclientconf.h"
 
 #include <QModbusTcpClient>
 
@@ -31,15 +32,18 @@ private slots:
     void printInfo(const QString& host, const QString& msg);
     void printMessage(const QString& host, const QString& msg);
     void printError(const QString& host, const QString& msg);
+    void openSigFileDialog();
 
 private:
     /// configure UI default state
     void setupUiDefaultState();
     void updateStatus();
+    void loadSigConfig();
 
 private:
     Ui::ModbusTcpClient *ui;
     QModbusTcpClient m_ModbusDevice;
+    ModbusSigConf conf;
 };
 
 #endif // MODBUSTCPCLIENT_H

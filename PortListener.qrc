@@ -4,5 +4,7 @@
         <file>resources/sql/diagnostic.sql</file>
         <file>resources/sql/temperature.sql</file>
         <file>resources/datamapper.json</file>
+        <file>resources/scrload/scrload.conf</file>
+        <file>resources/scrload/scrload.sig</file>
     </qresource>
 </RCC>

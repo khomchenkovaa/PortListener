@@ -5,6 +5,8 @@
 
 #include <QMessageBox>
 #include <QTimer>
+#include <QFileInfo>
+#include <QFileDialog>
 
 
 /********************************************************/
@@ -28,6 +30,8 @@ ModbusTcpClient::ModbusTcpClient(QWidget *parent) :
     connect(&m_ModbusDevice, &QModbusClient::errorOccurred,
             this, &ModbusTcpClient::handleDeviceError);
 
+    connect(ui->btnConfig, &QAbstractButton::clicked,
+            this, &ModbusTcpClient::openSigFileDialog);
     connect(ui->btnConnect, &QAbstractButton::clicked,
             this, &ModbusTcpClient::doConnect);
     connect(ui->btnDisconnect, &QAbstractButton::clicked,
@@ -51,13 +55,18 @@ ModbusTcpClient::~ModbusTcpClient()
 
 void ModbusTcpClient::doModbusRequest()
 {
-    QString host = QString("%1:%2").arg(ui->editHost->text()).arg(ui->spinPort->value());
-    printInfo(host, "Start request cycle");
+    if (m_ModbusDevice.state() == QModbusDevice::ConnectedState) {
+        QString host = QString("%1:%2").arg(ui->editHost->text()).arg(ui->spinPort->value());
+        printInfo(host, "Start request cycle");
 
-    auto time = QTime::currentTime().msecsSinceStartOfDay() / 1000;
-    printMessage(host, QString::number(time));
+        auto time = QTime::currentTime().msecsSinceStartOfDay() / 1000;
+        printMessage(host, QString::number(time));
 
-    // TODO
+        for (const auto &item : qAsConst(conf.items)) {
+            printMessage(host, item.pin);
+        }
+
+    }
 
     int msec = ui->spinFrequency->value() * 1000;
     QTimer::singleShot(msec, this, &ModbusTcpClient::doModbusRequest);
@@ -89,6 +98,9 @@ void ModbusTcpClient::doConnect()
                               .arg(port)
                               .arg(m_ModbusDevice.errorString()));
     }
+
+    loadSigConfig();
+
     if (m_ModbusDevice.state() == QModbusDevice::ConnectedState) {
         initHandler(true);
         connect(handler(), &MessageHandler::logMessage,
@@ -151,6 +163,25 @@ void ModbusTcpClient::printError(const QString &host, const QString &msg)
 
 /********************************************************/
 
+void ModbusTcpClient::openSigFileDialog()
+{
+    QString dirPath = QCoreApplication::applicationDirPath();
+    QString fileName = ui->editConfig->text();
+    const QFileInfo fileInfo(fileName);
+    if (fileInfo.exists()) {
+        dirPath = fileInfo.path();
+    }
+
+    fileName = QFileDialog::getOpenFileName(this, tr("Choose Sig Config File"),
+                                            dirPath,
+                                            "SIG files (*.sig)");
+    if (!fileName.isEmpty()) {
+        ui->editConfig->setText(fileName);
+    }
+}
+
+/********************************************************/
+
 void ModbusTcpClient::setupUiDefaultState()
 {
     ui->splitter->setStretchFactor(0, 1);
@@ -176,6 +207,16 @@ void ModbusTcpClient::updateStatus()
         ui->boxAction->setEnabled(true);
         emit tabText(QString("Modbus Client [-]"));
     }
+}
+
+/********************************************************/
+
+void ModbusTcpClient::loadSigConfig()
+{
+    QString sigFile = ui->editConfig->text().trimmed();
+    if (sigFile.isEmpty()) sigFile = ":/resources/scrload/scrload.sig";
+    conf.items.clear();
+    conf.load(sigFile);
 }
 
 /********************************************************/

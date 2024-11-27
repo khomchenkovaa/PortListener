@@ -2,7 +2,6 @@
 #define MODBUSHANDLERCONF_H
 
 #include "xcsvmodel.h"
-#include "dbhandlerconf.h"
 
 #include <QFile>
 #include <QTextCodec>
