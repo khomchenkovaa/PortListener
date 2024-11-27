@@ -3,6 +3,8 @@
 
 #include "messagehandlerwgt.h"
 
+#include <QMessageBox>
+
 
 /********************************************************/
 
@@ -11,6 +13,12 @@ ModbusTcpClient::ModbusTcpClient(QWidget *parent) :
     ui(new Ui::ModbusTcpClient)
 {
     ui->setupUi(this);
+
+    ui->cmbTable->addItem(tr("Coils"), QModbusDataUnit::Coils);
+    ui->cmbTable->addItem(tr("Discrete Inputs"), QModbusDataUnit::DiscreteInputs);
+    ui->cmbTable->addItem(tr("Input Registers"), QModbusDataUnit::InputRegisters);
+    ui->cmbTable->addItem(tr("Holding Registers"), QModbusDataUnit::HoldingRegisters);
+    ui->cmbTable->setCurrentIndex(ui->cmbTable->findData(QModbusDataUnit::HoldingRegisters));
 
     ui->cmbHandler->addItems(handlers());
 
@@ -51,7 +59,31 @@ void ModbusTcpClient::handleDeviceError(QModbusDevice::Error newError)
 
 void ModbusTcpClient::doConnect()
 {
-    // TODO
+    QString host = ui->editHost->text();
+    quint16 port = ui->spinPort->value();
+    m_ModbusDevice.setConnectionParameter(QModbusDevice::NetworkPortParameter, port);
+    m_ModbusDevice.setConnectionParameter(QModbusDevice::NetworkAddressParameter, host);
+    m_ModbusDevice.setTimeout(1);
+    m_ModbusDevice.setNumberOfRetries(3);
+    if (!m_ModbusDevice.connectDevice()) {
+        QMessageBox::critical(this, QApplication::applicationDisplayName(),
+                              tr("Modbus client %1:%2 connection error!\n%3")
+                              .arg(host)
+                              .arg(port)
+                              .arg(m_ModbusDevice.errorString()));
+    }
+    if (m_ModbusDevice.state() == QModbusDevice::ConnectedState) {
+        initHandler(true);
+        connect(handler(), &MessageHandler::logMessage,
+                this, &ModbusTcpClient::printMessage);
+        connect(handler(), &MessageHandler::logError,
+                this, &ModbusTcpClient::printError);
+    }
+    const auto errors = handlerErrors();
+    for (const auto &error : errors) {
+        printError(handlerName(), error);
+    }
+    clearErrors();
     updateStatus();
 }
 
