@@ -21,6 +21,7 @@ signals:
     void tabText(const QString &label);
 
 public slots:
+    void doModbusRequest();
     void handleDeviceError(QModbusDevice::Error newError);
 
 private slots:

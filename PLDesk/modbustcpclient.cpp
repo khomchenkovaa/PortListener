@@ -4,6 +4,7 @@
 #include "messagehandlerwgt.h"
 
 #include <QMessageBox>
+#include <QTimer>
 
 
 /********************************************************/
@@ -48,6 +49,22 @@ ModbusTcpClient::~ModbusTcpClient()
 
 /********************************************************/
 
+void ModbusTcpClient::doModbusRequest()
+{
+    QString host = QString("%1:%2").arg(ui->editHost->text()).arg(ui->spinPort->value());
+    printInfo(host, "Start request cycle");
+
+    auto time = QTime::currentTime().msecsSinceStartOfDay() / 1000;
+    printMessage(host, QString::number(time));
+
+    // TODO
+
+    int msec = ui->spinFrequency->value() * 1000;
+    QTimer::singleShot(msec, this, &ModbusTcpClient::doModbusRequest);
+}
+
+/********************************************************/
+
 void ModbusTcpClient::handleDeviceError(QModbusDevice::Error newError)
 {
     if (newError != QModbusDevice::NoError) {
@@ -85,6 +102,8 @@ void ModbusTcpClient::doConnect()
     }
     clearErrors();
     updateStatus();
+
+    doModbusRequest();
 }
 
 /********************************************************/
