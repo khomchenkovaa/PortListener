@@ -53,6 +53,15 @@ ModbusTcpClient::~ModbusTcpClient()
 
 /********************************************************/
 
+union ModbusValue {
+    struct {
+        quint16 last;
+        quint16 first;
+    } in;
+    float   outFloat;
+    quint32 outInt;
+};
+
 void ModbusTcpClient::doModbusRequest()
 {
     if (m_ModbusDevice.state() == QModbusDevice::ConnectedState) {
@@ -62,10 +71,75 @@ void ModbusTcpClient::doModbusRequest()
         auto time = QTime::currentTime().msecsSinceStartOfDay() / 1000;
         printMessage(host, QString::number(time));
 
-        for (const auto &item : qAsConst(conf.items)) {
-            printMessage(host, item.pin);
-        }
+        const auto table =
+                static_cast<QModbusDataUnit::RegisterType>(ui->cmbTable->currentData().toInt());
+        int serverId = ui->spinServerId->value();
 
+        for (const auto &item : qAsConst(conf.items)) {
+            QModbusDataUnit request(table, item.ad, item.addressInterval());
+            if (auto *response = m_ModbusDevice.sendReadRequest(request, serverId)) {
+                if (!response->isFinished())
+                    connect(response, &QModbusReply::finished, this, [this, item](){
+                        auto reply = qobject_cast<QModbusReply *>(sender());
+                        if (!reply) return;
+
+                        if (reply->error() == QModbusDevice::NoError) {
+                            const QModbusDataUnit unit = reply->result();
+                            switch(item.dt) {
+                            case ModbusSigConf::RealType: {
+                                ModbusValue v;
+                                v.in.first = unit.value(0);
+                                v.in.last  = unit.value(1);
+                                auto host = QString("%1 [%2 %3]")
+                                        .arg(item.pin)
+                                        .arg(v.in.first, 4, 16, QLatin1Char('0'))
+                                        .arg(v.in.last, 4, 16, QLatin1Char('0'));
+                                auto info = QString::number(v.outFloat, 'f', 3);
+//                                displayData << QString("%1;%2").arg(item.pin, info);
+                                printMessage(host, info);
+                            } break;
+                            case ModbusSigConf::DWordType: {
+                                ModbusValue v;
+                                v.in.first = unit.value(0);
+                                v.in.last  = unit.value(1);
+                                auto host = QString("%1 [%2 %3]")
+                                        .arg(item.pin)
+                                        .arg(v.in.first, 4, 16, QLatin1Char('0'))
+                                        .arg(v.in.last, 4, 16, QLatin1Char('0'));
+                                auto info = QString::number(v.outInt);
+//                                displayData << QString("%1;%2").arg(item.pin, info);
+                                printMessage(host, info);
+                            } break;
+                            case ModbusSigConf::IntType: {
+                                quint16 val = unit.value(0);
+                                auto host = QString("%1 [%2]")
+                                        .arg(item.pin)
+                                        .arg(val, 4, 16, QLatin1Char('0'));
+                                auto info = QString::number(val);
+//                                displayData << QString("%1;%2").arg(item.pin, info);
+                                printMessage(host, info);
+                            } break;
+                            default:
+                                break;
+                            }
+                        } else if (reply->error() == QModbusDevice::ProtocolError) {
+                            printError(item.pin, tr("Read response error: %1 (Mobus exception: 0x%2)").
+                                                arg(reply->errorString()).
+                                                arg(reply->rawResult().exceptionCode(), -1, 16));
+                        } else {
+                            printError(item.pin, tr("Read response error: %1 (code: 0x%2)").
+                                                arg(reply->errorString()).
+                                                arg(reply->error(), -1, 16));
+                        }
+
+                        reply->deleteLater();
+                    });
+                else
+                    delete response; // broadcast replies return immediately
+            } else {
+                printError(item.pin, m_ModbusDevice.errorString());
+            }
+        }
     }
 
     int msec = ui->spinFrequency->value() * 1000;
@@ -101,7 +175,7 @@ void ModbusTcpClient::doConnect()
 
     loadSigConfig();
 
-    if (m_ModbusDevice.state() == QModbusDevice::ConnectedState) {
+    if (m_ModbusDevice.state() != QModbusDevice::UnconnectedState) {
         initHandler(true);
         connect(handler(), &MessageHandler::logMessage,
                 this, &ModbusTcpClient::printMessage);
@@ -178,6 +252,13 @@ void ModbusTcpClient::openSigFileDialog()
     if (!fileName.isEmpty()) {
         ui->editConfig->setText(fileName);
     }
+}
+
+/********************************************************/
+
+void ModbusTcpClient::onReadReady()
+{
+
 }
 
 /********************************************************/

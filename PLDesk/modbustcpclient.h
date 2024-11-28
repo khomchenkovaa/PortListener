@@ -33,6 +33,7 @@ private slots:
     void printMessage(const QString& host, const QString& msg);
     void printError(const QString& host, const QString& msg);
     void openSigFileDialog();
+    void onReadReady();
 
 private:
     /// configure UI default state
