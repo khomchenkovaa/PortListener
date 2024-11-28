@@ -1,5 +1,7 @@
 #include "modbushandler.h"
 
+#include "modbushelper.h"
+
 #include <QTextStream>
 #include <QDataStream>
 #include <QBitArray>
@@ -73,15 +75,6 @@ void ModbusHandler::processCoils(PMessage msg)
 
 /********************************************************/
 
-union ModbusValue {
-    struct {
-        quint16 last;
-        quint16 first;
-    } in;
-    float   outFloat;
-    quint32 outInt;
-};
-
 void ModbusHandler::processHoldingRegisters(PMessage msg)
 {
     int  address = msg->headers.value("address").toInt();
@@ -95,8 +88,8 @@ void ModbusHandler::processHoldingRegisters(PMessage msg)
         int idx = item.ad - address;
         if (idx >=0 && idx < size) {
             switch(item.dataType()) {
-            case ModbusCsvConf::RealType: {
-                ModbusValue v;
+            case Modbus::RealType: {
+                Modbus::ModbusValue v;
                 v.in.first = data.at(idx).toUInt();
                 v.in.last  = data.at(idx+1).toUInt();
                 auto host = QString("%1 [%2 %3]")
@@ -107,8 +100,8 @@ void ModbusHandler::processHoldingRegisters(PMessage msg)
                 displayData << QString("%1;%2").arg(item.pin, info);
                 emit logMessage(host, info);
             } break;
-            case ModbusCsvConf::DWordType: {
-                ModbusValue v;
+            case Modbus::DWordType: {
+                Modbus::ModbusValue v;
                 v.in.first = data.at(idx).toUInt();
                 v.in.last  = data.at(idx+1).toUInt();
                 auto host = QString("%1 [%2 %3]")
@@ -119,7 +112,7 @@ void ModbusHandler::processHoldingRegisters(PMessage msg)
                 displayData << QString("%1;%2").arg(item.pin, info);
                 emit logMessage(host, info);
             } break;
-            case ModbusCsvConf::IntType: {
+            case Modbus::IntType: {
                 quint16 val = data.at(idx).toUInt();
                 auto host = QString("%1 [%2]")
                         .arg(item.pin)

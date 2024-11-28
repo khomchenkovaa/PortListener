@@ -3,6 +3,7 @@
 
 #include "iodecoder.h"
 #include "messagehandlerwgt.h"
+#include "modbushandlerconf.h"
 
 #include <QHostAddress>
 #include <QTcpSocket>
@@ -34,6 +35,7 @@ ModbusTcpListener::ModbusTcpListener(QWidget *parent) :
     connect(&m_ModbusDevice, &QModbusServer::errorOccurred,
             this, &ModbusTcpListener::handleDeviceError);
 
+    setupEditor();
 
     ui->cmbHandler->addItems(handlers());
 
@@ -158,10 +160,158 @@ void ModbusTcpListener::printError(const QString &host, const QString &msg)
 
 /********************************************************/
 
+void ModbusTcpListener::updateEditorStatus()
+{
+    switch(ui->cmbTable->currentData().toInt()) {
+    case QModbusDataUnit::Coils:
+    case QModbusDataUnit::DiscreteInputs:
+        if (ui->cmbValueType->count() != 1) {
+            QSignalBlocker block(ui->cmbValueType);
+            ui->cmbValueType->clear();
+            ui->cmbValueType->addItem(tr("Binary"), Modbus::BinaryType);
+            ui->cmbValueType->setCurrentIndex(0);
+            ui->editValue->setVisible(false);
+            ui->chkValue->setVisible(true);
+        }
+        break;
+    case QModbusDataUnit::InputRegisters:
+    case QModbusDataUnit::HoldingRegisters:
+        if (ui->cmbValueType->count() != 3) {
+            QSignalBlocker block(ui->cmbValueType);
+            ui->cmbValueType->clear();
+            ui->cmbValueType->addItem(tr("Real (4-byte)"), Modbus::RealType);
+            ui->cmbValueType->addItem(tr("Double Int (4-byte)"), Modbus::DWordType);
+            ui->cmbValueType->addItem(tr("Integer (2-byte)"), Modbus::IntType);
+            ui->cmbValueType->setCurrentIndex(0);
+            ui->chkValue->setVisible(false);
+            ui->editValue->setVisible(true);
+        }
+        break;
+    }
+}
+
+/********************************************************/
+
+void ModbusTcpListener::doReadValue()
+{
+    auto regType = static_cast<QModbusDataUnit::RegisterType>(ui->cmbTable->currentData().toInt());
+    auto addr    = ui->spinAddress->value();
+
+    quint16 value = 0;
+    m_ModbusDevice.data(regType, quint16(addr), &value);
+
+    switch (ui->cmbValueType->currentData().toInt()) {
+    case Modbus::BinaryType:
+        if (regType == QModbusDataUnit::Coils ||
+                regType == QModbusDataUnit::DiscreteInputs) {
+            ui->chkValue->setChecked(value);
+        }
+        break;
+    case Modbus::RealType:
+        if (regType == QModbusDataUnit::InputRegisters ||
+                regType == QModbusDataUnit::HoldingRegisters) {
+            quint16 value2 = 0;
+            m_ModbusDevice.data(regType, quint16(addr+1), &value2);
+            Modbus::ModbusValue v;
+            v.in.first = value;
+            v.in.last  = value2;
+            ui->editValue->setText(QString::number(v.outFloat, 'f'));
+        }
+        break;
+    case Modbus::DWordType:
+        if (regType == QModbusDataUnit::InputRegisters ||
+                regType == QModbusDataUnit::HoldingRegisters) {
+            quint16 value2 = 0;
+            m_ModbusDevice.data(regType, quint16(addr+1), &value2);
+            Modbus::ModbusValue v;
+            v.in.first = value;
+            v.in.last  = value2;
+            ui->editValue->setText(QString::number(v.outInt));
+        }
+        break;
+    case Modbus::IntType:
+        if (regType == QModbusDataUnit::InputRegisters ||
+                regType == QModbusDataUnit::HoldingRegisters) {
+            ui->editValue->setText(QString::number(value));
+        }
+        break;
+    }
+}
+
+/********************************************************/
+
+void ModbusTcpListener::doWriteValue()
+{
+    auto regType = static_cast<QModbusDataUnit::RegisterType>(ui->cmbTable->currentData().toInt());
+    auto addr    = ui->spinAddress->value();
+
+    quint16 value = 0;
+    m_ModbusDevice.data(regType, quint16(addr), &value);
+
+    switch (ui->cmbValueType->currentData().toInt()) {
+    case Modbus::BinaryType:
+        if (regType == QModbusDataUnit::Coils ||
+                regType == QModbusDataUnit::DiscreteInputs) {
+            quint16 value = ui->chkValue->isChecked();
+            m_ModbusDevice.setData(regType, quint16(addr), value);
+        }
+        break;
+    case Modbus::RealType:
+        if (regType == QModbusDataUnit::InputRegisters ||
+                regType == QModbusDataUnit::HoldingRegisters) {
+            Modbus::ModbusValue v;
+            v.outFloat = ui->editValue->text().toDouble();
+            m_ModbusDevice.setData(regType, quint16(addr), v.in.first);
+            m_ModbusDevice.setData(regType, quint16(addr+1), v.in.last);
+        }
+        break;
+    case Modbus::DWordType:
+        if (regType == QModbusDataUnit::InputRegisters ||
+                regType == QModbusDataUnit::HoldingRegisters) {
+            Modbus::ModbusValue v;
+            v.outInt = ui->editValue->text().toUInt();
+            m_ModbusDevice.setData(regType, quint16(addr), v.in.first);
+            m_ModbusDevice.setData(regType, quint16(addr+1), v.in.last);
+        }
+        break;
+    case Modbus::IntType:
+        if (regType == QModbusDataUnit::InputRegisters ||
+                regType == QModbusDataUnit::HoldingRegisters) {
+            quint16 value = ui->editValue->text().toUInt();
+            m_ModbusDevice.setData(regType, quint16(addr), value);
+        }
+        break;
+    }
+}
+
+/********************************************************/
+
 void ModbusTcpListener::setupUiDefaultState()
 {
     ui->splitter->setStretchFactor(0, 1);
     ui->splitter->setStretchFactor(1, 3);
+}
+
+/********************************************************/
+
+void ModbusTcpListener::setupEditor()
+{
+    ui->cmbTable->addItem(tr("Coils"), QModbusDataUnit::Coils);
+    ui->cmbTable->addItem(tr("Discrete Inputs"), QModbusDataUnit::DiscreteInputs);
+    ui->cmbTable->addItem(tr("Input Registers"), QModbusDataUnit::InputRegisters);
+    ui->cmbTable->addItem(tr("Holding Registers"), QModbusDataUnit::HoldingRegisters);
+    ui->cmbTable->setCurrentIndex(ui->cmbTable->findData(QModbusDataUnit::HoldingRegisters));
+
+    ui->spinAddress->setMaximum(REG_MAX);
+
+    connect(ui->cmbTable, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &ModbusTcpListener::updateEditorStatus);
+    connect(ui->btnValueRead, &QAbstractButton::clicked,
+            this, &ModbusTcpListener::doReadValue);
+    connect(ui->btnValueWrite, &QAbstractButton::clicked,
+            this, &ModbusTcpListener::doWriteValue);
+
+    updateEditorStatus();
 }
 
 /********************************************************/

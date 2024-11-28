@@ -34,10 +34,14 @@ private slots:
     void printInfo(const QString& host, const QString& msg);
     void printMessage(const QString& host, const QString& msg);
     void printError(const QString& host, const QString& msg);
+    void updateEditorStatus();
+    void doReadValue();
+    void doWriteValue();
 
 private:
     /// configure UI default state
     void setupUiDefaultState();
+    void setupEditor();
     void updateStatus();
     void onCoilsUpdated(int address, int size);
     void onHoldingRegistersUpdated(int address, int size);

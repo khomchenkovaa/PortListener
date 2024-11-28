@@ -1,6 +1,7 @@
 #ifndef MODBUSHANDLERCONF_H
 #define MODBUSHANDLERCONF_H
 
+#include "modbushelper.h"
 #include "xcsvmodel.h"
 
 #include <QFile>
@@ -25,14 +26,6 @@ struct ModbusCsvConf
         UnitsColumn
     };
 
-    enum DataType {
-        UnkownType,
-        BinaryType, ///< Binary type
-        RealType,   ///< Real type (floating-point type)
-        DWordType,  ///< DWORD type(4-byte integer)
-        IntType     ///< 2-byte integer
-    };
-
     struct ModbusCsvConfItem {
         QString pin;    ///< Код KKS (The Item name of the communication signals. The format is “Signal name.Item name”)
         quint16 dn;     ///< Define the device number of the third-party device. A maximum of 15 devices can be numbered from 1 to 15.
@@ -48,26 +41,26 @@ struct ModbusCsvConf
         QString maxVal; ///< High limit
         QString units;  ///< Unit
 
-        DataType dataType() const {
+        Modbus::DataType dataType() const {
             switch(dt) {
-            case 4: return BinaryType;
+            case 4: return Modbus::BinaryType;
             case 5:
-            case 6: return IntType;
+            case 6: return Modbus::IntType;
             case 7:
-            case 8: return DWordType;
+            case 8: return Modbus::DWordType;
             case 13:
             case 14:
             case 15:
-            case 16: return RealType;
+            case 16: return Modbus::RealType;
             case 17:
             case 18:
             case 19:
             case 20:
             case 21:
-            case 22: return DWordType;
+            case 22: return Modbus::DWordType;
             default: break;
             }
-            return UnkownType;
+            return Modbus::UnkownType;
         }
 
         /**
@@ -77,10 +70,10 @@ struct ModbusCsvConf
          */
         quint16 addressInterval() const {
             switch (dataType()) {
-            case BinaryType: return 1;
-            case RealType:
-            case DWordType:  return 2;
-            case IntType:    return 1;
+            case Modbus::BinaryType: return 1;
+            case Modbus::RealType:
+            case Modbus::DWordType:  return 2;
+            case Modbus::IntType:    return 1;
             default: break;
             }
             return 0;

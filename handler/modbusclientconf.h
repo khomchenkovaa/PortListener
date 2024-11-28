@@ -1,12 +1,13 @@
 #ifndef MODBUSCLIENTCONF_H
 #define MODBUSCLIENTCONF_H
 
+#include "modbushelper.h"
 #include "xcsvmodel.h"
 
 #include <QFile>
 #include <QTextCodec>
 
-/// Communication list description
+/// Signal list description
 struct ModbusSigConf
 {
     enum {
@@ -17,19 +18,11 @@ struct ModbusSigConf
         DescrColumn
     };
 
-    enum DataType {
-        UnkownType,
-        BinaryType, ///< Binary type
-        RealType,   ///< Real type (floating-point type)
-        DWordType,  ///< DWORD type(4-byte integer)
-        IntType     ///< 2-byte integer
-    };
-
     struct ModbusSigConfItem {
         QString  pin;    ///< Код KKS (The Item name of the communication signals. The format is “Signal name.Item name”)
         quint16  ad;     ///< Start address of the signals
         quint16  avg;    ///< Average flag
-        DataType dt;     ///< Data type
+        Modbus::DataType dt;     ///< Data type
         QString  descr;  ///< Описание сигнала
 
         /**
@@ -39,10 +32,10 @@ struct ModbusSigConf
          */
         quint16 addressInterval() const {
             switch (dt) {
-            case BinaryType: return 1;
-            case RealType:
-            case DWordType:  return 2;
-            case IntType:    return 1;
+            case Modbus::BinaryType: return 1;
+            case Modbus::RealType:
+            case Modbus::DWordType:  return 2;
+            case Modbus::IntType:    return 1;
             default: break;
             }
             return 0;
@@ -66,14 +59,14 @@ struct ModbusSigConf
         }
     }
 
-    static DataType dataType(const QString& value) {
+    static Modbus::DataType dataType(const QString& value) {
         if (value.startsWith("F", Qt::CaseInsensitive)) {
-            return RealType;
+            return Modbus::RealType;
         }
         if (value.startsWith("I", Qt::CaseInsensitive)) {
-            return IntType;
+            return Modbus::IntType;
         }
-        return UnkownType;
+        return Modbus::UnkownType;
     }
 
     QList<ModbusSigConfItem> items;

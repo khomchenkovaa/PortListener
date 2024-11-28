@@ -7,13 +7,13 @@
     <x>0</x>
     <y>0</y>
     <width>734</width>
-    <height>442</height>
+    <height>528</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Modbus Tcp Server</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_5">
+  <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>
     <widget class="QSplitter" name="splitter">
      <property name="orientation">
@@ -91,6 +91,88 @@
              <widget class="QSpinBox" name="spinServerId">
               <property name="minimum">
                <number>1</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupBox">
+         <property name="title">
+          <string>Register Editor</string>
+         </property>
+         <layout class="QFormLayout" name="formLayout">
+          <item row="0" column="0">
+           <widget class="QLabel" name="lblTable">
+            <property name="text">
+             <string>Table</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QComboBox" name="cmbTable"/>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="lblValueType">
+            <property name="text">
+             <string>Value type</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QComboBox" name="cmbValueType"/>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="lblAddress">
+            <property name="text">
+             <string>Address</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QSpinBox" name="spinAddress">
+            <property name="maximum">
+             <number>2000</number>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="lblValue">
+            <property name="text">
+             <string>Value</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <layout class="QHBoxLayout" name="horizontalLayout_3">
+            <item>
+             <widget class="QLineEdit" name="editValue"/>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="chkValue">
+              <property name="text">
+               <string>On</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="4" column="1">
+           <layout class="QHBoxLayout" name="horizontalLayout_4">
+            <item>
+             <widget class="QPushButton" name="btnValueRead">
+              <property name="text">
+               <string>Read</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btnValueWrite">
+              <property name="text">
+               <string>Write</string>
               </property>
              </widget>
             </item>

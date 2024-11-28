@@ -53,15 +53,6 @@ ModbusTcpClient::~ModbusTcpClient()
 
 /********************************************************/
 
-union ModbusValue {
-    struct {
-        quint16 last;
-        quint16 first;
-    } in;
-    float   outFloat;
-    quint32 outInt;
-};
-
 void ModbusTcpClient::doModbusRequest()
 {
     if (m_ModbusDevice.state() == QModbusDevice::ConnectedState) {
@@ -86,8 +77,8 @@ void ModbusTcpClient::doModbusRequest()
                         if (reply->error() == QModbusDevice::NoError) {
                             const QModbusDataUnit unit = reply->result();
                             switch(item.dt) {
-                            case ModbusSigConf::RealType: {
-                                ModbusValue v;
+                            case Modbus::RealType: {
+                                Modbus::ModbusValue v;
                                 v.in.first = unit.value(0);
                                 v.in.last  = unit.value(1);
                                 auto host = QString("%1 [%2 %3]")
@@ -98,8 +89,8 @@ void ModbusTcpClient::doModbusRequest()
 //                                displayData << QString("%1;%2").arg(item.pin, info);
                                 printMessage(host, info);
                             } break;
-                            case ModbusSigConf::DWordType: {
-                                ModbusValue v;
+                            case Modbus::DWordType: {
+                                Modbus::ModbusValue v;
                                 v.in.first = unit.value(0);
                                 v.in.last  = unit.value(1);
                                 auto host = QString("%1 [%2 %3]")
@@ -110,7 +101,7 @@ void ModbusTcpClient::doModbusRequest()
 //                                displayData << QString("%1;%2").arg(item.pin, info);
                                 printMessage(host, info);
                             } break;
-                            case ModbusSigConf::IntType: {
+                            case Modbus::IntType: {
                                 quint16 val = unit.value(0);
                                 auto host = QString("%1 [%2]")
                                         .arg(item.pin)
