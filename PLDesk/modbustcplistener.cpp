@@ -205,6 +205,7 @@ void ModbusTcpListener::updateEditorStatus()
         }
         break;
     }
+    doReadValue();
 }
 
 /********************************************************/
@@ -324,6 +325,10 @@ void ModbusTcpListener::setupEditor()
     connect(ui->cmbTable, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &ModbusTcpListener::updateEditorStatus);
     connect(ui->btnValueRead, &QAbstractButton::clicked,
+            this, &ModbusTcpListener::doReadValue);
+    connect(ui->spinAddress, QOverload<int>::of(&QSpinBox::valueChanged),
+            this, &ModbusTcpListener::doReadValue);
+    connect(ui->cmbValueType, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &ModbusTcpListener::doReadValue);
     connect(ui->btnValueWrite, &QAbstractButton::clicked,
             this, &ModbusTcpListener::doWriteValue);
