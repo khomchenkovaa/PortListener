@@ -167,11 +167,13 @@ void ModbusTcpClient::doConnect()
     loadSigConfig();
 
     if (m_ModbusDevice.state() != QModbusDevice::UnconnectedState) {
-        initHandler(true);
-        connect(handler(), &MessageHandler::logMessage,
-                this, &ModbusTcpClient::printMessage);
-        connect(handler(), &MessageHandler::logError,
-                this, &ModbusTcpClient::printError);
+        if (handler()) {
+            initHandler(true);
+            connect(handler(), &MessageHandler::logMessage,
+                    this, &ModbusTcpClient::printMessage);
+            connect(handler(), &MessageHandler::logError,
+                    this, &ModbusTcpClient::printError);
+        }
     }
     const auto errors = handlerErrors();
     for (const auto &error : errors) {

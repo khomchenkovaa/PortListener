@@ -16,11 +16,10 @@ class ListenerWidget : public QWidget
         UdpActionHandler,
         TcpActionHandler,
         SocketActionHandler,
-        GateActionHandler,
-        ModbusActionHandler
+        GateActionHandler
     };
 
-    struct ListenerWidgetPrivate {
+    struct ListenerWidgetProtected {
         MessageHandler    *handler = Q_NULLPTR;
         MessageHandlerWgt *editor  = Q_NULLPTR;
     };
@@ -51,8 +50,8 @@ protected:
 protected:
     static QStringList handlers();
 
-private:
-    ListenerWidgetPrivate d;
+protected:
+    ListenerWidgetProtected d;
 };
 
 #endif // LISTENERWIDGET_H

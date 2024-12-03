@@ -187,13 +187,12 @@
           <bool>false</bool>
          </property>
          <property name="title">
-          <string>Action</string>
+          <string>Modbus L2COM</string>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_4">
-          <item>
-           <widget class="QComboBox" name="cmbHandler"/>
-          </item>
-         </layout>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_4"/>
         </widget>
        </item>
        <item>

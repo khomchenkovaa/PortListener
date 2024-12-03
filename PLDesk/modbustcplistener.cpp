@@ -3,7 +3,9 @@
 
 #include "iodecoder.h"
 #include "messagehandlerwgt.h"
+#include "modbushandler.h"
 #include "modbushandlerconf.h"
+#include "modbushandlerwidget.h"
 
 #include <QHostAddress>
 #include <QTcpSocket>
@@ -37,14 +39,14 @@ ModbusTcpListener::ModbusTcpListener(QWidget *parent) :
 
     setupEditor();
 
-    ui->cmbHandler->addItems(handlers());
+    ui->boxAction->setChecked(false);
 
     connect(ui->btnConnect, &QAbstractButton::clicked,
             this, &ModbusTcpListener::doConnect);
     connect(ui->btnDisconnect, &QAbstractButton::clicked,
             this, &ModbusTcpListener::doDisconnect);
-    connect(ui->cmbHandler, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &ModbusTcpListener::changeHandler);
+    connect(ui->boxAction, &QGroupBox::clicked,
+            this, &ModbusTcpListener::activateHandler);
 
     setupUiDefaultState();
 
@@ -101,11 +103,13 @@ void ModbusTcpListener::doConnect()
                               .arg(m_ModbusDevice.errorString()));
     }
     if (m_ModbusDevice.state() == QModbusDevice::ConnectedState) {
-        initHandler(true);
-        connect(handler(), &MessageHandler::logMessage,
-                this, &ModbusTcpListener::printMessage);
-        connect(handler(), &MessageHandler::logError,
-                this, &ModbusTcpListener::printError);
+        if (handler()) {
+            initHandler(true);
+            connect(handler(), &MessageHandler::logMessage,
+                    this, &ModbusTcpListener::printMessage);
+            connect(handler(), &MessageHandler::logError,
+                    this, &ModbusTcpListener::printError);
+        }
     }
     const auto errors = handlerErrors();
     for (const auto &error : errors) {
@@ -126,11 +130,24 @@ void ModbusTcpListener::doDisconnect()
 
 /********************************************************/
 
-void ModbusTcpListener::changeHandler(int index)
+void ModbusTcpListener::activateHandler()
 {
-    auto editor = updateHandler(index);
-    if (editor) {
-        ui->boxAction->layout()->addWidget(editor);
+    if (d.editor) {
+        d.editor->deleteLater();
+        d.editor = Q_NULLPTR;
+    }
+    if (d.handler) {
+        d.handler->deleteLater();
+        d.handler = Q_NULLPTR;
+    }
+
+    if (ui->boxAction->isChecked()) {
+        d.handler = new ModbusHandler(this);
+        d.editor  = new ModbusHandlerWidget(this);
+    }
+
+    if (d.editor) {
+        ui->boxAction->layout()->addWidget(d.editor);
     }
 }
 
