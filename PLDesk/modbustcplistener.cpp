@@ -202,6 +202,7 @@ void ModbusTcpListener::updateEditorStatus()
             ui->cmbValueType->setCurrentIndex(0);
             ui->chkValue->setVisible(false);
             ui->editValue->setVisible(true);
+            ui->editValue->clear();
         }
         break;
     }
@@ -346,7 +347,7 @@ void ModbusTcpListener::updateStatus()
         ui->btnConnect->setVisible(false);
         ui->btnDisconnect->setVisible(true);
         ui->boxAction->setEnabled(false);
-        emit tabText(QString("Modbus TCP [%1]").arg(ui->spinPort->value()));
+        emit tabText(QString("Modbus TCP [%1:%2]").arg(ui->spinPort->value()).arg(ui->spinServerId->value()));
     } else {
         ui->lblConnection->setText(tr("<font color=\"black\">Choose TCP port to listen</font>"));
         ui->spinPort->setEnabled(true);

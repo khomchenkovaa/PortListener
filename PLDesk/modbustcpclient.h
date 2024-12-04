@@ -14,6 +14,12 @@ class ModbusTcpClient : public ListenerWidget
 {
     Q_OBJECT
 
+    struct ModbusTcpClientData {
+        QModbusTcpClient modbusDevice;
+        ModbusSigConf    conf;
+        QTimer           *timer = Q_NULLPTR;
+    };
+
 public:
     explicit ModbusTcpClient(QWidget *parent = nullptr);
     ~ModbusTcpClient();
@@ -22,6 +28,8 @@ signals:
     void tabText(const QString &label);
 
 public slots:
+    void doReadRequest();
+    void doWriteRequest();
     void doModbusRequest();
     void handleDeviceError(QModbusDevice::Error newError);
 
@@ -32,19 +40,18 @@ private slots:
     void printInfo(const QString& host, const QString& msg);
     void printMessage(const QString& host, const QString& msg);
     void printError(const QString& host, const QString& msg);
-    void openSigFileDialog();
     void onReadReady();
 
 private:
     /// configure UI default state
     void setupUiDefaultState();
+    void setupSingleRequestBlock();
+    void setupCycleRequestBlock();
     void updateStatus();
-    void loadSigConfig();
 
 private:
     Ui::ModbusTcpClient *ui;
-    QModbusTcpClient m_ModbusDevice;
-    ModbusSigConf conf;
+    ModbusTcpClientData  m;
 };
 
 #endif // MODBUSTCPCLIENT_H

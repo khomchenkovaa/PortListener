@@ -24,23 +24,6 @@ struct ModbusSigConf
         quint16  avg;    ///< Average flag
         Modbus::DataType dt;     ///< Data type
         QString  descr;  ///< Описание сигнала
-
-        /**
-         * The address interval between two 2-byte Analog signals is 1
-         * The address interval between two Binary signals is 1
-         * The address interval between two 4-byte Analog signals is 2
-         */
-        quint16 addressInterval() const {
-            switch (dt) {
-            case Modbus::BinaryType: return 1;
-            case Modbus::RealType:
-            case Modbus::DWordType:  return 2;
-            case Modbus::IntType:    return 1;
-            default: break;
-            }
-            return 0;
-        }
-
     };
 
     void load(const QString &fileName) {

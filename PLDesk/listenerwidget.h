@@ -19,7 +19,7 @@ class ListenerWidget : public QWidget
         GateActionHandler
     };
 
-    struct ListenerWidgetProtected {
+    struct ListenerWidgetData {
         MessageHandler    *handler = Q_NULLPTR;
         MessageHandlerWgt *editor  = Q_NULLPTR;
     };
@@ -51,7 +51,7 @@ protected:
     static QStringList handlers();
 
 protected:
-    ListenerWidgetProtected d;
+    ListenerWidgetData d;
 };
 
 #endif // LISTENERWIDGET_H

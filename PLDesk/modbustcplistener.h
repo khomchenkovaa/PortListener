@@ -6,8 +6,6 @@
 #include <QModbusTcpServer>
 #include <QBitArray>
 
-#define REG_MAX 2000
-
 namespace Ui {
 class ModbusTcpListener;
 }
