@@ -44,6 +44,7 @@ UdpListener::UdpListener(QWidget *parent) :
 
 UdpListener::~UdpListener()
 {
+    disconnect(this, nullptr, nullptr, nullptr);
     if (m_UdpSocket) {
         m_UdpSocket->close();
     }

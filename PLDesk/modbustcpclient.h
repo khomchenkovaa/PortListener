@@ -36,7 +36,7 @@ public slots:
 private slots:
     void doConnect();
     void doDisconnect();
-    void changeHandler(int index);
+    void activateHandler();
     void printInfo(const QString& host, const QString& msg);
     void printMessage(const QString& host, const QString& msg);
     void printError(const QString& host, const QString& msg);

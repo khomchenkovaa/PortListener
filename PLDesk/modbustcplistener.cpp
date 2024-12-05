@@ -22,6 +22,7 @@ ModbusTcpListener::ModbusTcpListener(QWidget *parent) :
     m_ModbusDevice(this)
 {
     ui->setupUi(this);
+    setupUiDefaultState();
 
     QModbusDataUnitMap reg;
     reg.insert(QModbusDataUnit::Coils, { QModbusDataUnit::Coils, 0, REG_MAX });
@@ -30,25 +31,24 @@ ModbusTcpListener::ModbusTcpListener(QWidget *parent) :
     reg.insert(QModbusDataUnit::HoldingRegisters, { QModbusDataUnit::HoldingRegisters, 0, REG_MAX });
     m_ModbusDevice.setMap(reg);
 
+    // connection block
     connect(&m_ModbusDevice, &QModbusServer::dataWritten,
             this, &ModbusTcpListener::onDataUpdated);
     connect(&m_ModbusDevice, &QModbusServer::stateChanged,
             this, &ModbusTcpListener::updateStatus);
     connect(&m_ModbusDevice, &QModbusServer::errorOccurred,
             this, &ModbusTcpListener::handleDeviceError);
-
-    setupEditor();
-
-    ui->boxAction->setChecked(false);
-
     connect(ui->btnConnect, &QAbstractButton::clicked,
             this, &ModbusTcpListener::doConnect);
     connect(ui->btnDisconnect, &QAbstractButton::clicked,
             this, &ModbusTcpListener::doDisconnect);
+
+    setupEditor();
+
+    // action block
+    ui->boxAction->setChecked(false);
     connect(ui->boxAction, &QGroupBox::clicked,
             this, &ModbusTcpListener::activateHandler);
-
-    setupUiDefaultState();
 
     updateStatus();
 }
@@ -57,9 +57,8 @@ ModbusTcpListener::ModbusTcpListener(QWidget *parent) :
 
 ModbusTcpListener::~ModbusTcpListener()
 {
-    if (m_ModbusDevice.state() == QModbusDevice::ConnectedState) {
-        m_ModbusDevice.disconnectDevice();
-    }
+    disconnect(this, nullptr, nullptr, nullptr);
+    doDisconnect();
     delete ui;
 }
 
@@ -123,7 +122,9 @@ void ModbusTcpListener::doConnect()
 
 void ModbusTcpListener::doDisconnect()
 {
-    m_ModbusDevice.disconnectDevice();
+    if (m_ModbusDevice.state() == QModbusDevice::ConnectedState) {
+        m_ModbusDevice.disconnectDevice();
+    }
     disconnectHandler();
     updateStatus();
 }
@@ -245,7 +246,7 @@ void ModbusTcpListener::doReadValue()
             Modbus::ModbusValue v;
             v.in.first = value;
             v.in.last  = value2;
-            ui->editValue->setText(QString::number(v.outInt));
+            ui->editValue->setText(QString::number(v.outUInt));
         }
         break;
     case Modbus::IntType:
@@ -288,7 +289,7 @@ void ModbusTcpListener::doWriteValue()
         if (regType == QModbusDataUnit::InputRegisters ||
                 regType == QModbusDataUnit::HoldingRegisters) {
             Modbus::ModbusValue v;
-            v.outInt = ui->editValue->text().toUInt();
+            v.outUInt = ui->editValue->text().toUInt();
             m_ModbusDevice.setData(regType, quint16(addr), v.in.first);
             m_ModbusDevice.setData(regType, quint16(addr+1), v.in.last);
         }

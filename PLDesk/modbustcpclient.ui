@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>805</width>
-    <height>689</height>
+    <height>712</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -215,7 +215,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QGroupBox" name="boxAction">
+        <widget class="QGroupBox" name="boxCycle">
          <property name="enabled">
           <bool>false</bool>
          </property>
@@ -309,6 +309,20 @@
            </layout>
           </item>
          </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="boxAction">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="title">
+          <string>File Handler</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayoutBoxAction"/>
         </widget>
        </item>
        <item>

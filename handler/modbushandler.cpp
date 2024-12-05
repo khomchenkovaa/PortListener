@@ -108,7 +108,7 @@ void ModbusHandler::processHoldingRegisters(PMessage msg)
                         .arg(item.pin)
                         .arg(v.in.first, 4, 16, QLatin1Char('0'))
                         .arg(v.in.last, 4, 16, QLatin1Char('0'));
-                auto info = QString::number(v.outInt);
+                auto info = QString::number(v.outUInt);
                 displayData << QString("%1;%2").arg(item.pin, info);
                 emit logMessage(host, info);
             } break;

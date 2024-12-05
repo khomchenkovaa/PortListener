@@ -43,6 +43,7 @@ SocketListener::SocketListener(QWidget *parent) :
 
 SocketListener::~SocketListener()
 {
+    disconnect(this, nullptr, nullptr, nullptr);
     m_LocalServer.close();
     delete ui;
 }

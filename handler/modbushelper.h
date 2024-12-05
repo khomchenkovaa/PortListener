@@ -3,6 +3,8 @@
 
 #include <QtGlobal>
 
+#include <QVector>
+
 #define REG_MAX 2000
 
 namespace Modbus {
@@ -13,7 +15,7 @@ union ModbusValue {
         quint16 first;
     } in;
     float   outFloat;
-    quint32 outInt;
+    quint32 outUInt;
 };
 
 enum DataType {
@@ -38,6 +40,22 @@ inline quint16 dataTypeSizeOf(DataType dt, quint16 valDefault = 1) {
     default: break;
     }
     return valDefault;
+}
+
+inline float takeFloat(const QVector<quint16> &values) {
+    Q_ASSERT(values.size() == 2);
+    ModbusValue v;
+    v.in.first = values.constFirst();
+    v.in.last  = values.constLast();
+    return v.outFloat;
+}
+
+inline quint32 takeUInt(const QVector<quint16> &values) {
+    Q_ASSERT(values.size() == 2);
+    ModbusValue v;
+    v.in.first = values.constFirst();
+    v.in.last  = values.constLast();
+    return v.outUInt;
 }
 
 }

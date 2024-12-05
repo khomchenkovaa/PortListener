@@ -2,12 +2,27 @@
 #include "ui_modbustcpclient.h"
 
 #include "messagehandlerwgt.h"
+#include "filehandler.h"
+#include "filehandlerwidget.h"
 
 #include <QMessageBox>
 #include <QTimer>
 #include <QFileInfo>
 #include <QFileDialog>
 
+
+inline QString takeHost(const QString &sensor, const QVector<quint16> &vars) {
+    switch (vars.size()) {
+    case 1:
+        return QString("%1 [%2]").arg(sensor)
+                .arg(vars.constFirst(), 4, 16, QLatin1Char('0'));
+    case 2:
+        return QString("%1 [%2 %3]").arg(sensor)
+                .arg(vars.constFirst(), 4, 16, QLatin1Char('0'))
+                .arg(vars.constLast(), 4, 16, QLatin1Char('0'));
+    }
+    return sensor;
+}
 
 /********************************************************/
 
@@ -16,6 +31,7 @@ ModbusTcpClient::ModbusTcpClient(QWidget *parent) :
     ui(new Ui::ModbusTcpClient)
 {
     ui->setupUi(this);
+    setupUiDefaultState();
 
     // connection block
     connect(&m.modbusDevice, &QModbusClient::stateChanged,
@@ -29,7 +45,11 @@ ModbusTcpClient::ModbusTcpClient(QWidget *parent) :
 
     setupSingleRequestBlock();
     setupCycleRequestBlock();
-    setupUiDefaultState();
+
+    // action block
+    ui->boxAction->setChecked(false);
+    connect(ui->boxAction, &QGroupBox::clicked,
+            this, &ModbusTcpClient::activateHandler);
 
     updateStatus();
 }
@@ -38,6 +58,7 @@ ModbusTcpClient::ModbusTcpClient(QWidget *parent) :
 
 ModbusTcpClient::~ModbusTcpClient()
 {
+    disconnect(this, nullptr, nullptr, nullptr);
     delete ui;
 }
 
@@ -69,43 +90,31 @@ void ModbusTcpClient::doReadRequest()
                     const QModbusDataUnit unit = reply->result();
                     switch(valueType) {
                     case Modbus::RealType: {
-                        Modbus::ModbusValue v;
-                        v.in.first = unit.value(0);
-                        v.in.last  = unit.value(1);
-                        auto host = QString("%1 [%2 %3]")
-                                .arg(address)
-                                .arg(v.in.first, 4, 16, QLatin1Char('0'))
-                                .arg(v.in.last, 4, 16, QLatin1Char('0'));
-                        auto info = QString::number(v.outFloat, 'f', 3);
+                        auto arg = QVector<quint16>() << unit.value(0) << unit.value(1);
+                        auto val = Modbus::takeFloat(arg);
+                        auto host = takeHost(QString::number(address), arg);
+                        auto info = QString::number(val, 'f', 3);
                         ui->editValue->setText(info);
                         printMessage(host, info);
                     } break;
                     case Modbus::DWordType: {
-                        Modbus::ModbusValue v;
-                        v.in.first = unit.value(0);
-                        v.in.last  = unit.value(1);
-                        auto host = QString("%1 [%2 %3]")
-                                .arg(address)
-                                .arg(v.in.first, 4, 16, QLatin1Char('0'))
-                                .arg(v.in.last, 4, 16, QLatin1Char('0'));
-                        auto info = QString::number(v.outInt);
+                        auto arg = QVector<quint16>() << unit.value(0) << unit.value(1);
+                        auto val = Modbus::takeUInt(arg);
+                        auto host = takeHost(QString::number(address), arg);
+                        auto info = QString::number(val);
                         ui->editValue->setText(info);
                         printMessage(host, info);
                     } break;
                     case Modbus::IntType: {
                         quint16 val = unit.value(0);
-                        auto host = QString("%1 [%2]")
-                                .arg(address)
-                                .arg(val, 4, 16, QLatin1Char('0'));
+                        auto host = takeHost(QString::number(address), QVector<quint16>() << val);
                         auto info = QString::number(val);
                         ui->editValue->setText(info);
                         printMessage(host, info);
                     } break;
                     case Modbus::BinaryType: {
                         quint16 val = unit.value(0);
-                        auto host = QString("%1 [%2]")
-                                .arg(address)
-                                .arg(val, 4, 16, QLatin1Char('0'));
+                        auto host = takeHost(QString::number(address), QVector<quint16>() << val);
                         ui->chkValue->setChecked(val);
                         printMessage(host, val ? "on" : "off");
                     } break;
@@ -169,7 +178,7 @@ void ModbusTcpClient::doWriteRequest()
         if (regType == QModbusDataUnit::InputRegisters ||
                 regType == QModbusDataUnit::HoldingRegisters) {
             Modbus::ModbusValue v;
-            v.outInt = ui->editValue->text().toUInt();
+            v.outUInt = ui->editValue->text().toUInt();
             data << v.in.first << v.in.last;
         }
         break;
@@ -225,6 +234,7 @@ void ModbusTcpClient::doModbusRequest()
 
         auto time = QTime::currentTime().msecsSinceStartOfDay() / 1000;
         printMessage(host, QString::number(time));
+        doHandle(QString("%1\n").arg(time));
 
         const auto table =
                 static_cast<QModbusDataUnit::RegisterType>(ui->cmbTable->currentData().toInt());
@@ -242,37 +252,27 @@ void ModbusTcpClient::doModbusRequest()
                             const QModbusDataUnit unit = reply->result();
                             switch(item.dt) {
                             case Modbus::RealType: {
-                                Modbus::ModbusValue v;
-                                v.in.first = unit.value(0);
-                                v.in.last  = unit.value(1);
-                                auto host = QString("%1 [%2 %3]")
-                                        .arg(item.pin)
-                                        .arg(v.in.first, 4, 16, QLatin1Char('0'))
-                                        .arg(v.in.last, 4, 16, QLatin1Char('0'));
-                                auto info = QString::number(v.outFloat, 'f', 3);
-//                                displayData << QString("%1;%2").arg(item.pin, info);
+                                auto arg = QVector<quint16>() << unit.value(0) << unit.value(1);
+                                auto val = Modbus::takeFloat(arg);
+                                auto host = takeHost(item.pin, arg);
+                                auto info = QString::number(val, 'f', 3);
                                 printMessage(host, info);
+                                doHandle(QString("%1;%\n2").arg(item.pin, info));
                             } break;
                             case Modbus::DWordType: {
-                                Modbus::ModbusValue v;
-                                v.in.first = unit.value(0);
-                                v.in.last  = unit.value(1);
-                                auto host = QString("%1 [%2 %3]")
-                                        .arg(item.pin)
-                                        .arg(v.in.first, 4, 16, QLatin1Char('0'))
-                                        .arg(v.in.last, 4, 16, QLatin1Char('0'));
-                                auto info = QString::number(v.outInt);
-//                                displayData << QString("%1;%2").arg(item.pin, info);
+                                auto arg = QVector<quint16>() << unit.value(0) << unit.value(1);
+                                auto val = Modbus::takeUInt(arg);
+                                auto host = takeHost(item.pin, arg);
+                                auto info = QString::number(val);
                                 printMessage(host, info);
+                                doHandle(QString("%1;%2\n").arg(item.pin, info));
                             } break;
                             case Modbus::IntType: {
                                 quint16 val = unit.value(0);
-                                auto host = QString("%1 [%2]")
-                                        .arg(item.pin)
-                                        .arg(val, 4, 16, QLatin1Char('0'));
+                                auto host = takeHost(item.pin, QVector<quint16>() << val);
                                 auto info = QString::number(val);
-//                                displayData << QString("%1;%2").arg(item.pin, info);
                                 printMessage(host, info);
+                                doHandle(QString("%1;%2\n").arg(item.pin, info));
                             } break;
                             default:
                                 break;
@@ -327,15 +327,14 @@ void ModbusTcpClient::doConnect()
                               .arg(m.modbusDevice.errorString()));
     }
 
-    if (m.modbusDevice.state() != QModbusDevice::UnconnectedState) {
-        if (handler()) {
-            initHandler(true);
-            connect(handler(), &MessageHandler::logMessage,
-                    this, &ModbusTcpClient::printMessage);
-            connect(handler(), &MessageHandler::logError,
-                    this, &ModbusTcpClient::printError);
-        }
+    if (handler()) {
+        initHandler(true);
+        connect(handler(), &MessageHandler::logMessage,
+                this, &ModbusTcpClient::printMessage);
+        connect(handler(), &MessageHandler::logError,
+                this, &ModbusTcpClient::printError);
     }
+
     const auto errors = handlerErrors();
     for (const auto &error : errors) {
         printError(handlerName(), error);
@@ -355,11 +354,24 @@ void ModbusTcpClient::doDisconnect()
 
 /********************************************************/
 
-void ModbusTcpClient::changeHandler(int index)
+void ModbusTcpClient::activateHandler()
 {
-    auto editor = updateHandler(index);
-    if (editor) {
-        ui->boxAction->layout()->addWidget(editor);
+    if (d.editor) {
+        d.editor->deleteLater();
+        d.editor = Q_NULLPTR;
+    }
+    if (d.handler) {
+        d.handler->deleteLater();
+        d.handler = Q_NULLPTR;
+    }
+
+    if (ui->boxAction->isChecked()) {
+        d.handler = new FileHandler(this);
+        d.editor  = new FileHandlerWidget(this);
+    }
+
+    if (d.editor) {
+        ui->boxAction->layout()->addWidget(d.editor);
     }
 }
 
@@ -505,7 +517,8 @@ void ModbusTcpClient::updateStatus()
         ui->btnConnect->setVisible(false);
         ui->btnDisconnect->setVisible(true);
         ui->boxRequest->setEnabled(true);
-        ui->boxAction->setEnabled(true);
+        ui->boxCycle->setEnabled(true);
+        ui->boxAction->setEnabled(false);
         emit tabText(QString("Modbus Client [%1:%2]").arg(ui->spinPort->value()).arg(ui->spinServerId->value()));
     } else {
         ui->lblConnection->setText(tr("<font color=\"black\">Choose TCP port to connect</font>"));
@@ -513,6 +526,7 @@ void ModbusTcpClient::updateStatus()
         ui->btnConnect->setVisible(true);
         ui->btnDisconnect->setVisible(false);
         ui->boxRequest->setEnabled(false);
+        ui->boxCycle->setEnabled(false);
         ui->boxAction->setEnabled(true);
         emit tabText(QString("Modbus Client [-]"));
     }
