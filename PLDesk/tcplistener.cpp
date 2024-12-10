@@ -46,7 +46,7 @@ TcpListener::TcpListener(QWidget *parent) :
 TcpListener::~TcpListener()
 {
     disconnect(this, nullptr, nullptr, nullptr);
-    m_TcpServer.close();
+    doDisconnect();
     delete ui;
 }
 
@@ -55,10 +55,13 @@ TcpListener::~TcpListener()
 void TcpListener::onNewConnection()
 {
     auto clientSocket = m_TcpServer.nextPendingConnection();
-    connect(clientSocket, &QTcpSocket::readyRead,
+    if (!clientSocket) return;
+    connect(clientSocket, &QAbstractSocket::readyRead,
            this, &TcpListener::onReadyRead);
-    connect(clientSocket, &QTcpSocket::stateChanged,
+    connect(clientSocket, &QAbstractSocket::stateChanged,
            this, &TcpListener::onTcpSocketStateChanged);
+    connect(this, &TcpListener::closeAll,
+            clientSocket, &QAbstractSocket::disconnectFromHost);
 
     printInfo(clientSocket->peerAddress().toString(),
               "connected to server !");
@@ -104,10 +107,12 @@ void TcpListener::doConnect()
     }
     if (m_TcpServer.isListening()) {
         initHandler(ui->rbBinary->isChecked());
-        connect(handler(), &MessageHandler::logMessage,
-                this, &TcpListener::printMessage);
-        connect(handler(), &MessageHandler::logError,
-                this, &TcpListener::printError);
+        if (handler()) {
+            connect(handler(), &MessageHandler::logMessage,
+                    this, &TcpListener::printMessage);
+            connect(handler(), &MessageHandler::logError,
+                    this, &TcpListener::printError);
+        }
     }
     const auto errors = handlerErrors();
     for (const auto &error : errors) {
@@ -121,6 +126,7 @@ void TcpListener::doConnect()
 void TcpListener::doDisconnect()
 {
     m_TcpServer.close();
+    emit closeAll();
     disconnectHandler();
     updateStatus();
 }
@@ -266,6 +272,13 @@ QByteArray TcpListener::processData(const QHostAddress &host, const QByteArray &
         reply = ioDecoder.fromUnicode(ui->editReply->text(), true);
         break;
     }
+
+    if (!reply.isEmpty()) {
+        QString replyData = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
+        // log reply data
+        printInfo(host.toString(), replyData);
+    }
+
     return reply;
 }
 

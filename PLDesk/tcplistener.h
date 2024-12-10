@@ -19,6 +19,7 @@ public:
 
 signals:
     void tabText(const QString &label);
+    void closeAll();
 
 public slots:
     void onNewConnection();
