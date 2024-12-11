@@ -2,8 +2,8 @@
 #define MODBUSTCPLISTENER_H
 
 #include "listenerwidget.h"
+#include "xmodbustcpserver.h"
 
-#include <QModbusTcpServer>
 #include <QBitArray>
 
 namespace Ui {
@@ -48,7 +48,7 @@ private:
 
 private:
     Ui::ModbusTcpListener *ui;
-    QModbusTcpServer m_ModbusDevice;
+    XModbusTcpServer m_ModbusDevice;
 };
 
 #endif // MODBUSTCPLISTENER_H

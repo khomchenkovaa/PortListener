@@ -23,3 +23,10 @@ SOURCES += \
     $$PWD/xdatetimeedit.cpp \
     $$PWD/xtextedit.cpp
 
+contains(QT, serialbus) {
+    HEADERS += \
+        $$PWD/xmodbustcpserver.h
+
+    SOURCES += \
+        $$PWD/xmodbustcpserver.cpp
+}
