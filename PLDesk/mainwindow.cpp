@@ -4,6 +4,7 @@
 #include "tcplistener.h"
 #include "udplistener.h"
 #include "socketlistener.h"
+#include "datasender.h"
 
 #ifdef QT_SERIALBUS_LIB
 #include "modbustcpclient.h"
@@ -100,6 +101,15 @@ void MainWindow::addModbusTcpClient()
 
 /********************************************************/
 
+void MainWindow::addDataSender()
+{
+    auto widget = new DataSender(this);
+    ui->tabWidget->addTab(widget, tr("Data Sender"));
+    ui->tabWidget->setCurrentWidget(widget);
+}
+
+/********************************************************/
+
 void MainWindow::setupUI()
 {
     connect(ui->btnTcp, &QPushButton::clicked,
@@ -123,6 +133,8 @@ void MainWindow::setupUI()
             this, &MainWindow::addModbusTcpServer);
     connect(ui->actionModbusTcpClient, &QAction::triggered,
             this, &MainWindow::addModbusTcpClient);
+    connect(ui->actionDataSender, &QAction::triggered,
+            this, &MainWindow::addDataSender);
 
 #ifndef QT_SERIALBUS_LIB
     ui->btnModbusTcpServer->setDisabled(true);

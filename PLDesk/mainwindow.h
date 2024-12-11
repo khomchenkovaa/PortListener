@@ -21,6 +21,7 @@ private slots:
     void addSocketListener();
     void addModbusTcpServer();
     void addModbusTcpClient();
+    void addDataSender();
 
 private:
     void setupUI();

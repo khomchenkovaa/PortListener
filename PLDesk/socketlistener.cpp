@@ -253,7 +253,7 @@ QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArr
     case ReplyType::ActionReply:
         // log reply data
         if (!reply.isEmpty()) {
-            QString replyData = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
+            QString replyData = ioDecoder.toUnicode(reply, ui->rbBinary->isChecked());
             printInfo(QString::number(socketDescriptor), replyData);
         }
         break;

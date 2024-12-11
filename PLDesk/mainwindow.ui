@@ -202,8 +202,15 @@
     <addaction name="actionModbusTcpServer"/>
     <addaction name="actionModbusTcpClient"/>
    </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>Tools</string>
+    </property>
+    <addaction name="actionDataSender"/>
+   </widget>
    <addaction name="menuConnect"/>
    <addaction name="menuModbus"/>
+   <addaction name="menuTools"/>
   </widget>
   <action name="actionTCP_port">
    <property name="text">
@@ -233,6 +240,11 @@
   <action name="actionModbusTcpClient">
    <property name="text">
     <string>Modbus TCP Client</string>
+   </property>
+  </action>
+  <action name="actionDataSender">
+   <property name="text">
+    <string>Data Sender</string>
    </property>
   </action>
  </widget>

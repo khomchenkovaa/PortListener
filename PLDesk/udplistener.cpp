@@ -235,7 +235,7 @@ QByteArray UdpListener::processData(const QHostAddress &host, const QByteArray &
     case ReplyType::ActionReply:
         // log reply data
         if (!reply.isEmpty()) {
-            QString replyData = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
+            QString replyData = ioDecoder.toUnicode(reply, ui->rbBinary->isChecked());
             printInfo(host.toString(), replyData);
         }
         break;
