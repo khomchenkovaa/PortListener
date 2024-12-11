@@ -93,6 +93,13 @@ void TcpListener::onReadyRead()
 
 /********************************************************/
 
+QTextBrowser *TcpListener::textLog() const
+{
+    return ui->textLog;
+}
+
+/********************************************************/
+
 void TcpListener::doConnect()
 {
     quint16 port = ui->spinPort->value();
@@ -106,8 +113,7 @@ void TcpListener::doConnect()
                               .arg(m_TcpServer.errorString()));
     }
     if (m_TcpServer.isListening()) {
-        initHandler(ui->rbBinary->isChecked());
-        if (handler()) {
+        if (initHandler(ui->rbBinary->isChecked())) {
             connect(handler(), &MessageHandler::logMessage,
                     this, &TcpListener::printMessage);
             connect(handler(), &MessageHandler::logError,
@@ -163,30 +169,6 @@ void TcpListener::changeHandler(int index)
     if (editor) {
         ui->boxAction->layout()->addWidget(editor);
     }
-}
-
-/********************************************************/
-
-void TcpListener::printInfo(const QString &host, const QString &msg)
-{
-    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkblue\">%2</font>")
-                        .arg(host, msg));
-}
-
-/********************************************************/
-
-void TcpListener::printMessage(const QString &host, const QString &msg)
-{
-    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkgreen\">%2</font>")
-                        .arg(host, msg));
-}
-
-/********************************************************/
-
-void TcpListener::printError(const QString &host, const QString &msg)
-{
-    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
-                        .arg(host, msg));
 }
 
 /********************************************************/
@@ -271,12 +253,13 @@ QByteArray TcpListener::processData(const QHostAddress &host, const QByteArray &
     case ReplyType::BinaryReply:
         reply = ioDecoder.fromUnicode(ui->editReply->text(), true);
         break;
-    }
-
-    if (!reply.isEmpty()) {
-        QString replyData = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
+    case ReplyType::ActionReply:
         // log reply data
-        printInfo(host.toString(), replyData);
+        if (!reply.isEmpty()) {
+            QString replyData = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
+            printInfo(host.toString(), replyData);
+        }
+        break;
     }
 
     return reply;

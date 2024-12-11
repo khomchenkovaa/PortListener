@@ -21,20 +21,20 @@ public:
 signals:
     void tabText(const QString &label);
 
-public slots:
+public Q_SLOTS:
     void onNewConnection();
     void onLocalSocketStateChanged(QLocalSocket::LocalSocketState socketState);
     void onReadyRead();
 
-private slots:
+protected:
+    QTextBrowser *textLog() const;
+
+private Q_SLOTS:
     void doConnect();
     void doDisconnect();
     void onInputFormatChanged();
     void changeReplyType(int index);
     void changeHandler(int index);
-    void printInfo(const QString& host, const QString& msg);
-    void printMessage(const QString& host, const QString& msg);
-    void printError(const QString& host, const QString& msg);
 
 private:
     /// configure UI default state

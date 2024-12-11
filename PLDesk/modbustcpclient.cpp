@@ -10,6 +10,7 @@
 #include <QFileInfo>
 #include <QFileDialog>
 
+/********************************************************/
 
 inline QString takeHost(const QString &sensor, const QVector<quint16> &vars) {
     switch (vars.size()) {
@@ -311,6 +312,13 @@ void ModbusTcpClient::handleDeviceError(QModbusDevice::Error newError)
 
 /********************************************************/
 
+QTextBrowser *ModbusTcpClient::textLog() const
+{
+    return ui->textLog;
+}
+
+/********************************************************/
+
 void ModbusTcpClient::doConnect()
 {
     QString host = ui->editHost->text();
@@ -327,8 +335,7 @@ void ModbusTcpClient::doConnect()
                               .arg(m.modbusDevice.errorString()));
     }
 
-    if (handler()) {
-        initHandler(true);
+    if (initHandler()) {
         connect(handler(), &MessageHandler::logMessage,
                 this, &ModbusTcpClient::printMessage);
         connect(handler(), &MessageHandler::logError,
@@ -373,30 +380,6 @@ void ModbusTcpClient::activateHandler()
     if (d.editor) {
         ui->boxAction->layout()->addWidget(d.editor);
     }
-}
-
-/********************************************************/
-
-void ModbusTcpClient::printInfo(const QString &host, const QString &msg)
-{
-    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkblue\">%2</font>")
-                        .arg(host, msg));
-}
-
-/********************************************************/
-
-void ModbusTcpClient::printMessage(const QString &host, const QString &msg)
-{
-    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkgreen\">%2</font>")
-                        .arg(host, msg));
-}
-
-/********************************************************/
-
-void ModbusTcpClient::printError(const QString &host, const QString &msg)
-{
-    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
-                        .arg(host, msg));
 }
 
 /********************************************************/

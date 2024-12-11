@@ -27,19 +27,19 @@ public:
 signals:
     void tabText(const QString &label);
 
-public slots:
+public Q_SLOTS:
     void doReadRequest();
     void doWriteRequest();
     void doModbusRequest();
     void handleDeviceError(QModbusDevice::Error newError);
 
-private slots:
+protected:
+    QTextBrowser *textLog() const;
+
+private Q_SLOTS:
     void doConnect();
     void doDisconnect();
     void activateHandler();
-    void printInfo(const QString& host, const QString& msg);
-    void printMessage(const QString& host, const QString& msg);
-    void printError(const QString& host, const QString& msg);
     void onReadReady();
 
 private:

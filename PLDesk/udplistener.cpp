@@ -66,6 +66,13 @@ void UdpListener::readPendingDatagrams()
 
 /********************************************************/
 
+QTextBrowser *UdpListener::textLog() const
+{
+    return ui->textLog;
+}
+
+/********************************************************/
+
 void UdpListener::doConnect()
 {
     quint16 port = ui->spinPort->value();
@@ -82,11 +89,12 @@ void UdpListener::doConnect()
         m_UdpSocket = Q_NULLPTR;
     }
     if (m_UdpSocket) {
-        initHandler(ui->rbBinary->isChecked());
-        connect(handler(), &MessageHandler::logMessage,
-                this, &UdpListener::printMessage);
-        connect(handler(), &MessageHandler::logError,
-                this, &UdpListener::printError);
+        if (initHandler(ui->rbBinary->isChecked())) {
+            connect(handler(), &MessageHandler::logMessage,
+                    this, &UdpListener::printMessage);
+            connect(handler(), &MessageHandler::logError,
+                    this, &UdpListener::printError);
+        }
     }
     const auto errors = handlerErrors();
     for (const auto &error : errors) {
@@ -140,22 +148,6 @@ void UdpListener::changeHandler(int index)
     if (editor) {
         ui->boxAction->layout()->addWidget(editor);
     }
-}
-
-/********************************************************/
-
-void UdpListener::printMessage(const QString &host, const QString &msg)
-{
-    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkgreen\">%2</font>")
-                        .arg(host, msg));
-}
-
-/********************************************************/
-
-void UdpListener::printError(const QString &host, const QString &msg)
-{
-    ui->textLog->append(QString("%<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
-                        .arg(host, msg));
 }
 
 /********************************************************/
@@ -239,6 +231,13 @@ QByteArray UdpListener::processData(const QHostAddress &host, const QByteArray &
         break;
     case ReplyType::BinaryReply:
         reply = ioDecoder.fromUnicode(ui->editReply->text(), true);
+        break;
+    case ReplyType::ActionReply:
+        // log reply data
+        if (!reply.isEmpty()) {
+            QString replyData = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
+            printInfo(host.toString(), replyData);
+        }
         break;
     }
     return reply;

@@ -23,14 +23,15 @@ signals:
 public Q_SLOTS:
     void readPendingDatagrams();
 
+protected:
+    QTextBrowser *textLog() const;
+
 private Q_SLOTS:
     void doConnect();
     void doDisconnect();
     void onInputFormatChanged();
     void changeReplyType(int index);
     void changeHandler(int index);
-    void printMessage(const QString& host, const QString& msg);
-    void printError(const QString& host, const QString& msg);
 
 private:
     /// configure UI default state

@@ -92,6 +92,13 @@ void SocketListener::onReadyRead()
 
 /********************************************************/
 
+QTextBrowser *SocketListener::textLog() const
+{
+    return ui->textLog;
+}
+
+/********************************************************/
+
 void SocketListener::doConnect()
 {
     QString socketName = ui->editSocket->text();
@@ -104,11 +111,12 @@ void SocketListener::doConnect()
                               .arg(socketName, m_LocalServer.errorString()));
     }
     if (m_LocalServer.isListening()) {
-        initHandler(ui->rbBinary->isChecked());
-        connect(handler(), &MessageHandler::logMessage,
-                this, &SocketListener::printMessage);
-        connect(handler(), &MessageHandler::logError,
-                this, &SocketListener::printError);
+        if (initHandler(ui->rbBinary->isChecked())) {
+            connect(handler(), &MessageHandler::logMessage,
+                    this, &SocketListener::printMessage);
+            connect(handler(), &MessageHandler::logError,
+                    this, &SocketListener::printError);
+        }
     }
     const auto errors = handlerErrors();
     for (const auto &error : errors) {
@@ -158,30 +166,6 @@ void SocketListener::changeHandler(int index)
     if (editor) {
         ui->boxAction->layout()->addWidget(editor);
     }
-}
-
-/********************************************************/
-
-void SocketListener::printInfo(const QString &host, const QString &msg)
-{
-    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkblue\">%2</font>")
-                        .arg(host, msg));
-}
-
-/********************************************************/
-
-void SocketListener::printMessage(const QString &host, const QString &msg)
-{
-    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkgreen\">%2</font>")
-                        .arg(host, msg));
-}
-
-/********************************************************/
-
-void SocketListener::printError(const QString &host, const QString &msg)
-{
-    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
-                        .arg(host, msg));
 }
 
 /********************************************************/
@@ -265,6 +249,13 @@ QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArr
         break;
     case ReplyType::BinaryReply:
         reply = ioDecoder.fromUnicode(ui->editReply->text(), true);
+        break;
+    case ReplyType::ActionReply:
+        // log reply data
+        if (!reply.isEmpty()) {
+            QString replyData = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
+            printInfo(QString::number(socketDescriptor), replyData);
+        }
         break;
     }
     return reply;

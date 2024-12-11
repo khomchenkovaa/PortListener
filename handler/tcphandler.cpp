@@ -21,18 +21,16 @@ TcpHandler::~TcpHandler()
 
 QByteArray TcpHandler::processData(const QByteArray &data)
 {
-    int sent = m_TcpSocket->write(data, data.length());
-    qDebug() << sent << "from" << data;
-    return QByteArray();
+    m_TcpSocket->write(data, data.length());
+    return m_TcpSocket->readAll();
 }
 
 /********************************************************/
 
 QByteArray TcpHandler::processData(const QString &data)
 {
-    int sent = m_TcpSocket->write(data.toUtf8());
-    qDebug() << sent << "from" << data;
-    return QByteArray();
+    m_TcpSocket->write(data.toUtf8());
+    return m_TcpSocket->readAll();
 }
 
 /********************************************************/

@@ -16,6 +16,8 @@
 #include "gatehandlerwidget.h"
 #include "modbushandlerwidget.h"
 
+#include <QTextBrowser>
+
 /********************************************************/
 
 ListenerWidget::ListenerWidget(QWidget *parent)
@@ -34,13 +36,14 @@ QString ListenerWidget::handlerName() const
 
 /********************************************************/
 
-void ListenerWidget::initHandler(bool binaryInput)
+bool ListenerWidget::initHandler(bool binaryInput)
 {
-    if (!d.handler) return;
+    if (!d.handler) return false;
     if (d.editor) {
         d.handler->setSettings(d.editor->settings());
     }
     d.handler->doConnect(binaryInput);
+    return true;
 }
 
 /********************************************************/
@@ -139,6 +142,38 @@ QStringList ListenerWidget::handlerErrors() const
 void ListenerWidget::clearErrors()
 {
     if (d.handler) d.handler->clearErrors();
+}
+
+/********************************************************/
+
+void ListenerWidget::printInfo(const QString &host, const QString &msg)
+{
+    printLog(QString("<font color=\"black\">%1 -> </font><font color=\"darkblue\">%2</font>")
+                      .arg(host, msg));
+}
+
+/********************************************************/
+
+void ListenerWidget::printMessage(const QString &host, const QString &msg)
+{
+    printLog(QString("<font color=\"black\">%1 -> </font><font color=\"darkgreen\">%2</font>")
+                      .arg(host, msg));
+}
+
+/********************************************************/
+
+void ListenerWidget::printError(const QString &host, const QString &msg)
+{
+    printLog(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
+                      .arg(host, msg));
+}
+
+/********************************************************/
+
+void ListenerWidget::printLog(const QString &msg)
+{
+    if (!textLog()) return;
+    textLog()->append(msg);
 }
 
 /********************************************************/

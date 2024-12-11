@@ -89,6 +89,13 @@ void ModbusTcpListener::handleDeviceError(QModbusDevice::Error newError)
 
 /********************************************************/
 
+QTextBrowser *ModbusTcpListener::textLog() const
+{
+    return ui->textLog;
+}
+
+/********************************************************/
+
 void ModbusTcpListener::doConnect()
 {
     quint16 port = ui->spinPort->value();
@@ -100,15 +107,11 @@ void ModbusTcpListener::doConnect()
                               tr("Modbus TCP Port %1 connection error!\n%2")
                               .arg(port)
                               .arg(m_ModbusDevice.errorString()));
-    }
-    if (m_ModbusDevice.state() == QModbusDevice::ConnectedState) {
-        if (handler()) {
-            initHandler(true);
-            connect(handler(), &MessageHandler::logMessage,
-                    this, &ModbusTcpListener::printMessage);
-            connect(handler(), &MessageHandler::logError,
-                    this, &ModbusTcpListener::printError);
-        }
+    } else if (initHandler()) {
+        connect(handler(), &MessageHandler::logMessage,
+                this, &ModbusTcpListener::printMessage);
+        connect(handler(), &MessageHandler::logError,
+                this, &ModbusTcpListener::printError);
     }
     const auto errors = handlerErrors();
     for (const auto &error : errors) {
@@ -150,30 +153,6 @@ void ModbusTcpListener::activateHandler()
     if (d.editor) {
         ui->boxAction->layout()->addWidget(d.editor);
     }
-}
-
-/********************************************************/
-
-void ModbusTcpListener::printInfo(const QString &host, const QString &msg)
-{
-    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkblue\">%2</font>")
-                        .arg(host, msg));
-}
-
-/********************************************************/
-
-void ModbusTcpListener::printMessage(const QString &host, const QString &msg)
-{
-    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"darkgreen\">%2</font>")
-                        .arg(host, msg));
-}
-
-/********************************************************/
-
-void ModbusTcpListener::printError(const QString &host, const QString &msg)
-{
-    ui->textLog->append(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
-                        .arg(host, msg));
 }
 
 /********************************************************/

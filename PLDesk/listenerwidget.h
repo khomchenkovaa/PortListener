@@ -5,6 +5,8 @@
 
 #include <QWidget>
 
+QT_FORWARD_DECLARE_CLASS(QTextBrowser)
+
 class ListenerWidget : public QWidget
 {
     Q_OBJECT
@@ -37,7 +39,7 @@ public:
 
 protected:
     QString handlerName() const;
-    void initHandler(bool binaryInput);
+    bool initHandler(bool binaryInput = true);
     void disconnectHandler();
     MessageHandler *handler() const;
     MessageHandlerWgt *updateHandler(int index);
@@ -46,6 +48,15 @@ protected:
     QByteArray doHandle(const QString& data);
     QStringList handlerErrors() const;
     void clearErrors();
+    virtual QTextBrowser *textLog() const {
+        return Q_NULLPTR;
+    }
+
+protected Q_SLOTS:
+    void printInfo(const QString& host, const QString& msg);
+    void printMessage(const QString& host, const QString& msg);
+    void printError(const QString& host, const QString& msg);
+    void printLog(const QString& msg);
 
 protected:
     static QStringList handlers();
