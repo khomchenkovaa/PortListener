@@ -36,6 +36,14 @@ QString ListenerWidget::handlerName() const
 
 /********************************************************/
 
+bool ListenerWidget::isHandlerConnected() const
+{
+    if (!d.handler) return false;
+    return d.handler->isConnected();
+}
+
+/********************************************************/
+
 bool ListenerWidget::initHandler(bool binaryInput)
 {
     if (!d.handler) return false;
@@ -66,6 +74,9 @@ MessageHandler *ListenerWidget::handler() const
 
 MessageHandlerWgt *ListenerWidget::updateHandler(int index)
 {
+    if (isHandlerConnected()) {
+        disconnectHandler();
+    }
     if (d.editor) {
         d.editor->deleteLater();
         d.editor = Q_NULLPTR;

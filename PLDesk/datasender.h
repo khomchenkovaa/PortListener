@@ -20,6 +20,7 @@ protected:
 
 private Q_SLOTS:
     void doSend();
+    void doConnect();
     void onInputFormatChanged();
     void changeHandler(int index);
 

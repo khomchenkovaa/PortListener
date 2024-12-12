@@ -21,7 +21,15 @@ TcpHandler::~TcpHandler()
 
 QByteArray TcpHandler::processData(const QByteArray &data)
 {
+    if (!isConnected()) {
+        addError("Not connected to Host");
+        return QByteArray();
+    }
     m_TcpSocket->write(data, data.length());
+    if (!m_TcpSocket->waitForBytesWritten()) {
+        addError("Cannot write binary data");
+        return QByteArray();
+    }
     return m_TcpSocket->readAll();
 }
 
@@ -29,7 +37,15 @@ QByteArray TcpHandler::processData(const QByteArray &data)
 
 QByteArray TcpHandler::processData(const QString &data)
 {
+    if (!isConnected()) {
+        addError("Not connected to Host");
+        return QByteArray();
+    }
     m_TcpSocket->write(data.toUtf8());
+    if (!m_TcpSocket->waitForBytesWritten()) {
+        addError("Cannot write text data");
+        return QByteArray();
+    }
     return m_TcpSocket->readAll();
 }
 
@@ -58,7 +74,11 @@ void TcpHandler::doConnect(bool binary)
     m_TcpSocket->connectToHost(host, port);
     m_TcpSocket->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
 
-    setConnected();
+    if (m_TcpSocket->waitForConnected()) {
+        setConnected();
+    } else {
+        addError("Connection error");
+    }
 }
 
 /********************************************************/
@@ -66,7 +86,7 @@ void TcpHandler::doConnect(bool binary)
 void TcpHandler::doDisconnect()
 {
     if (m_TcpSocket) {
-        m_TcpSocket->disconnectFromHost();
+        m_TcpSocket->close();
         m_TcpSocket->deleteLater();
         m_TcpSocket = Q_NULLPTR;
     }

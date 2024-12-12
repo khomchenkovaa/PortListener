@@ -39,6 +39,7 @@ public:
 
 protected:
     QString handlerName() const;
+    bool isHandlerConnected() const;
     bool initHandler(bool binaryInput = true);
     void disconnectHandler();
     MessageHandler *handler() const;

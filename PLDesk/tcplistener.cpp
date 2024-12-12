@@ -83,11 +83,14 @@ void TcpListener::onTcpSocketStateChanged(QAbstractSocket::SocketState socketSta
 
 void TcpListener::onReadyRead()
 {
-    QTcpSocket* sender = static_cast<QTcpSocket*>(QObject::sender());
-    QByteArray data = sender->readAll();
-    QByteArray replyData = processData(sender->peerAddress(), data);
+    auto sender = static_cast<QTcpSocket*>(QObject::sender());
+    auto data = sender->readAll();
+    auto replyData = processData(sender->peerAddress(), data);
     if (!replyData.isEmpty()) {
         sender->write(replyData);
+        if (!sender->waitForBytesWritten(1000)) {
+            printError(sender->peerAddress().toString(), "Problems with send reply");
+        }
     }
 }
 
@@ -124,6 +127,7 @@ void TcpListener::doConnect()
     for (const auto &error : errors) {
         printError(handlerName(), error);
     }
+
     updateStatus();
 }
 
@@ -238,6 +242,7 @@ QByteArray TcpListener::processData(const QHostAddress &host, const QByteArray &
     for (const auto &error : errors) {
         printError(host.toString(), error);
     }
+    clearErrors();
 
     // make reply
     switch (ui->cmbReplyType->currentIndex()) {

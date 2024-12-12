@@ -48,17 +48,8 @@ QTextBrowser *DataSender::textLog() const
 
 void DataSender::doSend()
 {
-    // do connnect
-    if (initHandler(ui->rbBinary->isChecked())) {
-        connect(handler(), &MessageHandler::logMessage,
-                this, &DataSender::printMessage);
-        connect(handler(), &MessageHandler::logError,
-                this, &DataSender::printError);
-    }
-    const auto connErrors = handlerErrors();
-    for (const auto &error : connErrors) {
-        printError(handlerName(), error);
-    }
+    // do connnect if not connected
+    if (!isHandlerConnected()) doConnect();
 
     // process data
     bool binary = ui->rbBinary->isChecked();
@@ -86,8 +77,23 @@ void DataSender::doSend()
         printInfo("<---", replyData);
     }
 
-    // do disconnect
-    disconnectHandler();
+    // do not disconnect
+}
+
+/********************************************************/
+
+void DataSender::doConnect()
+{
+    if (initHandler(ui->rbBinary->isChecked())) {
+        connect(handler(), &MessageHandler::logMessage,
+                this, &DataSender::printMessage);
+        connect(handler(), &MessageHandler::logError,
+                this, &DataSender::printError);
+    }
+    const auto connErrors = handlerErrors();
+    for (const auto &error : connErrors) {
+        printError(handlerName(), error);
+    }
 }
 
 /********************************************************/
