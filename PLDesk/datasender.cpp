@@ -57,7 +57,7 @@ void DataSender::doSend()
     IODecoder ioDecoder(mib);
 
     QString text = ui->editData->text();
-    printMessage("--->", text);
+    printMessage(handlerName(), text);
 
     QByteArray reply;
     if (binary) {
@@ -74,7 +74,7 @@ void DataSender::doSend()
     // log reply data
     if (!reply.isEmpty()) {
         QString replyData = ioDecoder.toUnicode(reply, binary);
-        printInfo("<---", replyData);
+        printReply(handlerName(), replyData);
     }
 
     // do not disconnect

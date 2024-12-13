@@ -56,6 +56,7 @@ protected:
 protected Q_SLOTS:
     void printInfo(const QString& host, const QString& msg);
     void printMessage(const QString& host, const QString& msg);
+    void printReply(const QString& host, const QString& msg);
     void printError(const QString& host, const QString& msg);
     void printLog(const QString& msg);
 

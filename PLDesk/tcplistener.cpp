@@ -63,8 +63,7 @@ void TcpListener::onNewConnection()
     connect(this, &TcpListener::closeAll,
             clientSocket, &QAbstractSocket::disconnectFromHost);
 
-    printInfo(clientSocket->peerAddress().toString(),
-              "connected to server !");
+    printInfo(clientSocket->peerAddress().toString(), "connected to server !");
 }
 
 /********************************************************/
@@ -73,8 +72,7 @@ void TcpListener::onTcpSocketStateChanged(QAbstractSocket::SocketState socketSta
 {
     if (socketState == QAbstractSocket::UnconnectedState) {
         QTcpSocket* clientSocket = static_cast<QTcpSocket*>(QObject::sender());
-        printInfo(clientSocket->peerAddress().toString(),
-                  "disconnected from server !");
+        printInfo(clientSocket->peerAddress().toString(), "disconnected from server !");
         clientSocket->deleteLater();
     }
 }
@@ -227,7 +225,7 @@ QByteArray TcpListener::processData(const QHostAddress &host, const QByteArray &
     int mib = ui->cmbCodec->itemData(ui->cmbCodec->currentIndex()).toInt();
     IODecoder ioDecoder(mib);
     QString displayData = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
-    QString displayHost = QString("[%1] %2").arg(QTime::currentTime().toString("hh:mm.ss")).arg(host.toString());
+    QString displayHost = host.toString();
 
     // log payload data
     printMessage(displayHost, displayData);
@@ -263,7 +261,7 @@ QByteArray TcpListener::processData(const QHostAddress &host, const QByteArray &
         // log reply data
         if (!reply.isEmpty()) {
             QString replyData = ioDecoder.toUnicode(reply, ui->rbBinary->isChecked());
-            printInfo(displayHost, replyData);
+            printReply(displayHost, replyData);
         }
         break;
     }

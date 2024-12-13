@@ -379,13 +379,13 @@ void ModbusTcpListener::onHoldingRegistersUpdated(int address, int size)
 
 void ModbusTcpListener::processCoils(int address, int size, const QBitArray &data)
 {
-    auto host = QString("[%1] Coils").arg(QTime::currentTime().toString("hh:mm:ss"));
+    const auto host = "Coils";
     QStringList dataInfo;
     for (int i=0; i<data.size(); ++i) {
         dataInfo << (data.testBit(i) ? "1" : "0");
     }
     auto info = QString("updated at %1 size %2 [ %3 ]").arg(address).arg(size).arg(dataInfo.join(","));
-    printInfo(host, info);
+    printMessage(host, info);
 
     auto msg = PMessage::create();
     msg->payload = data;
@@ -399,13 +399,13 @@ void ModbusTcpListener::processCoils(int address, int size, const QBitArray &dat
 
 void ModbusTcpListener::processHoldingRegisters(int address, int size, const QVariantList &data)
 {
-    auto host = QString("[%1] Holding registers").arg(QTime::currentTime().toString("hh:mm:ss"));
+    const auto host = "Holding registers";
     QStringList dataInfo;
     for (const auto &val : data) {
         dataInfo << QString("0x%1").arg(val.toUInt(), 4, 16, QLatin1Char('0'));
     }
     auto info = QString("updated at %1 size %2 [ %3 ]").arg(address).arg(size).arg(dataInfo.join(","));
-    printInfo(host, info);
+    printMessage(host, info);
 
     auto msg = PMessage::create();
     msg->payload = data;

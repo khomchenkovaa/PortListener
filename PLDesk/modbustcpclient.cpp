@@ -159,12 +159,14 @@ void ModbusTcpClient::doWriteRequest()
     int address  = ui->spinAddress->value();
 
     QVector<quint16> data;
+    QStringList displayData;
     switch (valueType) {
     case Modbus::BinaryType:
         if (regType == QModbusDataUnit::Coils ||
                 regType == QModbusDataUnit::DiscreteInputs) {
             quint16 value = ui->chkValue->isChecked();
             data << value;
+            displayData << (value ? "1" : "0");
         }
         break;
     case Modbus::RealType:
@@ -173,6 +175,7 @@ void ModbusTcpClient::doWriteRequest()
             Modbus::ModbusValue v;
             v.outFloat = ui->editValue->text().toDouble();
             data << v.in.first << v.in.last;
+            displayData << QString("0x%1").arg(v.in.first, 4, 16, QLatin1Char('0')) << QString("0x%1").arg(v.in.last, 4, 16, QLatin1Char('0'));
         }
         break;
     case Modbus::DWordType:
@@ -181,6 +184,7 @@ void ModbusTcpClient::doWriteRequest()
             Modbus::ModbusValue v;
             v.outUInt = ui->editValue->text().toUInt();
             data << v.in.first << v.in.last;
+            displayData << QString("0x%1").arg(v.in.first, 4, 16, QLatin1Char('0')) << QString("0x%1").arg(v.in.last, 4, 16, QLatin1Char('0'));
         }
         break;
     case Modbus::IntType:
@@ -188,6 +192,7 @@ void ModbusTcpClient::doWriteRequest()
                 regType == QModbusDataUnit::HoldingRegisters) {
             quint16 value = ui->editValue->text().toUInt();
             data << value;
+            displayData << QString("0x%1").arg(value, 4, 16, QLatin1Char('0'));
         }
         break;
     default:
@@ -197,13 +202,13 @@ void ModbusTcpClient::doWriteRequest()
     QModbusDataUnit request(regType, address, data);
     if (auto *response = m.modbusDevice.sendWriteRequest(request, serverId)) {
         if (!response->isFinished())
-            connect(response, &QModbusReply::finished, this, [this, address](){
+            connect(response, &QModbusReply::finished, this, [this, address, displayData](){
                 auto reply = qobject_cast<QModbusReply *>(sender());
                 if (!reply) return;
                 const QString serverAddress = QString::number(address);
 
                 if (reply->error() == QModbusDevice::NoError) {
-                    printMessage(serverAddress, tr("Write request done"));
+                    printMessage(serverAddress, tr("Write request done [ %1 ]").arg(displayData.join(",")));
 
                 } else if (reply->error() == QModbusDevice::ProtocolError) {
                     printError(serverAddress, tr("Write response error: %1 (Mobus exception: 0x%2)").
@@ -257,22 +262,22 @@ void ModbusTcpClient::doModbusRequest()
                                 auto val = Modbus::takeFloat(arg);
                                 auto host = takeHost(item.pin, arg);
                                 auto info = QString::number(val, 'f', 3);
-                                printMessage(host, info);
-                                doHandle(QString("%1;%\n2").arg(item.pin, info));
+                                printReply(host, info);
+                                doHandle(QString("%1;%2\n").arg(item.pin, info));
                             } break;
                             case Modbus::DWordType: {
                                 auto arg = QVector<quint16>() << unit.value(0) << unit.value(1);
                                 auto val = Modbus::takeUInt(arg);
                                 auto host = takeHost(item.pin, arg);
                                 auto info = QString::number(val);
-                                printMessage(host, info);
+                                printReply(host, info);
                                 doHandle(QString("%1;%2\n").arg(item.pin, info));
                             } break;
                             case Modbus::IntType: {
                                 quint16 val = unit.value(0);
                                 auto host = takeHost(item.pin, QVector<quint16>() << val);
                                 auto info = QString::number(val);
-                                printMessage(host, info);
+                                printReply(host, info);
                                 doHandle(QString("%1;%2\n").arg(item.pin, info));
                             } break;
                             default:

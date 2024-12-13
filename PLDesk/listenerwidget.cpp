@@ -158,25 +158,33 @@ void ListenerWidget::clearErrors()
 /********************************************************/
 
 void ListenerWidget::printInfo(const QString &host, const QString &msg)
-{
-    printLog(QString("<font color=\"black\">%1 -> </font><font color=\"darkblue\">%2</font>")
-                      .arg(host, msg));
+{ 
+    printLog(QString("<font color=\"black\">[%1] %2 -&gt; %3</font>")
+                      .arg(QTime::currentTime().toString("hh:mm:ss"), host, msg));
 }
 
 /********************************************************/
 
 void ListenerWidget::printMessage(const QString &host, const QString &msg)
 {
-    printLog(QString("<font color=\"black\">%1 -> </font><font color=\"darkgreen\">%2</font>")
-                      .arg(host, msg));
+    printLog(QString("<font color=\"black\">[%1] %2 -&gt; </font><font color=\"darkgreen\">%3</font>")
+             .arg(QTime::currentTime().toString("hh:mm:ss"), host, msg));
+}
+
+/********************************************************/
+
+void ListenerWidget::printReply(const QString &host, const QString &msg)
+{
+    printLog(QString("<font color=\"black\">[%1] %2 &lt;- </font><font color=\"darkblue\">%3</font>")
+             .arg(QTime::currentTime().toString("hh:mm:ss"), host, msg));
 }
 
 /********************************************************/
 
 void ListenerWidget::printError(const QString &host, const QString &msg)
 {
-    printLog(QString("<font color=\"black\">%1 -> </font><font color=\"red\">%2</font>")
-                      .arg(host, msg));
+    printLog(QString("<font color=\"black\">[%1] %2 -&gt; </font><font color=\"red\">%3</font>")
+                      .arg(QTime::currentTime().toString("hh:mm:ss"), host, msg));
 }
 
 /********************************************************/

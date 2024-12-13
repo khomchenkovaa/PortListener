@@ -254,7 +254,7 @@ QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArr
         // log reply data
         if (!reply.isEmpty()) {
             QString replyData = ioDecoder.toUnicode(reply, ui->rbBinary->isChecked());
-            printInfo(QString::number(socketDescriptor), replyData);
+            printReply(QString::number(socketDescriptor), replyData);
         }
         break;
     }
