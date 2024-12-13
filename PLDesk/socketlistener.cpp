@@ -231,6 +231,12 @@ QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArr
     } else {
         reply = doHandle(data);
     }
+    // log reply data
+    if (!reply.isEmpty()) {
+        QString replyData = ioDecoder.toUnicode(reply, ui->rbBinary->isChecked());
+        printReply(QString::number(socketDescriptor), replyData);
+    }
+    // log errors
     const auto errors = handlerErrors();
     for (const auto &error : errors) {
         printError(QString::number(socketDescriptor), error);
@@ -251,11 +257,6 @@ QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArr
         reply = ioDecoder.fromUnicode(ui->editReply->text(), true);
         break;
     case ReplyType::ActionReply:
-        // log reply data
-        if (!reply.isEmpty()) {
-            QString replyData = ioDecoder.toUnicode(reply, ui->rbBinary->isChecked());
-            printReply(QString::number(socketDescriptor), replyData);
-        }
         break;
     }
     return reply;

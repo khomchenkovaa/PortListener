@@ -213,6 +213,12 @@ QByteArray UdpListener::processData(const QHostAddress &host, const QByteArray &
     } else {
         reply = doHandle(data);
     }
+    // log reply data
+    if (!reply.isEmpty()) {
+        QString replyData = ioDecoder.toUnicode(reply, ui->rbBinary->isChecked());
+        printReply(host.toString(), replyData);
+    }
+    // log errors
     const auto errors = handlerErrors();
     for (const auto &error : errors) {
         printError(host.toString(), error);
@@ -233,11 +239,6 @@ QByteArray UdpListener::processData(const QHostAddress &host, const QByteArray &
         reply = ioDecoder.fromUnicode(ui->editReply->text(), true);
         break;
     case ReplyType::ActionReply:
-        // log reply data
-        if (!reply.isEmpty()) {
-            QString replyData = ioDecoder.toUnicode(reply, ui->rbBinary->isChecked());
-            printReply(host.toString(), replyData);
-        }
         break;
     }
     return reply;
