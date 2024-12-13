@@ -227,9 +227,10 @@ QByteArray TcpListener::processData(const QHostAddress &host, const QByteArray &
     int mib = ui->cmbCodec->itemData(ui->cmbCodec->currentIndex()).toInt();
     IODecoder ioDecoder(mib);
     QString displayData = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
+    QString displayHost = QString("[%1] %2").arg(QTime::currentTime().toString("hh:mm.ss")).arg(host.toString());
 
     // log payload data
-    printMessage(host.toString(), displayData);
+    printMessage(displayHost, displayData);
 
     QByteArray reply;
     // Handler
@@ -240,7 +241,7 @@ QByteArray TcpListener::processData(const QHostAddress &host, const QByteArray &
     }
     const auto errors = handlerErrors();
     for (const auto &error : errors) {
-        printError(host.toString(), error);
+        printError(displayHost, error);
     }
     clearErrors();
 
@@ -262,7 +263,7 @@ QByteArray TcpListener::processData(const QHostAddress &host, const QByteArray &
         // log reply data
         if (!reply.isEmpty()) {
             QString replyData = ioDecoder.toUnicode(reply, ui->rbBinary->isChecked());
-            printInfo(host.toString(), replyData);
+            printInfo(displayHost, replyData);
         }
         break;
     }
