@@ -392,6 +392,7 @@ void ModbusTcpListener::processCoils(int address, int size, const QBitArray &dat
     msg->payloadType = QMetaType::QBitArray;
     msg->headers.insert("address", address);
     msg->headers.insert("size", size);
+    msg->headers.insert("srv", m_ModbusDevice.serverAddress());
     doHandle(msg);
 }
 
@@ -412,6 +413,7 @@ void ModbusTcpListener::processHoldingRegisters(int address, int size, const QVa
     msg->payloadType = QMetaType::QVariantList;
     msg->headers.insert("address", address);
     msg->headers.insert("size", size);
+    msg->headers.insert("srv", m_ModbusDevice.serverAddress());
     doHandle(msg);
 }
 

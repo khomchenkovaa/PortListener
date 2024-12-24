@@ -80,7 +80,12 @@ struct ModbusCsvConf
         }
     };
 
-    void load(const QString &fileName) {
+    /**
+     * @brief load config
+     * @param fileName config file name in special csv format
+     * @param pt - load binary (true) or analog (false) signals
+     */
+    void load(const QString &fileName, bool pt = true) {
         XCsvModel csv;
         csv.setSource(fileName, true, ';', QTextCodec::codecForName("Windows-1251"));
         for (int i = 0; i < csv.rowCount(); ++i) {
@@ -100,7 +105,9 @@ struct ModbusCsvConf
             item.minVal = csv.data(csv.index(i, MinColumn)).toString().trimmed();
             item.maxVal = csv.data(csv.index(i, MaxColumn)).toString().trimmed();
             item.units  = csv.data(csv.index(i, UnitsColumn)).toString().trimmed();
-            items << item;
+            if (item.pt == pt) {
+                items << item;
+            }
         }
     }
 

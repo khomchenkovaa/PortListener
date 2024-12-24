@@ -2,9 +2,12 @@
 
 #include "modbushelper.h"
 
+#include <QCoreApplication>
 #include <QTextStream>
 #include <QDataStream>
 #include <QBitArray>
+#include <QFileInfo>
+#include <QDir>
 
 /********************************************************/
 
@@ -44,12 +47,14 @@ void ModbusHandler::processCoils(PMessage msg)
 {
     int  address = msg->headers.value("address").toInt();
     int  size    = msg->headers.value("size").toInt();
+    int  srv     = msg->headers.value("srv").toInt();
     auto data    = msg->payload.toBitArray();
 
     QStringList displayData;
     displayData << QString::number(msg->timestamp.time().msecsSinceStartOfDay() / 1000);
-    emit logMessage(msg->timestamp.date().toString(), msg->timestamp.time().toString());
     for (const auto &item : qAsConst(d.doConf.items)) {
+        if (srv != item.dn) continue; // only our server
+        if (!item.iot) continue;      // only input
         int idx = item.ad - address;
         if (idx >=0 && idx < size) {
             auto host = item.pin;
@@ -79,12 +84,14 @@ void ModbusHandler::processHoldingRegisters(PMessage msg)
 {
     int  address = msg->headers.value("address").toInt();
     int  size    = msg->headers.value("size").toInt();
+    int  srv     = msg->headers.value("srv").toInt();
     auto data    = msg->payload.toList();
 
     QStringList displayData;
     displayData << QString::number(msg->timestamp.time().msecsSinceStartOfDay() / 1000);
-    emit logMessage(msg->timestamp.date().toString(), msg->timestamp.time().toString());
     for (const auto &item : qAsConst(d.aoConf.items)) {
+        if (srv != item.dn) continue; // only our server
+        if (!item.iot) continue;      // only input
         int idx = item.ad - address;
         if (idx >=0 && idx < size) {
             switch(item.dataType()) {
@@ -148,19 +155,26 @@ void ModbusHandler::doConnect(bool binary)
     clearErrors();
     const auto aoCsvFileName = settings()->value(Settings::AoCsvFileName).toString();
     if (aoCsvFileName.isEmpty()) {
-        addError(tr("No AO CSV config file to open"));
+        addError(tr("No AO CSV config file is present"));
     }
-    d.aoConf.load(aoCsvFileName);
+    d.aoConf.load(aoCsvFileName, false);
 
-    const auto doCsvFileName = settings()->value(Settings::DoCsvFileName).toString();
+    auto doCsvFileName = settings()->value(Settings::DoCsvFileName).toString();
+    if (doCsvFileName.isEmpty()) {
+        addError(tr("No DO CSV config file is present. Use AO CSV config file"));
+        doCsvFileName = aoCsvFileName;
+    }
     if (doCsvFileName.isEmpty()) {
         addError(tr("No DO CSV config file to open"));
     }
-    d.doConf.load(doCsvFileName);
+    d.doConf.load(doCsvFileName, true);
 
-    const auto outFileName = settings()->value(Settings::OutFileName).toString();
+    auto outFileName = settings()->value(Settings::OutFileName).toString();
     if (outFileName.isEmpty()) {
-        addError(tr("No output file to open"));
+        const auto fileName = QString("prefix%1.txt").arg(QDate::currentDate().toString("_yyyy_MM_dd"));
+        const QFileInfo fileInfo(QDir(QCoreApplication::applicationDirPath()), fileName);
+        outFileName = fileInfo.absoluteFilePath();
+        addError(tr("No output file is present. Using %1 as output file").arg(fileName));
     }
     d.outFile.setFileName(outFileName);
     QIODevice::OpenMode flags;
@@ -173,7 +187,7 @@ void ModbusHandler::doConnect(bool binary)
         flags |= QIODevice::Text;
     }
     if (!d.outFile.open(flags)) {
-        addError(tr("Could not open file"));
+        addError(tr("Could not open output file"));
     }
     setConnected();
 }
