@@ -50,8 +50,6 @@ void ModbusHandler::processCoils(PMessage msg)
     int  srv     = msg->headers.value("srv").toInt();
     auto data    = msg->payload.toBitArray();
 
-    QStringList displayData;
-    displayData << QString::number(msg->timestamp.time().msecsSinceStartOfDay() / 1000);
     for (const auto &item : qAsConst(d.doConf.items)) {
         if (srv != item.dn) continue; // only our server
         if (!item.iot) continue;      // only input
@@ -59,23 +57,12 @@ void ModbusHandler::processCoils(PMessage msg)
         if (idx >=0 && idx < size) {
             auto host = item.pin;
             auto info = data.testBit(idx) ? "1" : "0";
-            displayData << QString("%1;%2").arg(host, info);
+            addOutValue(host, info);
             emit logMessage(host, info);
         }
     }
 
-    QString output;
-    QTextStream out(&output);
-    for (const auto &str : qAsConst(displayData)) {
-        out << str << Qt::endl;
-    }
-
-    if (isConnected() && d.outFile.isOpen()) {
-        QTextStream fout(&d.outFile);
-        fout << output;
-    } else {
-        emit logError(name(), tr("Cannot write data to file"));
-    }
+    printOutValues(msg->timestamp.time().msecsSinceStartOfDay() / 1000);
 }
 
 /********************************************************/
@@ -87,8 +74,6 @@ void ModbusHandler::processHoldingRegisters(PMessage msg)
     int  srv     = msg->headers.value("srv").toInt();
     auto data    = msg->payload.toList();
 
-    QStringList displayData;
-    displayData << QString::number(msg->timestamp.time().msecsSinceStartOfDay() / 1000);
     for (const auto &item : qAsConst(d.aoConf.items)) {
         if (srv != item.dn) continue; // only our server
         if (!item.iot) continue;      // only input
@@ -104,7 +89,7 @@ void ModbusHandler::processHoldingRegisters(PMessage msg)
                         .arg(v.in.first, 4, 16, QLatin1Char('0'))
                         .arg(v.in.last, 4, 16, QLatin1Char('0'));
                 auto info = QString::number(v.outFloat, 'f', 3);
-                displayData << QString("%1;%2").arg(item.pin, info);
+                addOutValue(item.pin, info);
                 emit logMessage(host, info);
             } break;
             case Modbus::DWordType: {
@@ -116,7 +101,7 @@ void ModbusHandler::processHoldingRegisters(PMessage msg)
                         .arg(v.in.first, 4, 16, QLatin1Char('0'))
                         .arg(v.in.last, 4, 16, QLatin1Char('0'));
                 auto info = QString::number(v.outUInt);
-                displayData << QString("%1;%2").arg(item.pin, info);
+                addOutValue(item.pin, info);
                 emit logMessage(host, info);
             } break;
             case Modbus::IntType: {
@@ -125,7 +110,7 @@ void ModbusHandler::processHoldingRegisters(PMessage msg)
                         .arg(item.pin)
                         .arg(val, 4, 16, QLatin1Char('0'));
                 auto info = QString::number(val);
-                displayData << QString("%1;%2").arg(item.pin, info);
+                addOutValue(item.pin, info);
                 emit logMessage(host, info);
             } break;
             default:
@@ -134,18 +119,7 @@ void ModbusHandler::processHoldingRegisters(PMessage msg)
         }
     }
 
-    QString output;
-    QTextStream out(&output);
-    for (const auto &str : qAsConst(displayData)) {
-        out << str << Qt::endl;
-    }
-
-    if (isConnected() && d.outFile.isOpen()) {
-        QTextStream fout(&d.outFile);
-        fout << output;
-    } else {
-        emit logError(name(), tr("Cannot write data to file"));
-    }
+    printOutValues(msg->timestamp.time().msecsSinceStartOfDay() / 1000);
 }
 
 /********************************************************/
@@ -200,6 +174,44 @@ void ModbusHandler::doDisconnect()
         d.outFile.close();
     }
     setDisconnected();
+}
+
+/********************************************************/
+
+void ModbusHandler::addOutValue(const QString &kks, const QString &value)
+{
+    if (d.allValues.value(kks).toString() != value) {
+        d.outValues.insert(kks, value);
+        d.allValues.insert(kks, value);
+    }
+}
+
+/********************************************************/
+
+void ModbusHandler::printOutValues(int sec)
+{
+    if (d.outValues.isEmpty()) return;
+
+    QString output;
+    QTextStream out(&output);
+
+    if (d.outSec != sec) {
+        d.outSec = sec;
+        out << QString::number(d.outSec) << Qt::endl;
+    }
+
+    for (auto i = d.outValues.constBegin(); i != d.outValues.constEnd(); i++) {
+        out << i.key() << ";" << i.value().toString() << Qt::endl;
+    }
+
+    d.outValues.clear();
+
+    if (isConnected() && d.outFile.isOpen()) {
+        QTextStream fout(&d.outFile);
+        fout << output;
+    } else {
+        emit logError(name(), tr("Cannot write data to file"));
+    }
 }
 
 /********************************************************/

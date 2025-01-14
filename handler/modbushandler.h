@@ -10,10 +10,13 @@ class ModbusHandler : public MessageHandler
 {
     Q_OBJECT
 
-    struct ModbusHandlerPrivate {
+    struct ModbusHandlerData {
         ModbusCsvConf aoConf; ///< analog output (holding registers)
         ModbusCsvConf doConf; ///< digital output (coins)
         QFile         outFile;
+        int           outSec = -1;
+        QVariantMap   allValues;
+        QVariantMap   outValues;
     };
 public:
     enum Settings {
@@ -34,7 +37,11 @@ public:
     void doDisconnect();
 
 private:
-    ModbusHandlerPrivate d;
+    void addOutValue(const QString &kks, const QString &value);
+    void printOutValues(int sec);
+
+private:
+    ModbusHandlerData d;
 };
 
 #endif // MODBUSHANDLER_H
