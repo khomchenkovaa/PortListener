@@ -24,34 +24,39 @@ QByteArray GateHandler::processData(const QByteArray &data)
 {
     clearErrors();
 
-    if (data.size() != d.defConf.size()) {
-        addError(tr("Wrong size of the incomming packet"));
+    QByteArray buff(data);
+    if (d.defConf.size() > data.size()) {
+        buff.append(d.defConf.size() - data.size(), '\0');
     }
 
     QString output;
     QTextStream out(&output);
 
     for (int i=0; i<d.defConf.fields(); ++i) {
-        if (d.defConf.type(i).compare("type_timeval") == 0) {
-            const QByteArray ba = data.mid(d.defConf.offset(i), 8);
+        switch(d.defConf.typeId(i)) {
+        case Gate::TIMEVAL: { // type_timeval
+            const QByteArray ba = buff.mid(d.defConf.offset(i), 8);
             QDataStream ds(ba);
             int time = 0;
             ds >> time;
             out << time << Qt::endl;
-        }
-        if (d.defConf.type(i).compare("type_ival") == 0) {
-            const QByteArray ba = data.mid(d.defConf.offset(i), 8);
-            QDataStream ds(ba);
-            qint64 value = 0;
-            ds >> value;
-            out << d.defConf.name(i) << " " << value << Qt::endl;
-        }
-        if (d.defConf.type(i).compare("type_rval") == 0) {
-            const QByteArray ba = data.mid(d.defConf.offset(i), 8);
+        } break;
+        case Gate::FLOATVALID: { // type_rval
+            const QByteArray ba = buff.mid(d.defConf.offset(i), 8);
             QDataStream ds(ba);
             qreal value = 0.0;
             ds >> value;
             out << d.defConf.name(i) << " " << value << Qt::endl;
+        } break;
+        case Gate::SDWORDVALID: { // type_ival
+            const QByteArray ba = buff.mid(d.defConf.offset(i), 8);
+            QDataStream ds(ba);
+            qint64 value = 0;
+            ds >> value;
+            out << d.defConf.name(i) << " " << value << Qt::endl;
+        } break;
+        default:
+            break;
         }
     }
 

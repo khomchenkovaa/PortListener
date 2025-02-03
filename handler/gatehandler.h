@@ -11,9 +11,9 @@ class GateHandler : public MessageHandler
     Q_OBJECT
 
     struct GateHandlerPrivate {
-        GateCsvConf csvConf;
-        GateDefConf defConf;
-        QFile       outFile;
+        Gate::CsvConf csvConf;
+        Gate::DefConf defConf;
+        QFile         outFile;
     };
 public:
     enum Settings {

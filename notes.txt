@@ -1,0 +1,14 @@
+# TODO list
+
+## Servers based on Qt
+
+* QBluetoothServer (Qt Bluetooth) - The QBluetoothServer class uses the RFCOMM or L2cap protocol to communicate with a Bluetooth device
+* QDBusServer (Qt D-Bus) - The QDBusServer class provides peer-to-peer communication between processes on the same computer
+* QSctpServer - The QSctpServer class provides an SCTP-based server
+* Qt Remote Objects - Qt Remote Objects (QtRO) is an Inter-Process Communication (IPC) module developed for Qt.
+
+## Servers based on libs
+
+* SNMP trap server
+
+## extend gates servers
