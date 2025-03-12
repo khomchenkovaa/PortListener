@@ -6,14 +6,18 @@
 
 #include <QFile>
 
+class DEPWorker;
+
+/// Data exchange protocol
 class DepHandler : public MessageHandler
 {
     Q_OBJECT
 
-    struct GateHandlerPrivate {
+    struct DepHandlerPrivate {
         Gate::CsvConf csvConf;
         Gate::DefConf defConf;
         QFile         outFile;
+        DEPWorker    *depWorker = Q_NULLPTR; ///< обьект для обработки (паковки/распаковки DEP-пакетов)
     };
 public:
     enum Settings {
@@ -32,7 +36,7 @@ public:
     void doDisconnect();
 
 private:
-    GateHandlerPrivate d;
+    DepHandlerPrivate d;
 };
 
 #endif // DEPHANDLER_H

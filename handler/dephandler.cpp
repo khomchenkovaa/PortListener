@@ -1,5 +1,7 @@
 #include "dephandler.h"
 
+#include "depworker.h"
+
 #include <QTextStream>
 #include <QDataStream>
 
@@ -103,6 +105,9 @@ void DepHandler::doConnect(bool binary)
     if (!d.outFile.open(flags)) {
         addError(tr("Could not open file"));
     }
+
+    d.depWorker = new DEPWorker(this);
+
     setConnected();
 }
 

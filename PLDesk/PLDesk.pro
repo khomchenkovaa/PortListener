@@ -56,6 +56,7 @@ contains(QT, serialbus) {
 }
 
 include("../common/ext/ext.pri")
+include("../common/depprotocol/depprotocol.pri")
 include("../messaging/messaging.pri")
 include("../handler/handler.pri")
 include("../handlerwgt/handlerwgt.pri")
