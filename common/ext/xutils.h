@@ -37,6 +37,65 @@ inline QString fromResource(const QString& fileName)
 }
 
 /******************************************************************/
+
+inline QByteArray readFile(const QString& fileName, QString* err = Q_NULLPTR) {
+    QFile file(fileName);
+    QByteArray result;
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        result = file.readAll();
+        file.close();
+    } else {
+        if (err) err->append(file.errorString());
+    }
+    return result;
+}
+
+/******************************************************************/
+
+inline QStringList parseCsvRow(QString& csv, QChar separator = ';') {
+    QStringList row;
+    QString field;
+    QChar quote;
+    QChar ch, buffer(0);
+    QTextStream stream(&csv, QIODevice::ReadOnly);
+    while(!stream.atEnd()) {
+        if(buffer != QChar(0)) {
+            ch = buffer;
+            buffer = QChar(0);
+        } else {
+            stream >> ch;
+        }
+        if(ch != separator && (ch.category() == QChar::Separator_Line || ch.category() == QChar::Separator_Paragraph || ch.category() == QChar::Other_Control)) {
+            row << field;
+            field.clear();
+            if(!row.isEmpty()) {
+                break;
+            }
+            row.clear();
+        } else if(ch == '"') {
+            quote = ch;
+            do {
+                stream >> ch;
+                if(ch == quote) {
+                    break;
+                }
+                field.append(ch);
+            } while(!stream.atEnd());
+        } else if(ch == separator) {
+            row << field;
+            field.clear();
+        } else {
+            field.append(ch);
+        }
+    }
+    if(!field.isEmpty()) {
+        row << field;
+    }
+
+    return row;
+}
+
+/******************************************************************/
 /**
  * @brief gets the root node of the object's hierarchy
  * @param item the member of the object's hierarchy

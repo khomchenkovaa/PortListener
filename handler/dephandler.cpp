@@ -1,11 +1,11 @@
-#include "gatehandler.h"
+#include "dephandler.h"
 
 #include <QTextStream>
 #include <QDataStream>
 
 /********************************************************/
 
-GateHandler::GateHandler(QObject *parent)
+DepHandler::DepHandler(QObject *parent)
     : MessageHandler(tr("Gate handler"), parent)
 {
 
@@ -13,14 +13,14 @@ GateHandler::GateHandler(QObject *parent)
 
 /********************************************************/
 
-GateHandler::~GateHandler()
+DepHandler::~DepHandler()
 {
-    GateHandler::doDisconnect();
+    DepHandler::doDisconnect();
 }
 
 /********************************************************/
 
-QByteArray GateHandler::processData(const QByteArray &data)
+QByteArray DepHandler::processData(const QByteArray &data)
 {
     clearErrors();
 
@@ -71,7 +71,7 @@ QByteArray GateHandler::processData(const QByteArray &data)
 
 /********************************************************/
 
-void GateHandler::doConnect(bool binary)
+void DepHandler::doConnect(bool binary)
 {
     clearErrors();
     const auto csvFileName = settings()->value(Settings::CsvFileName).toString();
@@ -108,7 +108,7 @@ void GateHandler::doConnect(bool binary)
 
 /********************************************************/
 
-void GateHandler::doDisconnect()
+void DepHandler::doDisconnect()
 {
     if (d.outFile.isOpen()) {
         d.outFile.close();

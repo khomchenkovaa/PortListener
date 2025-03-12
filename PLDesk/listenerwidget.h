@@ -18,7 +18,7 @@ class ListenerWidget : public QWidget
         UdpActionHandler,
         TcpActionHandler,
         SocketActionHandler,
-        GateActionHandler
+        DepActionHandler
     };
 
     struct ListenerWidgetData {

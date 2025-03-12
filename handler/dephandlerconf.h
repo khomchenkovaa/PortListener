@@ -1,8 +1,8 @@
-#ifndef GATEHANDLERCONF_H
-#define GATEHANDLERCONF_H
+#ifndef DEPHANDLERCONF_H
+#define DEPHANDLERCONF_H
 
 #include "xcsvmodel.h"
-#include "dbhandlerconf.h"
+#include "xutils.h"
 
 #include <QFile>
 #include <QTextCodec>
@@ -154,7 +154,7 @@ public:
                 state = 2;
                 continue;
             }
-            const auto values = CsvDbMapper::parseCsv(line, ',');
+            const auto values = Utils::parseCsvRow(line, ',');
             DefConfItem item;
             if (values.size() > NameColumn)    item.name    = values.at(NameColumn);
             if (values.size() > TypeColumn)    item.type    = values.at(TypeColumn);
@@ -225,4 +225,4 @@ private:
 
 } // namespace Gate
 
-#endif // GATEHANDLERCONF_H
+#endif // DEPHANDLERCONF_H

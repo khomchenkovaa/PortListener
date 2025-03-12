@@ -1,12 +1,12 @@
-#ifndef GATEHANDLER_H
-#define GATEHANDLER_H
+#ifndef DEPHANDLER_H
+#define DEPHANDLER_H
 
 #include "messagehandler.h"
-#include "gatehandlerconf.h"
+#include "dephandlerconf.h"
 
 #include <QFile>
 
-class GateHandler : public MessageHandler
+class DepHandler : public MessageHandler
 {
     Q_OBJECT
 
@@ -23,9 +23,9 @@ public:
         FileAppend
     };
 
-    explicit GateHandler(QObject *parent = nullptr);
+    explicit DepHandler(QObject *parent = nullptr);
 
-    ~GateHandler();
+    ~DepHandler();
 
     QByteArray processData(const QByteArray& data);
     void doConnect(bool binary = false);
@@ -35,4 +35,4 @@ private:
     GateHandlerPrivate d;
 };
 
-#endif // GATEHANDLER_H
+#endif // DEPHANDLER_H

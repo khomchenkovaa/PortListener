@@ -1,6 +1,8 @@
 #ifndef DBHANDLERCONF_H
 #define DBHANDLERCONF_H
 
+#include "xutils.h"
+
 #include <QString>
 #include <QVariant>
 #include <QDateTime>
@@ -100,7 +102,7 @@ class CsvDbMapper {
 public:
     bool load(const QString& fileName = ":/resources/datamapper.json") {
         clear();
-        QByteArray ba = readFile(fileName, &error);
+        QByteArray ba = Utils::readFile(fileName, &error);
         if (!error.isEmpty()) {
             return false;
         }
@@ -142,7 +144,7 @@ public:
     QVariantMap bindValues(const QString& prefix, QString& csv) {
         int i = findByPrefix(prefix);
         if (i != -1) {
-            QStringList parsedCsv = parseCsv(csv);
+            QStringList parsedCsv = Utils::parseCsvRow(csv);
             return datamapper.at(i).bindValues(parsedCsv);
         }
         return QVariantMap();
@@ -159,61 +161,6 @@ private:
     }
 
 public:
-    static QByteArray readFile(const QString& fileName, QString* err = Q_NULLPTR) {
-        QFile file(fileName);
-        QByteArray result;
-        if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            result = file.readAll();
-            file.close();
-        } else {
-            if (err) err->append(file.errorString());
-        }
-        return result;
-    }
-
-    static QStringList parseCsv(QString& csv, QChar separator = ';') {
-        QStringList row;
-        QString field;
-        QChar quote;
-        QChar ch, buffer(0);
-        QTextStream stream(&csv, QIODevice::ReadOnly);
-        while(!stream.atEnd()) {
-            if(buffer != QChar(0)) {
-                ch = buffer;
-                buffer = QChar(0);
-            } else {
-                stream >> ch;
-            }
-            if(ch != separator && (ch.category() == QChar::Separator_Line || ch.category() == QChar::Separator_Paragraph || ch.category() == QChar::Other_Control)) {
-                row << field;
-                field.clear();
-                if(!row.isEmpty()) {
-                    break;
-                }
-                row.clear();
-            } else if(ch == '"') {
-                quote = ch;
-                do {
-                    stream >> ch;
-                    if(ch == quote) {
-                        break;
-                    }
-                    field.append(ch);
-                } while(!stream.atEnd());
-            } else if(ch == separator) {
-                row << field;
-                field.clear();
-            } else {
-                field.append(ch);
-            }
-        }
-        if(!field.isEmpty()) {
-            row << field;
-        }
-
-        return row;
-    }
-
     static QPair<QString, QString> splitToPrefixAndCsv(const QString& source, const QString& delimeter = ":") {
         QString prefix;
         QString csv;

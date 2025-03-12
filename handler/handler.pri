@@ -4,9 +4,9 @@ DEPENDPATH += $$PWD
 HEADERS += \
     $$PWD/dbhandler.h \
     $$PWD/dbhandlerconf.h \
+    $$PWD/dephandler.h \
+    $$PWD/dephandlerconf.h \
     $$PWD/filehandler.h \
-    $$PWD/gatehandler.h \
-    $$PWD/gatehandlerconf.h \
     $$PWD/iodecoder.h \
     $$PWD/modbusclientconf.h \
     $$PWD/modbushandler.h \
@@ -18,8 +18,8 @@ HEADERS += \
 
 SOURCES += \
     $$PWD/dbhandler.cpp \
+    $$PWD/dephandler.cpp \
     $$PWD/filehandler.cpp \
-    $$PWD/gatehandler.cpp \
     $$PWD/iodecoder.cpp \
     $$PWD/modbushandler.cpp \
     $$PWD/sockhandler.cpp \

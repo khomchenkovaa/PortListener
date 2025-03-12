@@ -1,57 +1,57 @@
-#include "gatehandlerwidget.h"
-#include "ui_gatehandlerwidget.h"
+#include "dephandlerwidget.h"
+#include "ui_dephandlerwidget.h"
 
 #include <QFileInfo>
 #include <QFileDialog>
 
 /********************************************************/
 
-GateHandlerWidget::GateHandlerWidget(QWidget *parent) :
+DepHandlerWidget::DepHandlerWidget(QWidget *parent) :
     MessageHandlerWgt(parent),
-    ui(new Ui::GateHandlerWidget)
+    ui(new Ui::DepHandlerWidget)
 {
     ui->setupUi(this);
-    GateHandlerWidget::setSettings(SettingsMap());
+    DepHandlerWidget::setSettings(SettingsMap());
     connect(ui->btnCsvFile, &QAbstractButton::clicked,
-            this, &GateHandlerWidget::openCsvFileDialog);
+            this, &DepHandlerWidget::openCsvFileDialog);
     connect(ui->btnDefFile, &QAbstractButton::clicked,
-            this, &GateHandlerWidget::openDefFileDialog);
+            this, &DepHandlerWidget::openDefFileDialog);
     connect(ui->btnOutputFile, &QAbstractButton::clicked,
-            this, &GateHandlerWidget::openOutputFileDialog);
+            this, &DepHandlerWidget::openOutputFileDialog);
 }
 
 /********************************************************/
 
-GateHandlerWidget::~GateHandlerWidget()
+DepHandlerWidget::~DepHandlerWidget()
 {
     delete ui;
 }
 
 /********************************************************/
 
-SettingsMap GateHandlerWidget::settings() const
+SettingsMap DepHandlerWidget::settings() const
 {
     SettingsMap map;
-    map.insert(GateHandler::CsvFileName, ui->editCsvFile->text());
-    map.insert(GateHandler::DefFileName, ui->editDefFile->text());
-    map.insert(GateHandler::OutFileName, ui->editOutputFile->text());
-    map.insert(GateHandler::FileAppend, ui->chkAppend->isChecked());
+    map.insert(DepHandler::CsvFileName, ui->editCsvFile->text());
+    map.insert(DepHandler::DefFileName, ui->editDefFile->text());
+    map.insert(DepHandler::OutFileName, ui->editOutputFile->text());
+    map.insert(DepHandler::FileAppend, ui->chkAppend->isChecked());
     return map;
 }
 
 /********************************************************/
 
-void GateHandlerWidget::setSettings(const SettingsMap &map)
+void DepHandlerWidget::setSettings(const SettingsMap &map)
 {
-    ui->editCsvFile->setText(map.value(GateHandler::CsvFileName).toString());
-    ui->editDefFile->setText(map.value(GateHandler::DefFileName).toString());
-    ui->editOutputFile->setText(map.value(GateHandler::OutFileName).toString());
-    ui->chkAppend->setChecked(map.value(GateHandler::FileAppend, true).toBool());
+    ui->editCsvFile->setText(map.value(DepHandler::CsvFileName).toString());
+    ui->editDefFile->setText(map.value(DepHandler::DefFileName).toString());
+    ui->editOutputFile->setText(map.value(DepHandler::OutFileName).toString());
+    ui->chkAppend->setChecked(map.value(DepHandler::FileAppend, true).toBool());
 }
 
 /********************************************************/
 
-void GateHandlerWidget::openCsvFileDialog()
+void DepHandlerWidget::openCsvFileDialog()
 {
     QString dirPath = QCoreApplication::applicationDirPath();
     QString fileName = ui->editCsvFile->text();
@@ -70,7 +70,7 @@ void GateHandlerWidget::openCsvFileDialog()
 
 /********************************************************/
 
-void GateHandlerWidget::openDefFileDialog()
+void DepHandlerWidget::openDefFileDialog()
 {
     QString dirPath = QCoreApplication::applicationDirPath();
     QString fileName = ui->editDefFile->text();
@@ -89,7 +89,7 @@ void GateHandlerWidget::openDefFileDialog()
 
 /********************************************************/
 
-void GateHandlerWidget::openOutputFileDialog()
+void DepHandlerWidget::openOutputFileDialog()
 {
     QString dirPath = QCoreApplication::applicationDirPath();
     QString fileName = ui->editOutputFile->text();
