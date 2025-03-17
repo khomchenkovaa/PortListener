@@ -2,127 +2,89 @@
 
 #include "mathutils.h"
 #include "timeutils.h"
-#include "depstructs.h"
-#include "depenums.h"
 
-#include <QDataStream>
 #include <QDebug>
-
-DEPWorker::DEPWorker(QObject *parent)
-    : QObject(parent)
-{
-    setObjectName("depworker_obj");
-}
-
-void DEPWorker::addToBuffer(const QByteArray &ba)
-{
-    d.buffer.append(ba);
-    work();
-}
 
 void DEPWorker::work(bool try_next)
 {
-    if (bufferEmpty()) return;
+    if (d.buffer.isEmpty()) return;
     if (!try_next) {
-        emit signalMsg(QString("DEPWorker: try work received bytes, buffer size %1")
-                       .arg(buffSize()));
-    }
-    if (buffSize() < DEPHeader::byteSize()) {
-        qWarning("WARNING buff size < header size");
-        return;
+        emit signalMsg(QString("DEPWorker: try work received bytes, buffer size is %1")
+                       .arg(d.buffer.size()));
     }
 
     bool ok;
-    DEPHeader header;
-    tryGetHeader(header, ok);
+    DEPHeader header = tryGetHeader(ok);
     if (!ok) return;
-
-    tryGetBody(header, ok);
-}
-
-void DEPWorker::tryGetHeader(DEPHeader &header, bool &ok)
-{
-    ok = false;
-    if (buffSize() < DEPHeader::byteSize()) return;
-
-    QDataStream stream(d.buffer);
-    prepareStream(stream);
-    header.fromDataStream(stream);
-    if (header.validModule()) {
-        bool cs_ok = headerChecksumOk(header);
-        if (!cs_ok) {
-            emit signalError(QString("DEPWorker: invalid header checksum, %1")
-                             .arg(header.toStr()));
-            cutOutFirstValue();
-            tryGetHeader(header, ok);
-        } else {
-            // внешний заголовок успешно считан из m_buffer
-            ok = true;
-        }
-    } else {
-        cutOutFirstValue();
-        tryGetHeader(header, ok);
-    }
-}
-
-void DEPWorker::tryGetBody(const DEPHeader &header, bool &ok)
-{
-    //внешний заголовок был успешно считан
-    ok = false;
-    int p_size = lastPackSize(header);
-    if (buffSize() < p_size) {
-        //не хватает байт для чтения всего пакета целиком
-        emit signalError(QString("DEPWorker: buffer size (%1) < packet size (%2)")
-                         .arg(buffSize()).arg(p_size));
-        return;
-    }
-
-    qDebug() << Qt::endl << QString("DEPHeader OK: %1,  buffSize=%2").arg(header.toStr()).arg(buffSize());
-
-    QDataStream stream(d.buffer);
-    prepareStream(stream, DEPHeader::byteSize() + header.len);
-    stream >> d.packCS;
-
-    if (packChecksumOk(header)) {
-        ok = true;
-        // take body bytes
-        QByteArray body_ba(d.buffer.mid(DEPHeader::byteSize(), header.len));
-        // извлечь данные из тела пакета
+    if (isPackChecksumOk(header)) {
+        QByteArray body_ba(d.buffer.mid(DEPHeader::size(), header.len));
         parseBodyPacket(body_ba);
-    } else {
-        QString checkSum = Utils::uint32ToBAStr(d.packCS, true);
-        emit signalError(QString("DEPWorker: invalid checksum of all packet, %1")
-                         .arg(checkSum));
-        qWarning()<<QString("DEPWorker: WARNING - invalid packet checksum, %1").arg(checkSum);
     }
-    // удалить текущий пакет из m_buffer (независимо от правильности КС)
-    d.buffer.remove(0, lastPackSize(header));
+//    d.buffer.remove(0, header.packetSize());
+    d.buffer.clear();
+}
 
-    if (ok) {
-        //если все ок, то пытаемся читать следующий пакет сразу, на случай если в m_buffer есть еще данные
-        work(true);
+DEPHeader DEPWorker::tryGetHeader(bool &ok)
+{
+    DEPHeader result;
+    ok = false;
+
+    if (d.buffer.size() < DEPHeader::size()) {
+        emit signalError("DEPWorker: WARNING buff size < header size");
+        return result;
     }
+
+    while (!ok && d.buffer.size() >= DEPHeader::size()) {
+        const auto header = reinterpret_cast<const DEPHeader*>(d.buffer.data());
+        if (!header->isModuleValid()) {
+            emit signalError(QString("DEPWorker: invalid package header, %1")
+                             .arg(header->toString()));
+            // в случае ошибки чтения заголовка надо отрезать первое значение для повторной попытки
+            d.buffer.remove(0, sizeof(quint32));
+            continue;
+        }
+        if (!header->isChecksumOK()) {
+            emit signalError(QString("DEPWorker: invalid header checksum, %1")
+                             .arg(header->toString()));
+            // в случае ошибки чтения заголовка надо отрезать первое значение для повторной попытки
+            d.buffer.remove(0, sizeof(quint32));
+            continue;
+        }
+        // внешний заголовок успешно считан и валиден
+        emit signalMsg(QString("DEPWorker: header received, %1")
+                         .arg(header->toString()));
+        result.module = header->module;
+        result.len    = header->len;
+        result.cs     = header->cs;
+        ok = true;
+    }
+    return result;
 }
 
-bool DEPWorker::headerChecksumOk(const DEPHeader &header) const
+bool DEPWorker::isPackChecksumOk(const DEPHeader &header)
 {
-    if (buffSize() < DEPHeader::byteSize()) return false;
-    quint32 cs = qChecksum(d.buffer.data(), DEPHeader::byteSize()-depChecksumSize());
-    return (cs == header.cs);
-}
+    if (d.buffer.size() < (int)header.packetSize()) {
+        emit signalError(QString("DEPWorker: buffer size (%1) is less than packet size (%2)")
+                         .arg(d.buffer.size()).arg(header.packetSize()));
+        if (d.buffer.size() < (int)header.packetSizeWithoutCs()) {
+            emit signalError(QString("DEPWorker: buffer size (%1) is less than packet size without cs (%2)")
+                             .arg(d.buffer.size()).arg(header.packetSizeWithoutCs()));
+            return false;
+        } else {
+            emit signalMsg("DEPWorker: parse package without checksum");
+            return true;
+        }
+    }
 
-bool DEPWorker::packChecksumOk(const DEPHeader &header) const
-{
-    //размер всего полного пакета без КС в конце него
-    int n = DEPHeader::byteSize() + header.len;
-    quint32 cs = qChecksum(d.buffer.data(), n);
-    return (cs == d.packCS);
-}
-
-int DEPWorker::lastPackSize(const DEPHeader &header) const
-{
-    if (!header.validModule()) return -1;
-    return (DEPHeader::byteSize() + header.len + depChecksumSize());
+    // размер всего полного пакета без КС в конце него
+    quint32 checksum = qChecksum(d.buffer.data(), header.packetSizeWithoutCs());
+    // КС в конце пакета
+    quint32 packCS = *reinterpret_cast<quint32*>(d.buffer.data() + header.packetSizeWithoutCs());
+    if (checksum != packCS) {
+        emit signalError(QString("DEPWorker: invalid checksum of all packet, 0x%1").arg(packCS, 0, 16));
+        return false;
+    }
+    return true;
 }
 
 void DEPWorker::wrapPacket(QByteArray& packet_ba) const
@@ -132,7 +94,8 @@ void DEPWorker::wrapPacket(QByteArray& packet_ba) const
     //prepare stream for writing packet
     QByteArray ba;
     QDataStream stream(&ba, QIODevice::WriteOnly);
-    prepareStream(stream);
+    stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+    stream.setByteOrder(d.byteOrder);
 
     //prepare external header
     DEPHeader header(depsParamPacket);
@@ -155,46 +118,45 @@ void DEPWorker::parseBodyPacket(const QByteArray &ba)
 {
     //весь пакет был успешно считан, читаем теперь внутренний пакет
     d.lastSigType = -1;
-    if (ba.size() < DEPInternalHeader::byteSize()) {
+    if (ba.size() < DEPInternalHeader::size()) {
         emit signalError(QString("DEPWorker: too small body size(%1) < depInternalHeaderSize(%2)")
-                         .arg(ba.size()).arg(DEPInternalHeader::byteSize()));
+                         .arg(ba.size()).arg(DEPInternalHeader::size()));
         return;
     }
 
-    qDebug()<<QString("full packet OK: internal_pack_size %1, DEPInternalHeader size %2").arg(ba.size()).arg(DEPInternalHeader::byteSize());
-
-    //prepare data stream
-    QDataStream body_stream(ba);
-    prepareStream(body_stream);
+    emit signalMsg(QString("DEPWorker: packet OK. Internal_pack_size %1").arg(ba.size()));
 
     //read internal header
-    DEPInternalHeader i_header;
-    i_header.fromDataStream(body_stream);
-    qDebug()<<i_header.toStr();
-    if (int(i_header.header_len) >  DEPInternalHeader::byteSize()) {
-        w32_time_us t;
-        t.fromStream(body_stream);
-        t.dwLow *= 1000;
-        qDebug()<<QString("HEADER TIME_POINT:  ")<<t.toStr();
+    const DEPInternalHeader* intHeader = reinterpret_cast<const DEPInternalHeader*>(ba.data());
+    emit signalMsg(QString("DEPWorker: internal header received, %1")
+                     .arg(intHeader->toString()));
+
+    // read optional data
+    if (int(intHeader->headerSize) > DEPInternalHeader::size()) {
+         w32_time_us t = *reinterpret_cast<const w32_time_us*>(ba.data() + DEPInternalHeader::size());
+         t.dwLow *= 1000;
+         emit signalMsg(QString("DEPWorker: internal header timepoint, %1")
+                          .arg(t.toStr()));
     }
+
     //read parameters data
-    parseDataPacket(ba, i_header, body_stream);
+    parseDataPacket(ba, *intHeader);
 }
 
-void DEPWorker::parseDataPacket(const QByteArray &ba, const DEPInternalHeader &i_header, QDataStream &stream)
+void DEPWorker::parseDataPacket(const QByteArray &ba, const DEPInternalHeader &i_header)
 {
-    if (i_header.metod == ptIndividual) {
-        d.lastSigType = i_header.data_type;
-        if (i_header.param_count == 0) {
+    if (i_header.packType == ptIndividual) {
+        d.lastSigType = i_header.dataType;
+        if (i_header.paramCount == 0) {
             emit signalError(QString("DEPWorker: in internal header param_count == 0"));
             return;
         }
-        switch (i_header.data_type) {
+        switch (i_header.dataType) {
         case dpdtFloatValid:
-            readFloatValidData(ba, i_header, stream);
+            readFloatValidData(ba, i_header);
             break;
         case dpdtSDWordValid:
-            readSDWordValidData(ba, i_header, stream);
+            readSDWordValidData(ba, i_header);
             break;
         default:
             break;
@@ -202,62 +164,50 @@ void DEPWorker::parseDataPacket(const QByteArray &ba, const DEPInternalHeader &i
     }
 }
 
-void DEPWorker::readSDWordValidData(const QByteArray &ba, const DEPInternalHeader &i_header, QDataStream &stream)
+void DEPWorker::readSDWordValidData(const QByteArray &ba, const DEPInternalHeader &i_header)
 {
-    quint32 must_size = i_header.param_count * DEPSDWordValidRecord::REC_SIZE;
-    quint32 cur_size  = ba.size() - i_header.header_len;
+    quint32 must_size = i_header.paramCount * DEPSDWordValidRecord::REC_SIZE;
+    quint32 cur_size  = ba.size() - i_header.headerSize;
     if (must_size != cur_size) {
         emit signalError(QString("DEPWorker: invalid buff records(SDWord) size(%1), must be %2")
                          .arg(cur_size).arg(must_size));
         return;
     }
 
-    QByteArray view_ba;     ///< массив байт предназначенный для вьюхи, туда будут порциями(8 байт) складываться значения и валидности
-    QList<quint16> indexes; ///< список индексов-позиций параметров в пакете DEP для сопоставления с местом положения во вьюхе
-    for (int i=0; i<int(i_header.param_count); i++) {
-        DEPSDWordValidRecord rec;
-        rec.fromDataStream(stream);
+    QList<DEPSDWordValidRecord> result;
+    for (int i=0; i < int(i_header.paramCount); i++) {
         //позиция текущей записи(offset)
-        int rec_pos = i_header.header_len + DEPSDWordValidRecord::REC_SIZE*i;
-        view_ba.append(ba.mid(rec_pos+12, VIEW_PARAM_SIZE));
-        indexes.append(rec.pack_index);
+        int rec_pos = i_header.headerSize + DEPSDWordValidRecord::REC_SIZE * i;
+        auto rec = reinterpret_cast<const DEPSDWordValidRecord*>(ba.data() + rec_pos);
+        emit signalMsg(QString("DEPWorker: %1 record %2")
+                         .arg(i).arg(rec->toString()));
+        result << *rec;
     }
 
-    emit signalRewriteReceivedPacket(indexes, view_ba);
+    emit dataSDWordReceived(result);
 }
 
-void DEPWorker::readFloatValidData(const QByteArray &ba, const DEPInternalHeader &i_header, QDataStream &stream)
+void DEPWorker::readFloatValidData(const QByteArray &ba, const DEPInternalHeader &i_header)
 {
-    quint32 must_size = i_header.param_count*DEPFloatValidRecord::REC_SIZE;
-    quint32 cur_size  = ba.size() - i_header.header_len;
+    quint32 must_size = i_header.paramCount*DEPFloatValidRecord::REC_SIZE;
+    quint32 cur_size  = ba.size() - i_header.headerSize;
     if (must_size != cur_size) {
         emit signalError(QString("DEPWorker: invalid buff records(Float) size(%1), must be %2")
                          .arg(cur_size).arg(must_size));
         return;
     }
 
-    QByteArray view_ba;     ///< массив байт предназначенный для вьюхи, туда будут порциями(8 байт) складываться значения и валидности
-    QList<quint16> indexes; ///< список индексов-позиций параметров в пакете DEP для сопоставления с местом положения во вьюхе
-    for (int i=0; i<int(i_header.param_count); i++) {
-        DEPFloatValidRecord rec;
-        rec.fromDataStream(stream);
-        // позиция текущей записи(offset)
-        int rec_pos = i_header.header_len + DEPFloatValidRecord::REC_SIZE*i;
-        view_ba.append(ba.mid(rec_pos+12, VIEW_PARAM_SIZE));
-        indexes.append(rec.pack_index);
+    QList<DEPFloatValidRecord> result;
+    for (int i=0; i < int(i_header.paramCount); i++) {
+        //позиция текущей записи(offset)
+        int rec_pos = i_header.headerSize + DEPFloatValidRecord::REC_SIZE * i;
+        auto rec = reinterpret_cast<const DEPFloatValidRecord*>(ba.data() + rec_pos);
+        emit signalMsg(QString("DEPWorker: %1 record %2")
+                         .arg(i).arg(rec->toString()));
+        result << *rec;
     }
 
-    emit signalRewriteReceivedPacket(indexes, view_ba);
-}
-
-QByteArray DEPWorker::makeIntValidPacket(const QList<quint16> &indexes, const QByteArray &view_ba) const
-{
-    return makeDEPPacket(indexes, view_ba, dpdtSDWordValid);
-}
-
-QByteArray DEPWorker::makeFloatValidPacket(const QList<quint16> &indexes, const QByteArray &view_ba) const
-{
-    return makeDEPPacket(indexes, view_ba, dpdtFloatValid);
+    emit dataFloatReceived(result);
 }
 
 QByteArray DEPWorker::makeDEPPacket(const QList<quint16> &indexes, const QByteArray &view_ba, int p_type) const
@@ -265,7 +215,8 @@ QByteArray DEPWorker::makeDEPPacket(const QList<quint16> &indexes, const QByteAr
     //prepare data stream for pack BA
     QByteArray packet_ba;
     QDataStream body_stream(&packet_ba, QIODevice::WriteOnly);
-    prepareStream(body_stream);
+    body_stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+    body_stream.setByteOrder(d.byteOrder);
 
     //prepare internal header
     DEPInternalHeader i_header;
@@ -289,16 +240,4 @@ QByteArray DEPWorker::makeDEPPacket(const QList<quint16> &indexes, const QByteAr
     //make full DEP packet
     wrapPacket(packet_ba);
     return packet_ba;
-}
-
-void DEPWorker::prepareStream(QDataStream &stream, int skip_bytes) const
-{
-    stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
-    stream.setByteOrder((QDataStream::ByteOrder)d.byteOrder);
-    if (skip_bytes > 0) stream.skipRawData(skip_bytes);
-}
-
-void DEPWorker::cutOutFirstValue()
-{
-    d.buffer.remove(0, depChecksumSize());
 }

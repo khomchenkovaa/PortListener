@@ -35,29 +35,50 @@ class QDataStream;
  */
 struct DEPHeader
 {
-    uint32_t module = 0;  ///< елемент множества DEPSignatures
-    char     reserve[20]; ///< пустая область (резерв)
-    uint32_t len = 0;         ///< размер только внутренних данных, т.е. без учета размера этого внешнего заголовка и КС, которая находится в конце полного пакета
-    uint32_t cs  = 0;          ///< header checksum
+    quint32 module = depsParamPacket;  ///< елемент множества DEPSignatures
+    char    reserve[20];               ///< пустая область (резерв)
+    quint32 len = 0;                   ///< размер только внутренних данных, т.е. без учета размера этого внешнего заголовка и КС, которая находится в конце полного пакета
+    quint32 cs  = 0;                   ///< header checksum
 
     DEPHeader() {
-        for (int i=0; i<20; i++) reserve[i] = 0;
+        memset(reserve, 0, sizeof(reserve));
     }
 
-    DEPHeader(uint32_t m) {
+    DEPHeader(quint32 m) {
         module = m;
-        for (int i=0; i<20; i++) reserve[i] = 0;
+        memset(reserve, 0, sizeof(reserve));
     }
 
-    bool validModule() const {
+    bool isModuleValid() const {
         return (module == depsParamPacket || module == depsStubPacket);
     }
 
-    QString toStr() const;
-    void fromDataStream(QDataStream& stream);
-    void toStream(QDataStream& stream, bool without_cs);
+    bool isChecksumOK() const {
+        const auto buff = reinterpret_cast<const char *>(this);
+        quint32 sum = qChecksum(buff, DEPHeader::size() - sizeof(quint32));
+        return (cs == sum);
+    }
 
-    static int byteSize() {
+    QString toString() const;
+
+    /// @deprecated
+    void fromDataStream(QDataStream& stream);
+
+    /// @deprecated
+    void toStream(QDataStream& stream, bool without_cs = false);
+
+    /// размер всего полного пакета
+    quint32 packetSize() const {
+        return DEPHeader::size() + len + sizeof(quint32);
+    }
+
+    /// размер всего полного пакета без КС в конце него
+    quint32 packetSizeWithoutCs() const {
+        return DEPHeader::size() + len;
+    }
+
+    /// размер заголовка
+    static int size() {
         return (sizeof(module) + sizeof(reserve) + sizeof(len) + sizeof(cs));
     }
 };
@@ -65,25 +86,25 @@ struct DEPHeader
 /// dep protocol internal header
 struct DEPInternalHeader
 {
-    quint32 header_len  = 0; ///< Размер этого заголовка (+опциональные данные до начала параметров)
-    quint32 ver         = 0; ///< Версия (Сейчас 0x10000 = "0.1.0.0")
-    quint32 metod       = 0; ///< способ паковки DEPPackingType: 1 - Индивидуально, 2 - Массив (пока реализовано только для варианта - 1)
-    quint32 data_type   = 0; ///< данные: id типа данных  (елемент множества DEPDataType), пока реализовано только для типов: dpdtFloatValid, dpdtSDWordValid
-    quint32 common_time = 0; ///< тип общей метки времени: 0 - нет, или значение из множества DEPTimePoint
-    quint32 param_time  = 0; ///< тип индивидуальной метки времени параметров: аналогично предыдущему
-    quint32 start_index = 0; ///< Начальные индекс для паковки последовательным массивом (иначе 0)
-    quint32 param_count = 0; ///< Число параметров
+    quint32 headerSize = 0; ///< Размер этого заголовка (+опциональные данные до начала параметров)
+    quint32 version    = 0; ///< Версия (Сейчас 0x10000 = "0.1.0.0")
+    quint32 packType   = 0; ///< способ паковки DEPPackingType: 1 - Индивидуально, 2 - Массив (пока реализовано только для варианта - 1)
+    quint32 dataType   = 0; ///< данные: id типа данных  (елемент множества DEPDataType), пока реализовано только для типов: dpdtFloatValid, dpdtSDWordValid
+    quint32 commonTime = 0; ///< тип общей метки времени: 0 - нет, или значение из множества DEPTimePoint
+    quint32 paramTime  = 0; ///< тип индивидуальной метки времени параметров: аналогично предыдущему
+    quint32 startIndex = 0; ///< Начальные индекс для паковки последовательным массивом (иначе 0)
+    quint32 paramCount = 0; ///< Число параметров
 
-    QString toStr() const;
-    void fromDataStream(QDataStream&);
-    void toStream(QDataStream&);
+    QString toString() const;
+    void fromDataStream(QDataStream& stream);
+    void toStream(QDataStream& stream);
 
     /// инициализировать заголовок перед отправкой пакета
     void prepare(int p_type, int p_count, quint32 pos = 0);
 
-    static int byteSize() {
-        return (sizeof(header_len) + sizeof(ver) + sizeof(metod) + sizeof(data_type) +
-                sizeof(common_time) + sizeof(param_time) + sizeof(start_index) + sizeof(param_count));
+    static int size() {
+        return (sizeof(headerSize) + sizeof(version)   + sizeof(packType)   + sizeof(dataType) +
+                sizeof(commonTime) + sizeof(paramTime) + sizeof(startIndex) + sizeof(paramCount));
     }
 };
 
@@ -97,7 +118,7 @@ struct DEPFloatValidRecord
     float     value      = -1;
     qint32    validity   = 0;
 
-    QString toStr() const {
+    QString toString() const {
         return QString("DEPFloatValidRecord: pos=%1 value=%2 validity=%3")
                 .arg(pack_index).arg(value).arg(validity);
     }
@@ -114,6 +135,11 @@ struct DEPSDWordValidRecord
     QDateTime dt;
     qint32    value      = -1;
     qint32    validity   = 0;
+
+    QString toString() const {
+        return QString("DEPSDWordValidRecord: pos=%1 value=%2 validity=%3")
+                .arg(pack_index).arg(value).arg(validity);
+    }
 
     void fromDataStream(QDataStream&);
 };

@@ -1,9 +1,12 @@
 #ifndef DEP_WORKER_H
 #define DEP_WORKER_H
 
-#include <QObject>
+#include "depenums.h"
+#include "depstructs.h"
 
-class QDataStream;
+#include <QObject>
+#include <QDataStream>
+
 struct DEPHeader;
 struct DEPInternalHeader;
 
@@ -14,30 +17,29 @@ class DEPWorker : public QObject
 
     struct DEPWorkerData {
         QByteArray buffer;           ///< receiving bytes
-        int        byteOrder   = 0;
+        QDataStream::ByteOrder byteOrder = QDataStream::LittleEndian;
         quint32    packCS;           ///< контрольная сумма последнего пакета целиком
         int        lastSigType = -1; ///< переменная множества DEPDataType, хранит тип данных последнего успешно спарсенного пришедшего пакета
     };
 
 public:
-    DEPWorker(QObject *parent = NULL);
+    DEPWorker(QObject *parent = NULL) : QObject(parent) {
+        setObjectName("depworker_obj");
+    }
 
     QString name() const {
         return QString("DEP worker object");
     }
 
     /// добавить новые пришедшие байты в  текущий буфер m_buffer, затем выполнить work()
-    void addToBuffer(const QByteArray&);
+    void addToBuffer(const QByteArray& ba) {
+        d.buffer.append(ba);
+        work();
+    }
 
     /// устанавливает порядок байт для чтения из потока
     inline void setByteOrder(int b_order) {
-        d.byteOrder = b_order;
-    }
-    inline int buffSize() const {
-        return d.buffer.size();
-    }
-    inline bool bufferEmpty() const {
-        return d.buffer.isEmpty();
+        d.byteOrder = static_cast<QDataStream::ByteOrder>(b_order);
     }
     inline int lastReceivedType() const {
         return d.lastSigType;
@@ -47,13 +49,13 @@ public:
     }
 
     /// создать готовый пакет для отправки со значениями типа dpdtFloatValid
-    QByteArray makeFloatValidPacket(const QList<quint16>&, const QByteArray&) const;
+    QByteArray makeFloatValidPacket(const QList<quint16>& indexes, const QByteArray& view_ba) const {
+        return makeDEPPacket(indexes, view_ba, dpdtFloatValid);
+    }
 
     /// создать готовый пакет для отправки со значениями типа dpdtSDWordValid
-    QByteArray makeIntValidPacket(const QList<quint16>&, const QByteArray&) const;
-
-    static quint16 depChecksumSize() {
-        return sizeof(uint32_t);
+    QByteArray makeIntValidPacket(const QList<quint16>& indexes, const QByteArray& view_ba) const {
+        return makeDEPPacket(indexes, view_ba, dpdtSDWordValid);
     }
 
 signals:
@@ -62,6 +64,8 @@ signals:
      * далее он конвертируется в спец. QByteArray - формат понятный для вьюхи (xmlpack lib)
      */
     void signalRewriteReceivedPacket(const QList<quint16>&, const QByteArray&);
+    void dataFloatReceived(const QList<DEPFloatValidRecord>& data);
+    void dataSDWordReceived(const QList<DEPSDWordValidRecord>& data);
     void signalError(const QString& msg);
     void signalMsg(const QString& msg);
 
@@ -76,32 +80,23 @@ private:
     void work(bool try_next = false);
 
     // функции, которые выполняются при считывании пакетов из m_buffer
-    /// проверка контрольной суммы внешнего заголовка, стоящего в начале m_buffer
-    bool headerChecksumOk(const DEPHeader&) const;
-
     /// проверка контрольной суммы текущего читаемого пакета целиком
-    bool packChecksumOk(const DEPHeader&) const;
-
-    /// размер текущего читаемого пакета целиком (DEPHeader + body + cs)
-    int lastPackSize(const DEPHeader&) const;
+    bool isPackChecksumOk(const DEPHeader& header);
 
     /// попытаться найти валидный заголовок в начале m_buffer, 2-й парметр результат поиска
-    void tryGetHeader(DEPHeader&, bool&);
-
-    /// попытаться считать оставшееся тело пакета после заголовка из m_buffer
-    void tryGetBody(const DEPHeader&, bool&);
+    DEPHeader tryGetHeader(bool& ok);
 
     /// извлечь данные из тела пакета (т.е. без обертки)
-    void parseBodyPacket(const QByteArray&);
+    void parseBodyPacket(const QByteArray& ba);
 
     /// извлечь данные после заголовка из тела пакета (без обертки)
-    void parseDataPacket(const QByteArray&, const DEPInternalHeader&, QDataStream&);
+    void parseDataPacket(const QByteArray& ba, const DEPInternalHeader&i_header);
 
     /// распарсить данные типа dpdtFloatValid
-    void readFloatValidData(const QByteArray&, const DEPInternalHeader&, QDataStream&);
+    void readFloatValidData(const QByteArray& ba, const DEPInternalHeader& i_header);
 
     /// распарсить данные типа dpdtSDWordValid
-    void readSDWordValidData(const QByteArray&, const DEPInternalHeader&, QDataStream&);
+    void readSDWordValidData(const QByteArray& ba, const DEPInternalHeader& i_header);
 
     // make sending packets funcs
     /// обернуть готовый внутренний пакет в DEPHeader и checksum
@@ -109,12 +104,6 @@ private:
 
     /// make DEP packet by data type
     QByteArray makeDEPPacket(const QList<quint16>&, const QByteArray&, int) const;
-
-    /// в случае ошибки чтения заголовка надо отрезать первое значение сначала m_buffer для повторной попытки
-    void cutOutFirstValue();
-
-    /// установить параметры потока данных для чтения
-    void prepareStream(QDataStream&, int skip_bytes = 0) const;
 
 private:
     DEPWorkerData d;

@@ -14,8 +14,8 @@ DepHandlerWidget::DepHandlerWidget(QWidget *parent) :
     DepHandlerWidget::setSettings(SettingsMap());
     connect(ui->btnCsvFile, &QAbstractButton::clicked,
             this, &DepHandlerWidget::openCsvFileDialog);
-    connect(ui->btnDefFile, &QAbstractButton::clicked,
-            this, &DepHandlerWidget::openDefFileDialog);
+//    connect(ui->btnDefFile, &QAbstractButton::clicked,
+//            this, &DepHandlerWidget::openDefFileDialog);
     connect(ui->btnOutputFile, &QAbstractButton::clicked,
             this, &DepHandlerWidget::openOutputFileDialog);
 }
@@ -33,7 +33,7 @@ SettingsMap DepHandlerWidget::settings() const
 {
     SettingsMap map;
     map.insert(DepHandler::CsvFileName, ui->editCsvFile->text());
-    map.insert(DepHandler::DefFileName, ui->editDefFile->text());
+//    map.insert(DepHandler::DefFileName, ui->editDefFile->text());
     map.insert(DepHandler::OutFileName, ui->editOutputFile->text());
     map.insert(DepHandler::FileAppend, ui->chkAppend->isChecked());
     return map;
@@ -44,7 +44,7 @@ SettingsMap DepHandlerWidget::settings() const
 void DepHandlerWidget::setSettings(const SettingsMap &map)
 {
     ui->editCsvFile->setText(map.value(DepHandler::CsvFileName).toString());
-    ui->editDefFile->setText(map.value(DepHandler::DefFileName).toString());
+//    ui->editDefFile->setText(map.value(DepHandler::DefFileName).toString());
     ui->editOutputFile->setText(map.value(DepHandler::OutFileName).toString());
     ui->chkAppend->setChecked(map.value(DepHandler::FileAppend, true).toBool());
 }

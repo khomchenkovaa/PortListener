@@ -78,6 +78,24 @@ class CsvConf
         PointColumn
     };
 
+    struct CsvColumns {
+        int dataType = -1; ///< datatype column index
+        int id       = -1; ///< id column index: >=0 (otherwise error)
+        int extId    = -1; ///< extid column index: >=0 (otherwise not used)
+        int iId      = -1; ///< iid column index: >=0 (otherwise not used)
+        int kks      = -1; ///< kks column index: >=0 (otherwise not used)
+        int rtm      = -1; ///< rtm column index: >=0 (otherwise not used)
+
+        int maxIndex() const {
+            int result = qMax(dataType, id);
+            result = qMax(result, extId);
+            result = qMax(result, iId);
+            result = qMax(result, kks);
+            result = qMax(result, rtm);
+            return result;
+        }
+    };
+
     struct CsvConfItem {
         quint32 num;   ///< номер
         QString type;  ///< тип
@@ -88,9 +106,9 @@ class CsvConf
     };
 
 public:
-    void load(const QString &fileName) {
+    void load(const QString &fileName, QChar separator = ',', QTextCodec *codec = Q_NULLPTR) {
         XCsvModel csv;
-        csv.setSource(fileName, true, ',', QTextCodec::codecForName("Windows-1251"));
+        csv.setSource(fileName, true, separator, codec);
         for (int i = 0; i < csv.rowCount(); ++i) {
             CsvConfItem item;
             item.num   = csv.data(csv.index(i, NumColumn)).toUInt();
@@ -105,6 +123,7 @@ public:
 
 private:
     QList<CsvConfItem> items;
+    CsvColumns colIdx;
 };
 
 class DefConf {
@@ -217,7 +236,6 @@ public:
         if (idx < d.items.size()) return d.items.at(idx).offset;
         return 0;
     }
-
 
 private:
     DefConfItemPrivate d;
