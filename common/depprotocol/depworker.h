@@ -17,6 +17,7 @@ class DEPWorker : public QObject
 
     struct DEPWorkerData {
         QByteArray buffer;           ///< receiving bytes
+        QDataStream::FloatingPointPrecision precision = QDataStream::SinglePrecision;
         QDataStream::ByteOrder byteOrder = QDataStream::LittleEndian;
         quint32    packCS;           ///< контрольная сумма последнего пакета целиком
         int        lastSigType = -1; ///< переменная множества DEPDataType, хранит тип данных последнего успешно спарсенного пришедшего пакета

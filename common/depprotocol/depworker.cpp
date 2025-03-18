@@ -105,11 +105,12 @@ void DEPWorker::wrapPacket(QByteArray& packet_ba) const
     header.cs = qChecksum(ba.data(), ba.size());
     stream << header.cs;
 
-    //add body and cs of all packet
-    ba.append(packet_ba);
-    stream.skipRawData(header.len);
-    header.cs = qChecksum(ba.data(), ba.size());
-    stream << header.cs;
+    //add body of all packet
+    stream.writeRawData(packet_ba.data(), packet_ba.size());
+
+    //add cs of all packet
+    quint32 cs = qChecksum(ba.data(), ba.size());
+    stream << cs;
     packet_ba.clear();
     packet_ba.append(ba);
 }
@@ -133,10 +134,13 @@ void DEPWorker::parseBodyPacket(const QByteArray &ba)
 
     // read optional data
     if (int(intHeader->headerSize) > DEPInternalHeader::size()) {
-         w32_time_us t = *reinterpret_cast<const w32_time_us*>(ba.data() + DEPInternalHeader::size());
-         t.dwLow *= 1000;
-         emit signalMsg(QString("DEPWorker: internal header timepoint, %1")
-                          .arg(t.toStr()));
+        auto time_data = ba.mid(DEPInternalHeader::size(), sizeof (w32_time_us));
+        w32_time_us t;
+        QDataStream stream(time_data);
+        stream.setByteOrder(d.byteOrder);
+        t.fromStream(stream);
+        t.dwLow *= 1000;
+        emit signalMsg(QString("DEPWorker: internal header timepoint, %1").arg(t.toStr()));
     }
 
     //read parameters data
@@ -174,14 +178,15 @@ void DEPWorker::readSDWordValidData(const QByteArray &ba, const DEPInternalHeade
         return;
     }
 
+    QDataStream stream(ba);
+    stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+    stream.setByteOrder(d.byteOrder);
+    stream.skipRawData(i_header.headerSize);
     QList<DEPSDWordValidRecord> result;
-    for (int i=0; i < int(i_header.paramCount); i++) {
-        //позиция текущей записи(offset)
-        int rec_pos = i_header.headerSize + DEPSDWordValidRecord::REC_SIZE * i;
-        auto rec = reinterpret_cast<const DEPSDWordValidRecord*>(ba.data() + rec_pos);
-        emit signalMsg(QString("DEPWorker: %1 record %2")
-                         .arg(i).arg(rec->toString()));
-        result << *rec;
+    for (quint32 i=0; i < i_header.paramCount; i++) {
+        DEPSDWordValidRecord rec;
+        rec.fromDataStream(stream);
+        result << rec;
     }
 
     emit dataSDWordReceived(result);
@@ -189,7 +194,7 @@ void DEPWorker::readSDWordValidData(const QByteArray &ba, const DEPInternalHeade
 
 void DEPWorker::readFloatValidData(const QByteArray &ba, const DEPInternalHeader &i_header)
 {
-    quint32 must_size = i_header.paramCount*DEPFloatValidRecord::REC_SIZE;
+    quint32 must_size = i_header.paramCount * DEPFloatValidRecord::REC_SIZE;
     quint32 cur_size  = ba.size() - i_header.headerSize;
     if (must_size != cur_size) {
         emit signalError(QString("DEPWorker: invalid buff records(Float) size(%1), must be %2")
@@ -197,14 +202,15 @@ void DEPWorker::readFloatValidData(const QByteArray &ba, const DEPInternalHeader
         return;
     }
 
+    QDataStream stream(ba);
+    stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+    stream.setByteOrder(d.byteOrder);
+    stream.skipRawData(i_header.headerSize);
     QList<DEPFloatValidRecord> result;
-    for (int i=0; i < int(i_header.paramCount); i++) {
-        //позиция текущей записи(offset)
-        int rec_pos = i_header.headerSize + DEPFloatValidRecord::REC_SIZE * i;
-        auto rec = reinterpret_cast<const DEPFloatValidRecord*>(ba.data() + rec_pos);
-        emit signalMsg(QString("DEPWorker: %1 record %2")
-                         .arg(i).arg(rec->toString()));
-        result << *rec;
+    for (quint32 i=0; i < i_header.paramCount; i++) {
+        DEPFloatValidRecord rec;
+        rec.fromDataStream(stream);
+        result << rec;
     }
 
     emit dataFloatReceived(result);
@@ -215,7 +221,7 @@ QByteArray DEPWorker::makeDEPPacket(const QList<quint16> &indexes, const QByteAr
     //prepare data stream for pack BA
     QByteArray packet_ba;
     QDataStream body_stream(&packet_ba, QIODevice::WriteOnly);
-    body_stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+    body_stream.setFloatingPointPrecision(d.precision);
     body_stream.setByteOrder(d.byteOrder);
 
     //prepare internal header
@@ -231,11 +237,9 @@ QByteArray DEPWorker::makeDEPPacket(const QList<quint16> &indexes, const QByteAr
 
     //write params data
     for (int i=0; i<indexes.count(); i++) {
-        //qDebug()<<QString("float params: index %1").arg(indexes.at(i));
         body_stream << quint32(indexes.at(i));
         t.toStream(body_stream);
-        packet_ba.append(view_ba.mid(VIEW_PARAM_SIZE*i, VIEW_PARAM_SIZE));
-        body_stream.skipRawData(VIEW_PARAM_SIZE);
+        body_stream.writeRawData(view_ba.mid(VIEW_PARAM_SIZE*i, VIEW_PARAM_SIZE).data(), VIEW_PARAM_SIZE);
     }
     //make full DEP packet
     wrapPacket(packet_ba);

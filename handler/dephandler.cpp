@@ -115,6 +115,16 @@ void DepHandler::doConnect(bool binary)
     connect(d.depWorker, &DEPWorker::signalMsg, this, [this](const QString& msg){
         emit logMessage(name(), msg);
     });
+    connect(d.depWorker, &DEPWorker::dataFloatReceived, this, [this](const QList<DEPFloatValidRecord>& data){
+        for (const auto &rec : data) {
+            emit logMessage(name(), rec.toString());
+        }
+    });
+    connect(d.depWorker, &DEPWorker::dataSDWordReceived, this, [this](const QList<DEPSDWordValidRecord>& data){
+        for (const auto &rec : data) {
+            emit logMessage(name(), rec.toString());
+        }
+    });
 
     setConnected();
 }

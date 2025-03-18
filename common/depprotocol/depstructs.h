@@ -119,8 +119,8 @@ struct DEPFloatValidRecord
     qint32    validity   = 0;
 
     QString toString() const {
-        return QString("DEPFloatValidRecord: pos=%1 value=%2 validity=%3")
-                .arg(pack_index).arg(value).arg(validity);
+        return QString("DEPFloatValidRecord: {%1, %2, %3, %4}")
+                .arg(pack_index).arg(dt.toString()).arg(value).arg(validity);
     }
 
     void fromDataStream(QDataStream&);
@@ -137,8 +137,8 @@ struct DEPSDWordValidRecord
     qint32    validity   = 0;
 
     QString toString() const {
-        return QString("DEPSDWordValidRecord: pos=%1 value=%2 validity=%3")
-                .arg(pack_index).arg(value).arg(validity);
+        return QString("DEPSDWordValidRecord: {%1, %2, %3, %4}")
+                .arg(pack_index).arg(dt.toString()).arg(value).arg(validity);
     }
 
     void fromDataStream(QDataStream&);
