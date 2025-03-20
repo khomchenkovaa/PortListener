@@ -17,7 +17,7 @@ void DEPWorker::work(bool try_next)
     DEPHeader header = tryGetHeader(ok);
     if (!ok) return;
     if (isPackChecksumOk(header)) {
-        QByteArray body_ba(d.buffer.mid(DEPHeader::REC_SIZE, header.len));
+        QByteArray body_ba(d.buffer.mid(DEPHeader::REC_SIZE, header.bodySize));
         parseBodyPacket(body_ba);
     }
 //    d.buffer.remove(0, header.packetSize());
@@ -47,7 +47,7 @@ DEPHeader DEPWorker::tryGetHeader(bool &ok)
             continue;
         }
         quint32 cs = qChecksum(d.buffer.data(), DEPHeader::REC_SIZE - sizeof (quint32));
-        if (header.cs != cs) {
+        if (header.headerChecksum != cs) {
             emit signalError(QString("DEPWorker: invalid header checksum, %1")
                              .arg(header.toString()));
             // в случае ошибки чтения заголовка надо отрезать первое значение для повторной попытки
@@ -97,11 +97,11 @@ void DEPWorker::wrapPacket(QByteArray& packet_ba) const
 
     //prepare external header
     DEPHeader header(depsParamPacket);
-    header.len = packet_ba.size();
+    header.bodySize = packet_ba.size();
     header.toStream(stream, true);
     //calc header cs
-    header.cs = qChecksum(ba.data(), ba.size());
-    stream << header.cs;
+    header.headerChecksum = qChecksum(ba.data(), ba.size());
+    stream << header.headerChecksum;
 
     //add body of all packet
     stream.writeRawData(packet_ba.data(), packet_ba.size());
@@ -130,12 +130,22 @@ void DEPWorker::parseBodyPacket(const QByteArray &ba)
     intHeader.fromDataStream(stream);
     emit signalMsg(QString("DEPWorker: %1").arg(intHeader.toString()));
 
-    // read optional data
-    if (int(intHeader.headerSize) > DEPInternalHeader::REC_SIZE) {
-        w32_time_us t;
-        t.fromStream(stream);
-        t.dwLow *= 1000;
-        emit signalMsg(QString("DEPWorker: %1").arg(t.toStr()));
+    // read optional data (timepoint)
+    switch(intHeader.commonTime) {
+    case DEPTimePoint::tptNone:
+        emit signalMsg("DEPWorker: No time pont");
+        break;
+    case DEPTimePoint::tptUTmsecUTC:
+        if (int(intHeader.headerSize) > DEPInternalHeader::REC_SIZE) {
+            w32_time_us t;
+            t.fromStream(stream);
+            t.dwLow *= 1000;
+            emit signalMsg(QString("DEPWorker: %1").arg(t.toStr()));
+        }
+        break;
+    default:
+        emit signalMsg("DEPWorker: Unsupported time pont");
+        break;
     }
 
     //read parameters data
@@ -144,7 +154,7 @@ void DEPWorker::parseBodyPacket(const QByteArray &ba)
 
 void DEPWorker::parseDataPacket(const QByteArray &ba, const DEPInternalHeader &i_header)
 {
-    if (i_header.packType == ptIndividual) {
+    if (i_header.packType == DEPInternalHeader::ptIndividual) {
         if (i_header.paramCount == 0) {
             emit signalError(QString("DEPWorker: in internal header param_count == 0"));
             return;
@@ -170,7 +180,7 @@ void DEPWorker::readData(const QByteArray &ba, const DEPInternalHeader &i_header
     QList<DEPDataRecord> result;
     for (quint32 i=0; i < i_header.paramCount; i++) {
         DEPDataRecord rec;
-        rec.fromDataStream(stream, i_header.dataType);
+        rec.fromDataStream(stream, i_header);
         result << rec;
     }
 

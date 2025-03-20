@@ -34,15 +34,6 @@ enum DEPDataType
     dpdtTime_t32         ///< 20 Unix time_t (uint32) - secs since 1 Jan 1970 UTC
 };
 
-/// тип паковки данных в пакете
-enum DEPPackingType
-{
-    ptNone = 0,   ///< 0 - No data (should no be used)
-    ptIndividual, ///< 1 - Individual (each param with ID)
-    ptArray,      ///< 2 - Array (range from N to N+C-1)
-    ptCount,      ///< 3 - Values count (for service purpose)
-};
-
 /// тип временной метки
 enum DEPTimePoint
 {

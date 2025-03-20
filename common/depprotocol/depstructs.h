@@ -42,8 +42,8 @@ struct DEPHeader
 
     quint32 module = depsParamPacket;  ///< елемент множества DEPSignatures
     char    reserve[20];               ///< пустая область (резерв)
-    quint32 len = 0;                   ///< размер только внутренних данных, т.е. без учета размера этого внешнего заголовка и КС, которая находится в конце полного пакета
-    quint32 cs  = 0;                   ///< header checksum
+    quint32 bodySize       = 0;        ///< размер только внутренних данных, т.е. без учета размера этого внешнего заголовка и КС, которая находится в конце полного пакета
+    quint32 headerChecksum = 0;        ///< header checksum
 
     DEPHeader() {
         memset(reserve, 0, sizeof(reserve));
@@ -61,7 +61,7 @@ struct DEPHeader
     bool isChecksumOK() const {
         const auto buff = reinterpret_cast<const char *>(this);
         quint32 sum = qChecksum(buff, DEPHeader::REC_SIZE - sizeof(quint32));
-        return (cs == sum);
+        return (headerChecksum == sum);
     }
 
     QString toString() const;
@@ -77,7 +77,7 @@ struct DEPHeader
 
     /// размер всего полного пакета без КС в конце него
     quint32 packetSizeWithoutCs() const {
-        return DEPHeader::REC_SIZE + len;
+        return DEPHeader::REC_SIZE + bodySize;
     }
 };
 
@@ -86,9 +86,17 @@ struct DEPInternalHeader
 {
     enum { REC_SIZE = 32 };
 
+    /// тип паковки данных в пакете
+    enum PackingType {
+        ptNone = 0,   ///< 0 - No data (should no be used)
+        ptIndividual, ///< 1 - Individual (each param with ID)
+        ptArray,      ///< 2 - Array (range from N to N+C-1)
+        ptCount,      ///< 3 - Values count (for service purpose)
+    };
+
     quint32 headerSize = 40;                           ///< Размер заголовка. REC_SIZE + опциональные данные sizeof(w32_time_us)
     quint32 version    = DEP_PARAM_PACK_VERSION;       ///< Версия (Сейчас 0x10000 = "0.1.0.0")
-    quint32 packType   = DEPPackingType::ptIndividual; ///< способ паковки: 1 - Индивидуально, 2 - Массив (реализовано только для варианта - 1)
+    quint32 packType   = PackingType::ptIndividual;    ///< способ паковки: 1 - Индивидуально, 2 - Массив (реализовано только для варианта - 1)
     quint32 dataType   = 0;                            ///< id типа данных  (елемент множества DEPDataType), реализовано только для типов: dpdtFloatValid, dpdtSDWordValid
     quint32 commonTime = DEPTimePoint::tptUTmsecUTC;   ///< Тип общей метки времени: 0 - нет, или значение из множества DEPTimePoint
     quint32 paramTime  = DEPTimePoint::tptUTmsecUTC;   ///< Тип индивидуальной метки времени параметров: аналогично предыдущему
@@ -119,7 +127,7 @@ struct DEPDataRecord
                 .arg(pack_index).arg(s_time, value.toString()).arg(validity);
     }
 
-    void fromDataStream(QDataStream& stream, quint32 dataType);
+    void fromDataStream(QDataStream& stream, const DEPInternalHeader &i_header);
 };
 
 typedef QList<DEPDataRecord> DEPDataRecords;

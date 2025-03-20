@@ -11,8 +11,8 @@ QString DEPHeader::toString() const
 {
     return QString("DEPHeader: module=0x%1 len=%2 cs=%3")
             .arg(QString::number(module, 16))
-            .arg(len)
-            .arg(Utils::uint32ToBAStr(cs, true));
+            .arg(bodySize)
+            .arg(Utils::uint32ToBAStr(headerChecksum, true));
 }
 
 /********************************************************/
@@ -21,8 +21,8 @@ void DEPHeader::fromDataStream(QDataStream &stream)
 {
     stream >> module;
     stream.readRawData(reserve, sizeof (reserve));
-    stream >> len;
-    stream >> cs;
+    stream >> bodySize;
+    stream >> headerChecksum;
 }
 
 /********************************************************/
@@ -31,8 +31,8 @@ void DEPHeader::toStream(QDataStream &stream, bool without_cs)
 {
     stream << module;
     stream.writeRawData(reserve, sizeof (reserve));
-    stream << len;
-    if (!without_cs) stream << cs;
+    stream << bodySize;
+    if (!without_cs) stream << headerChecksum;
 }
 
 /********************************************************/
@@ -77,14 +77,27 @@ void DEPInternalHeader::prepare(int p_type, int p_count, quint32 pos)
 
 /********************************************************/
 
-void DEPDataRecord::fromDataStream(QDataStream &stream, quint32 dataType)
+void DEPDataRecord::fromDataStream(QDataStream &stream, const DEPInternalHeader &i_header)
 {
     stream >> pack_index;
-    w32_time_us t;
-    t.fromStream(stream);
-    t.dwLow *= 1000;
-    dt = t.toQDateTime();
-    switch (dataType) {
+    switch (i_header.paramTime) {
+    case DEPTimePoint::tptNone:
+        dt = QDateTime::currentDateTime();
+        stream.skipRawData(sizeof(w32_time_us));
+        break;
+    case DEPTimePoint::tptUTmsecUTC:
+    {
+        w32_time_us t;
+        t.fromStream(stream);
+        t.dwLow *= 1000;
+        dt = t.toQDateTime();
+    }
+        break;
+    default: // unsupported
+        stream.skipRawData(sizeof(w32_time_us));
+        break;
+    }
+    switch (i_header.dataType) {
     case DEPDataType::dpdtFloatValid:
     {
         float val;
