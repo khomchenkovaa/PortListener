@@ -20,11 +20,7 @@ QString DEPHeader::toString() const
 void DEPHeader::fromDataStream(QDataStream &stream)
 {
     stream >> module;
-    qint8 a = -1;
-    for (int i=0; i<20; i++) {
-        stream >> a;
-        reserve[i] = a;
-    }
+    stream.readRawData(reserve, sizeof (reserve));
     stream >> len;
     stream >> cs;
 }
@@ -34,7 +30,7 @@ void DEPHeader::fromDataStream(QDataStream &stream)
 void DEPHeader::toStream(QDataStream &stream, bool without_cs)
 {
     stream << module;
-    for (int i=0; i<20; i++) stream << qint8(reserve[i]);
+    stream.writeRawData(reserve, sizeof (reserve));
     stream << len;
     if (!without_cs) stream << cs;
 }
@@ -68,10 +64,8 @@ void DEPInternalHeader::toStream(QDataStream &stream)
 
 void DEPInternalHeader::prepare(int p_type, int p_count, quint32 pos)
 {
-    w32_time_us t;
-
     //prepare internal header fields
-    headerSize = DEPInternalHeader::size() + t.size();
+    headerSize = DEPInternalHeader::REC_SIZE + sizeof (w32_time_us);
     version    = quint32(DEP_PARAM_PACK_VERSION);
     packType   = ptIndividual;
     dataType   = p_type;
@@ -83,26 +77,31 @@ void DEPInternalHeader::prepare(int p_type, int p_count, quint32 pos)
 
 /********************************************************/
 
-void DEPFloatValidRecord::fromDataStream(QDataStream &stream)
+void DEPDataRecord::fromDataStream(QDataStream &stream, quint32 dataType)
 {
     stream >> pack_index;
     w32_time_us t;
     t.fromStream(stream);
     t.dwLow *= 1000;
     dt = t.toQDateTime();
-    stream >> value >> validity;
-}
-
-/********************************************************/
-
-void DEPSDWordValidRecord::fromDataStream(QDataStream &stream)
-{
-    stream >> pack_index;
-    w32_time_us t;
-    t.fromStream(stream);
-    t.dwLow *= 1000;
-    dt = t.toQDateTime();
-    stream >> value >> validity;
+    switch (dataType) {
+    case DEPDataType::dpdtFloatValid:
+    {
+        float val;
+        stream >> val;
+        value = val;
+    } break;
+    case DEPDataType::dpdtSDWordValid:
+    {
+        qint32 val;
+        stream >> val;
+        value = val;
+    }   break;
+    default:
+        stream.skipRawData(4);
+        break;
+    }
+    stream >> validity;
 }
 
 /********************************************************/

@@ -20,7 +20,6 @@ class DEPWorker : public QObject
         QDataStream::FloatingPointPrecision precision = QDataStream::SinglePrecision;
         QDataStream::ByteOrder byteOrder = QDataStream::LittleEndian;
         quint32    packCS;           ///< контрольная сумма последнего пакета целиком
-        int        lastSigType = -1; ///< переменная множества DEPDataType, хранит тип данных последнего успешно спарсенного пришедшего пакета
     };
 
 public:
@@ -42,9 +41,6 @@ public:
     inline void setByteOrder(int b_order) {
         d.byteOrder = static_cast<QDataStream::ByteOrder>(b_order);
     }
-    inline int lastReceivedType() const {
-        return d.lastSigType;
-    }
     inline int curByteOrder() const {
         return d.byteOrder;
     }
@@ -65,8 +61,7 @@ signals:
      * далее он конвертируется в спец. QByteArray - формат понятный для вьюхи (xmlpack lib)
      */
     void signalRewriteReceivedPacket(const QList<quint16>&, const QByteArray&);
-    void dataFloatReceived(const QList<DEPFloatValidRecord>& data);
-    void dataSDWordReceived(const QList<DEPSDWordValidRecord>& data);
+    void dataReceived(const QList<DEPDataRecord>& data);
     void signalError(const QString& msg);
     void signalMsg(const QString& msg);
 
@@ -94,7 +89,7 @@ private:
     void parseDataPacket(const QByteArray& ba, const DEPInternalHeader&i_header);
 
     /// распарсить данные типа dpdtFloatValid
-    void readFloatValidData(const QByteArray& ba, const DEPInternalHeader& i_header);
+    void readData(const QByteArray& ba, const DEPInternalHeader& i_header);
 
     /// распарсить данные типа dpdtSDWordValid
     void readSDWordValidData(const QByteArray& ba, const DEPInternalHeader& i_header);

@@ -114,7 +114,7 @@ struct w32_time_us
 
     /// вернет значения полей структуры в виде строки
     QString toStr() const {
-        QString s_time = toQDateTime().toString("dd.MM.yyyy  hh:mm:ss.zzz");
+        QString s_time = toQDateTime().toString("dd.MM.yyyy hh:mm:ss.zzz");
         return QString("W32_TIME_US: dwLow=%1 dwHigh=%2 (%3)").arg(dwLow).arg(dwHigh).arg(s_time);
     }
 
