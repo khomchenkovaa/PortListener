@@ -1,6 +1,5 @@
 #include "depworker.h"
 
-#include "mathutils.h"
 #include "timeutils.h"
 
 #include <QDebug>
@@ -18,10 +17,11 @@ void DEPWorker::work(bool try_next)
     if (!ok) return;
     if (isPackChecksumOk(header)) {
         QByteArray body_ba(d.buffer.mid(DEPHeader::REC_SIZE, header.bodySize));
-        parseBodyPacket(body_ba);
+        DEPData data = parseBodyPacket(body_ba);
+        emit dataReceived(data);
     }
-//    d.buffer.remove(0, header.packetSize());
-    d.buffer.clear();
+    d.buffer.remove(0, header.packetSize());
+//    d.buffer.clear();
 }
 
 DEPHeader DEPWorker::tryGetHeader(bool &ok)
@@ -113,33 +113,35 @@ void DEPWorker::wrapPacket(QByteArray& packet_ba) const
     packet_ba.append(ba);
 }
 
-void DEPWorker::parseBodyPacket(const QByteArray &ba)
+DEPData DEPWorker::parseBodyPacket(const QByteArray &ba)
 {
+    DEPData result;
     //весь пакет был успешно считан, читаем теперь внутренний пакет
-    if (ba.size() < DEPInternalHeader::REC_SIZE) {
+    if (ba.size() < DEPDataHeader::REC_SIZE) {
         emit signalError(QString("DEPWorker: too small body size(%1) < depInternalHeaderSize(%2)")
-                         .arg(ba.size()).arg(DEPInternalHeader::REC_SIZE));
-        return;
+                         .arg(ba.size()).arg(DEPDataHeader::REC_SIZE));
+        return result;
     }
 
     //read internal header
     QDataStream stream(ba);
     stream.setByteOrder(d.byteOrder);
     stream.setFloatingPointPrecision(d.precision);
-    DEPInternalHeader intHeader;
-    intHeader.fromDataStream(stream);
-    emit signalMsg(QString("DEPWorker: %1").arg(intHeader.toString()));
+    result.header.fromDataStream(stream);
+    emit signalMsg(QString("DEPWorker: %1").arg(result.header.toString()));
 
     // read optional data (timepoint)
-    switch(intHeader.commonTime) {
+    switch(result.header.commonTime) {
     case DEPTimePoint::tptNone:
         emit signalMsg("DEPWorker: No time pont");
+        result.commonTime = QDateTime::currentDateTimeUtc();
         break;
     case DEPTimePoint::tptUTmsecUTC:
-        if (int(intHeader.headerSize) > DEPInternalHeader::REC_SIZE) {
+        if (int(result.header.headerSize) > DEPDataHeader::REC_SIZE) {
             w32_time_us t;
             t.fromStream(stream);
             t.dwLow *= 1000;
+            result.commonTime = t.toQDateTime();
             emit signalMsg(QString("DEPWorker: %1").arg(t.toStr()));
         }
         break;
@@ -149,42 +151,39 @@ void DEPWorker::parseBodyPacket(const QByteArray &ba)
     }
 
     //read parameters data
-    parseDataPacket(ba, intHeader);
-}
-
-void DEPWorker::parseDataPacket(const QByteArray &ba, const DEPInternalHeader &i_header)
-{
-    if (i_header.packType == DEPInternalHeader::ptIndividual) {
-        if (i_header.paramCount == 0) {
+    if (result.header.packType == DEPDataHeader::ptIndividual) {
+        if (result.header.paramCount == 0) {
             emit signalError(QString("DEPWorker: in internal header param_count == 0"));
-            return;
+        } else {
+            result.records = readData(ba, result.header);
         }
-        readData(ba, i_header);
     }
+
+    return result;
 }
 
-void DEPWorker::readData(const QByteArray &ba, const DEPInternalHeader &i_header)
+DEPDataRecords DEPWorker::readData(const QByteArray &ba, const DEPDataHeader &i_header)
 {
+    DEPDataRecords result;
     quint32 must_size = i_header.paramCount * DEPDataRecord::REC_SIZE;
     quint32 cur_size  = ba.size() - i_header.headerSize;
     if (must_size != cur_size) {
         emit signalError(QString("DEPWorker: invalid buff records size(%1), must be %2")
                          .arg(cur_size).arg(must_size));
-        return;
+        return result;
     }
 
     QDataStream stream(ba);
     stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
     stream.setByteOrder(d.byteOrder);
     stream.skipRawData(i_header.headerSize);
-    QList<DEPDataRecord> result;
     for (quint32 i=0; i < i_header.paramCount; i++) {
         DEPDataRecord rec;
         rec.fromDataStream(stream, i_header);
         result << rec;
     }
 
-    emit dataReceived(result);
+    return result;
 }
 
 QByteArray DEPWorker::makeDEPPacket(const QList<quint16> &indexes, const QByteArray &view_ba, int p_type) const
@@ -196,7 +195,7 @@ QByteArray DEPWorker::makeDEPPacket(const QList<quint16> &indexes, const QByteAr
     body_stream.setByteOrder(d.byteOrder);
 
     //prepare internal header
-    DEPInternalHeader i_header;
+    DEPDataHeader i_header;
     i_header.prepare(p_type, indexes.count());
     i_header.toStream(body_stream);
 

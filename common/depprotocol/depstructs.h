@@ -5,7 +5,7 @@
 структуры DEP протокола, служат для формирования/разбора DEP пакетов.
 в одном пакете могут быть только данные одного типа (из множества DEPDataType)
 если передаваемых типов параметров несколько, то на каждый тип необходимо создавать свой пакет.
-тип данных параметров лежащих в пакете указывается в поле DEPInternalHeader.data_type
+тип данных параметров лежащих в пакете указывается в поле DEPDataHeader.data_type
 
 структура полного пакета:
 1. внешний заголовок DEPHeader (32 bytes)
@@ -13,7 +13,7 @@
 3. КС всего пакета  (4 bytes)
 
 структура внутреннего пакета:
-1. внутренний заголовок DEPInternalHeader
+1. внутренний заголовок DEPDataHeader
 2. локальное время компьюьера, (переменная w32_time_us)
 3. N-секций параметров по 20 байт
 
@@ -58,12 +58,6 @@ struct DEPHeader
         return (module == depsParamPacket || module == depsStubPacket);
     }
 
-    bool isChecksumOK() const {
-        const auto buff = reinterpret_cast<const char *>(this);
-        quint32 sum = qChecksum(buff, DEPHeader::REC_SIZE - sizeof(quint32));
-        return (headerChecksum == sum);
-    }
-
     QString toString() const;
 
     void fromDataStream(QDataStream& stream);
@@ -81,8 +75,8 @@ struct DEPHeader
     }
 };
 
-/// dep protocol internal header
-struct DEPInternalHeader
+/// dep protocol internal data header
+struct DEPDataHeader
 {
     enum { REC_SIZE = 32 };
 
@@ -127,19 +121,19 @@ struct DEPDataRecord
                 .arg(pack_index).arg(s_time, value.toString()).arg(validity);
     }
 
-    void fromDataStream(QDataStream& stream, const DEPInternalHeader &i_header);
+    void fromDataStream(QDataStream& stream, const DEPDataHeader &i_header);
 };
 
 typedef QList<DEPDataRecord> DEPDataRecords;
 
 /**
  * @brief Структура внутреннего пакета с данными
- * Тип данных параметров лежащих в пакете указывается в поле DEPInternalHeader.data_type
+ * Тип данных параметров лежащих в пакете указывается в поле DEPDataHeader.data_type
  */
 struct DEPData {
-    DEPInternalHeader  header;     ///< внутренний заголовок DEPInternalHeader
-    QDateTime          commonTime; ///< локальное время компьюьера (переменная w32_time_us)
-    DEPDataRecords     records;    ///< N-секций параметров по 20 байт
+    DEPDataHeader  header;     ///< внутренний заголовок DEPDataHeader
+    QDateTime      commonTime; ///< локальное время компьюьера (переменная w32_time_us)
+    DEPDataRecords records;    ///< N-секций параметров по 20 байт
 };
 
 /**

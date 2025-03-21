@@ -115,8 +115,8 @@ void DepHandler::doConnect(bool binary)
     connect(d.depWorker, &DEPWorker::signalMsg, this, [this](const QString& msg){
         emit logMessage(name(), msg);
     });
-    connect(d.depWorker, &DEPWorker::dataReceived, this, [this](const QList<DEPDataRecord>& data){
-        for (const auto &rec : data) {
+    connect(d.depWorker, &DEPWorker::dataReceived, this, [this](const DEPData& data){
+        for (const auto &rec : data.records) {
             emit logMessage(name(), rec.toString());
         }
     });

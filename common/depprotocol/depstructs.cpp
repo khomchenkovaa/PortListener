@@ -1,5 +1,4 @@
 #include "depstructs.h"
-#include "mathutils.h"
 #include "timeutils.h"
 
 #include <QDataStream>
@@ -9,10 +8,10 @@
 
 QString DEPHeader::toString() const
 {
-    return QString("DEPHeader: module=0x%1 len=%2 cs=%3")
-            .arg(QString::number(module, 16))
+    return QString("DEPHeader: module=0x%1 len=%2 cs=0x%3")
+            .arg(module, 8, 16, QLatin1Char('0'))
             .arg(bodySize)
-            .arg(Utils::uint32ToBAStr(headerChecksum, true));
+            .arg(headerChecksum, 8, 16, QLatin1Char('0'));
 }
 
 /********************************************************/
@@ -37,16 +36,19 @@ void DEPHeader::toStream(QDataStream &stream, bool without_cs)
 
 /********************************************************/
 
-QString DEPInternalHeader::toString() const
+QString DEPDataHeader::toString() const
 {
-    return QString("DEPInternalHeader: header_len=%1  VERSION(%2)  metod=%3  data_type=%4  common_time=%5  param_time=%6  start_index=%7  param_count=%8").
-            arg(headerSize).arg(Utils::uint32ToBAStr(version, true)).arg(packType).arg(dataType).
-            arg(commonTime).arg(paramTime).arg(startIndex).arg(paramCount);
+    return QString("DEPInternalHeader: header_len=%1  VERSION(0x%2)  metod=%3  data_type=%4  common_time=%5  param_time=%6  start_index=%7  param_count=%8")
+            .arg(headerSize)
+            .arg(version, 8, 16, QLatin1Char('0'))
+            .arg(packType).arg(dataType)
+            .arg(commonTime).arg(paramTime)
+            .arg(startIndex).arg(paramCount);
 }
 
 /********************************************************/
 
-void DEPInternalHeader::fromDataStream(QDataStream &stream)
+void DEPDataHeader::fromDataStream(QDataStream &stream)
 {
     stream >> headerSize >> version   >> packType   >> dataType
            >> commonTime >> paramTime >> startIndex >> paramCount;
@@ -54,7 +56,7 @@ void DEPInternalHeader::fromDataStream(QDataStream &stream)
 
 /********************************************************/
 
-void DEPInternalHeader::toStream(QDataStream &stream)
+void DEPDataHeader::toStream(QDataStream &stream)
 {
     stream << headerSize << version   << packType   << dataType
            << commonTime << paramTime << startIndex << paramCount;
@@ -62,10 +64,10 @@ void DEPInternalHeader::toStream(QDataStream &stream)
 
 /********************************************************/
 
-void DEPInternalHeader::prepare(int p_type, int p_count, quint32 pos)
+void DEPDataHeader::prepare(int p_type, int p_count, quint32 pos)
 {
     //prepare internal header fields
-    headerSize = DEPInternalHeader::REC_SIZE + sizeof (w32_time_us);
+    headerSize = DEPDataHeader::REC_SIZE + sizeof (w32_time_us);
     version    = quint32(DEP_PARAM_PACK_VERSION);
     packType   = ptIndividual;
     dataType   = p_type;
@@ -77,7 +79,7 @@ void DEPInternalHeader::prepare(int p_type, int p_count, quint32 pos)
 
 /********************************************************/
 
-void DEPDataRecord::fromDataStream(QDataStream &stream, const DEPInternalHeader &i_header)
+void DEPDataRecord::fromDataStream(QDataStream &stream, const DEPDataHeader &i_header)
 {
     stream >> pack_index;
     switch (i_header.paramTime) {

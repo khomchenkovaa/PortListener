@@ -6,7 +6,6 @@ HEADERS += \
     $$PWD/depenums.h \
     $$PWD/depstructs.h \
     $$PWD/depworker.h \
-    $$PWD/mathutils.h \
     $$PWD/timeutils.h
 
 SOURCES += \

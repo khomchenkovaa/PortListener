@@ -8,7 +8,7 @@
 #include <QDataStream>
 
 struct DEPHeader;
-struct DEPInternalHeader;
+struct DEPDataHeader;
 
 //DEPWorker
 class DEPWorker : public QObject
@@ -61,7 +61,7 @@ signals:
      * далее он конвертируется в спец. QByteArray - формат понятный для вьюхи (xmlpack lib)
      */
     void signalRewriteReceivedPacket(const QList<quint16>&, const QByteArray&);
-    void dataReceived(const QList<DEPDataRecord>& data);
+    void dataReceived(const DEPData& data);
     void signalError(const QString& msg);
     void signalMsg(const QString& msg);
 
@@ -83,18 +83,11 @@ private:
     DEPHeader tryGetHeader(bool& ok);
 
     /// извлечь данные из тела пакета (т.е. без обертки)
-    void parseBodyPacket(const QByteArray& ba);
+    DEPData parseBodyPacket(const QByteArray& ba);
 
-    /// извлечь данные после заголовка из тела пакета (без обертки)
-    void parseDataPacket(const QByteArray& ba, const DEPInternalHeader&i_header);
+    /// извлечь данные после заголовка из тела пакета
+    DEPDataRecords readData(const QByteArray& ba, const DEPDataHeader& i_header);
 
-    /// распарсить данные типа dpdtFloatValid
-    void readData(const QByteArray& ba, const DEPInternalHeader& i_header);
-
-    /// распарсить данные типа dpdtSDWordValid
-    void readSDWordValidData(const QByteArray& ba, const DEPInternalHeader& i_header);
-
-    // make sending packets funcs
     /// обернуть готовый внутренний пакет в DEPHeader и checksum
     void wrapPacket(QByteArray&) const;
 
