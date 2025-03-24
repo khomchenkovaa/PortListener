@@ -9,7 +9,7 @@
 
 namespace Gate {
 
-enum TypeValue {
+enum DPDataType {
     NONE               =  0, ///< Несуществующий тип, но теоретически может быть установлен в результате ошибки
     BYTE               =  1, ///< Байт (unsigned char)
     SBYTE              =  2, ///< Знаковый байт (signed char)
@@ -106,9 +106,12 @@ class CsvConf
     };
 
 public:
-    void load(const QString &fileName, QChar separator = ',', QTextCodec *codec = Q_NULLPTR) {
+    int load(const QString &fileName, QChar separator = ',', QTextCodec *codec = Q_NULLPTR) {
         XCsvModel csv;
         csv.setSource(fileName, true, separator, codec);
+//        if (csv.columnCount() <= colIdx.maxIndex()) {
+//            return -1; // lines too short
+//        }
         for (int i = 0; i < csv.rowCount(); ++i) {
             CsvConfItem item;
             item.num   = csv.data(csv.index(i, NumColumn)).toUInt();
@@ -119,6 +122,20 @@ public:
             item.point = csv.data(csv.index(i, PointColumn)).toString();
             items << item;
         }
+        return items.size();
+    }
+
+    int typeByString(const QString &str) {
+        if(str.compare("A", Qt::CaseInsensitive) == 0 || str.compare("R", Qt::CaseInsensitive) == 0) {
+            return DPDataType::DTSFLOAT;
+        }
+        if(str.compare("D", Qt::CaseInsensitive) == 0 || str.compare("B", Qt::CaseInsensitive) == 0){
+            return DPDataType::DTSSDWORDDISCRETE;
+        }
+        if(str.compare("I", Qt::CaseInsensitive) == 0 || str.compare("N", Qt::CaseInsensitive) == 0){
+            return DPDataType::DTSSDWORD;
+        }
+        return typeValueFromString(str);
     }
 
 private:

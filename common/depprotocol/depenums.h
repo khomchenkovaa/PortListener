@@ -1,8 +1,6 @@
 #ifndef DEP_ENUMS_H
 #define DEP_ENUMS_H
 
-#include <QString>
-
 enum {
     DEP_PARAM_PACK_VERSION = 0x10000,
     VIEW_PARAM_SIZE = 8
