@@ -26,6 +26,13 @@ QByteArray DepHandler::processData(const QByteArray &data)
 {
     clearErrors();
     d.depWorker->addToBuffer(data);
+    while (!d.depWorker->isBufferEmpty()) {
+        if (!d.depWorker->doWork()) break;
+        const auto records = d.depWorker->packetData().records;
+        for (const auto &rec : records) {
+            emit logMessage(name(), rec.toString());
+        }
+    }
 //    QByteArray buff(data);
 //    if (d.defConf.size() > data.size()) {
 //        buff.append(d.defConf.size() - data.size(), '\0');
@@ -80,14 +87,30 @@ void DepHandler::doConnect(bool binary)
     if (csvFileName.isEmpty()) {
         emit logMessage(name(), tr("No CSV config file to open"));
     } else {
-        d.csvConf.load(csvFileName, ',', QTextCodec::codecForName("Windows-1251"));
+        d.csvConf.csv.typeValue   = settings()->value(Settings::TypeValue, "NONE").toString();
+        d.csvConf.csv.typeColumn  = settings()->value(Settings::TypeColumn, -1).toInt();
+        d.csvConf.csv.indexColumn = settings()->value(Settings::IndexColumn, -1).toInt();
+        d.csvConf.csv.kksColumn   = settings()->value(Settings::KksColumn, -1).toInt();
+        d.csvConf.csv.iidColumn   = settings()->value(Settings::IidColumn, -1).toInt();
+        int resId = d.csvConf.load(csvFileName, ',', QTextCodec::codecForName("Windows-1251"));
+        switch (resId) {
+        case -1:
+            addError(tr("Load CSV config file failed! Not enought column to load values"));
+            break;
+        case -2:
+            addError(tr("Load CSV config file failed! Type value is not defined"));
+            break;
+        case -3:
+            addError(tr("Load CSV config file failed! Index is not defined"));
+            break;
+        case -4:
+            addError(tr("Load CSV config file failed! KKS or IID is not defined"));
+            break;
+        default:
+            emit logMessage(name(), tr("Loaded %1 items from CSV config file").arg(resId));
+            break;
+        }
     }
-//    const auto defFileName = settings()->value(Settings::DefFileName).toString();
-//    if (defFileName.isEmpty()) {
-//        emit logMessage(name(), tr("No DEF config file to open"));
-//    } else {
-//        d.defConf.load(defFileName);
-//    }
 
     const auto outFileName = settings()->value(Settings::OutFileName).toString();
     if (outFileName.isEmpty()) {
@@ -115,11 +138,11 @@ void DepHandler::doConnect(bool binary)
     connect(d.depWorker, &DEPWorker::signalMsg, this, [this](const QString& msg){
         emit logMessage(name(), msg);
     });
-    connect(d.depWorker, &DEPWorker::dataReceived, this, [this](const DEPData& data){
-        for (const auto &rec : data.records) {
-            emit logMessage(name(), rec.toString());
-        }
-    });
+//    connect(d.depWorker, &DEPWorker::dataReceived, this, [this](const DEPData& data){
+//        for (const auto &rec : data.records) {
+//            emit logMessage(name(), rec.toString());
+//        }
+//    });
 
     setConnected();
 }

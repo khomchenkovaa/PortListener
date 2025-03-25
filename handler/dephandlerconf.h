@@ -56,7 +56,7 @@ enum DPDataType {
     TIMESPEC64         = 43  ///< timespec для 64-ти битовых time_t and nsec: time_t (8 байт) + наносекунды (8 байт) (16-ти байтовая структура)
 };
 
-inline int typeValueFromString(const QString &typeName) {
+inline DPDataType typeValueFromString(const QString &typeName) {
     static const QStringList names = QString(
                 "NONE,BYTE,SBYTE,WORD,SWORD,DWORD,SDWORD,QWORD,SQWORD,FLOAT,"
                 "DOUBLE,(LongDouble),BIT,(BitField),(SBitField),BOOL,ASCIIZ,SM2MCODE,FLOATVALID,SDWORDVALID,"
@@ -64,83 +64,91 @@ inline int typeValueFromString(const QString &typeName) {
                 "FLOATERRCODE,SDWORDERRCODE,WORDDISCRETE,DTSFLOAT,DTSSDWORD,DTSSDWORDDISCRETE,SWORDERRCODE,ERRCODEWORD,TIMESPEC,TIMEWITHMSECS,"
                 "DOUBLEDAYSECSUTC,DOUBLEDAYSECSLOCAL,DOUBLEVALID,TIMESPEC64"
                 ).split(',');
-    return names.indexOf(typeName);
+    return names.contains(typeName) ?
+                static_cast<DPDataType>(names.indexOf(typeName)) :
+                DPDataType::NONE;
 }
 
-class CsvConf
-{
-    enum {
-        NumColumn,
-        TypeColumn,
-        NameColumn,
-        DimColumn,
-        KksColumn,
-        PointColumn
-    };
+inline DPDataType typeByString(const QString &str) {
+    if(str.compare("A", Qt::CaseInsensitive) == 0 || str.compare("R", Qt::CaseInsensitive) == 0) {
+        return DPDataType::DTSFLOAT;
+    }
+    if(str.compare("D", Qt::CaseInsensitive) == 0 || str.compare("B", Qt::CaseInsensitive) == 0){
+        return DPDataType::DTSSDWORDDISCRETE;
+    }
+    if(str.compare("I", Qt::CaseInsensitive) == 0 || str.compare("N", Qt::CaseInsensitive) == 0){
+        return DPDataType::DTSSDWORD;
+    }
+    return static_cast<DPDataType>(typeValueFromString(str));
+}
 
-    struct CsvColumns {
-        int dataType = -1; ///< datatype column index
-        int id       = -1; ///< id column index: >=0 (otherwise error)
-        int extId    = -1; ///< extid column index: >=0 (otherwise not used)
-        int iId      = -1; ///< iid column index: >=0 (otherwise not used)
-        int kks      = -1; ///< kks column index: >=0 (otherwise not used)
-        int rtm      = -1; ///< rtm column index: >=0 (otherwise not used)
+
+struct CsvConf
+{
+    struct CsvProperties {
+        QString typeValue = "NONE";  ///< datatype name
+        int typeColumn    = -1;      ///< datatype column index
+        int indexColumn   = -1;      ///< id column index: >=0 (otherwise error)
+        int extIdColumn   = -1;      ///< extid column index: >=0 (otherwise not used)
+        int iidColumn     = -1;      ///< iid column index: >=0 (otherwise not used)
+        int kksColumn     = -1;      ///< kks column index: >=0 (otherwise not used)
+        int rtmColumn     = -1;      ///< rtm column index: >=0 (otherwise not used)
 
         int maxIndex() const {
-            int result = qMax(dataType, id);
-            result = qMax(result, extId);
-            result = qMax(result, iId);
-            result = qMax(result, kks);
-            result = qMax(result, rtm);
+            int result = qMax(typeColumn, indexColumn);
+            result = qMax(result, extIdColumn);
+            result = qMax(result, iidColumn);
+            result = qMax(result, kksColumn);
+            result = qMax(result, rtmColumn);
             return result;
         }
     };
 
     struct CsvConfItem {
-        quint32 num;   ///< номер
-        QString type;  ///< тип
-        QString name;  ///< Наименование сигнала
-        QString dim;   ///< Размерность
-        QString kks;   ///< Код KKS
-        QString point; ///< пункт
+        DPDataType type;  ///< data type
+        quint32    index; ///< номер
+        QString    kks;   ///< Код KKS
+        QString    iid;   ///< Interal ID
     };
 
-public:
+    QList<CsvConfItem> items;
+    CsvProperties csv;
+
     int load(const QString &fileName, QChar separator = ',', QTextCodec *codec = Q_NULLPTR) {
-        XCsvModel csv;
-        csv.setSource(fileName, true, separator, codec);
-//        if (csv.columnCount() <= colIdx.maxIndex()) {
-//            return -1; // lines too short
-//        }
-        for (int i = 0; i < csv.rowCount(); ++i) {
+        XCsvModel csvModel;
+        csvModel.setSource(fileName, true, separator, codec);
+        if (csvModel.columnCount() <= csv.maxIndex()) {
+            return -1; // lines too short
+        }
+        DPDataType defaultType = typeByString(csv.typeValue);
+        if (defaultType == DPDataType::NONE && csv.typeColumn == -1) {
+            return -2; // type value is not defined
+        }
+        if (csv.indexColumn == -1) {
+            return -3; // index is not defined
+        }
+        if (csv.kksColumn == -1 && csv.iidColumn == -1) {
+            return -4; // kks or iid is not defined
+        }
+        for (int i = 0; i < csvModel.rowCount(); ++i) {
             CsvConfItem item;
-            item.num   = csv.data(csv.index(i, NumColumn)).toUInt();
-            item.type  = csv.data(csv.index(i, TypeColumn)).toString();
-            item.name  = csv.data(csv.index(i, NameColumn)).toString();
-            item.dim   = csv.data(csv.index(i, DimColumn)).toString();
-            item.kks   = csv.data(csv.index(i, KksColumn)).toString();
-            item.point = csv.data(csv.index(i, PointColumn)).toString();
+            if (csv.typeColumn != -1) {
+                QString typeStr = csvModel.data(csvModel.index(i, csv.typeColumn)).toString();
+                item.type = typeByString(csv.typeValue);
+            } else {
+                item.type = defaultType;
+            }
+            item.index = csvModel.data(csvModel.index(i, csv.indexColumn)).toUInt();
+            if (csv.kksColumn != -1) {
+                item.kks = csvModel.data(csvModel.index(i, csv.kksColumn)).toString();
+            }
+            if (csv.iidColumn != -1) {
+                item.iid = csvModel.data(csvModel.index(i, csv.iidColumn)).toString();
+            }
             items << item;
         }
         return items.size();
     }
-
-    int typeByString(const QString &str) {
-        if(str.compare("A", Qt::CaseInsensitive) == 0 || str.compare("R", Qt::CaseInsensitive) == 0) {
-            return DPDataType::DTSFLOAT;
-        }
-        if(str.compare("D", Qt::CaseInsensitive) == 0 || str.compare("B", Qt::CaseInsensitive) == 0){
-            return DPDataType::DTSSDWORDDISCRETE;
-        }
-        if(str.compare("I", Qt::CaseInsensitive) == 0 || str.compare("N", Qt::CaseInsensitive) == 0){
-            return DPDataType::DTSSDWORD;
-        }
-        return typeValueFromString(str);
-    }
-
-private:
-    QList<CsvConfItem> items;
-    CsvColumns colIdx;
 };
 
 class DefConf {

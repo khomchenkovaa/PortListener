@@ -21,7 +21,7 @@ public:
 
 private slots:
     void openCsvFileDialog();
-    void openDefFileDialog();
+    void onTypeValueCmbChanged();
     void openOutputFileDialog();
 
 private:

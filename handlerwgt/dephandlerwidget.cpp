@@ -14,10 +14,11 @@ DepHandlerWidget::DepHandlerWidget(QWidget *parent) :
     DepHandlerWidget::setSettings(SettingsMap());
     connect(ui->btnCsvFile, &QAbstractButton::clicked,
             this, &DepHandlerWidget::openCsvFileDialog);
-//    connect(ui->btnDefFile, &QAbstractButton::clicked,
-//            this, &DepHandlerWidget::openDefFileDialog);
+    connect(ui->cmbTypeValue, &QComboBox::currentTextChanged,
+            this, &DepHandlerWidget::onTypeValueCmbChanged);
     connect(ui->btnOutputFile, &QAbstractButton::clicked,
             this, &DepHandlerWidget::openOutputFileDialog);
+    onTypeValueCmbChanged();
 }
 
 /********************************************************/
@@ -33,7 +34,11 @@ SettingsMap DepHandlerWidget::settings() const
 {
     SettingsMap map;
     map.insert(DepHandler::CsvFileName, ui->editCsvFile->text());
-//    map.insert(DepHandler::DefFileName, ui->editDefFile->text());
+    map.insert(DepHandler::TypeValue, ui->cmbTypeValue->currentText());
+    map.insert(DepHandler::TypeColumn, ui->spinTypeColumn->value());
+    map.insert(DepHandler::IndexColumn, ui->spinIndexColumn->value());
+    map.insert(DepHandler::KksColumn, ui->spinKksColumn->value());
+    map.insert(DepHandler::IidColumn, ui->spinIidColumn->value());
     map.insert(DepHandler::OutFileName, ui->editOutputFile->text());
     map.insert(DepHandler::FileAppend, ui->chkAppend->isChecked());
     return map;
@@ -44,7 +49,11 @@ SettingsMap DepHandlerWidget::settings() const
 void DepHandlerWidget::setSettings(const SettingsMap &map)
 {
     ui->editCsvFile->setText(map.value(DepHandler::CsvFileName).toString());
-//    ui->editDefFile->setText(map.value(DepHandler::DefFileName).toString());
+    ui->cmbTypeValue->setCurrentText(map.value(DepHandler::TypeValue, "NONE").toString());
+    ui->spinTypeColumn->setValue(map.value(DepHandler::TypeColumn, -1).toInt());
+    ui->spinIndexColumn->setValue(map.value(DepHandler::IndexColumn, -1).toInt());
+    ui->spinKksColumn->setValue(map.value(DepHandler::KksColumn, -1).toInt());
+    ui->spinIidColumn->setValue(map.value(DepHandler::IidColumn, -1).toInt());
     ui->editOutputFile->setText(map.value(DepHandler::OutFileName).toString());
     ui->chkAppend->setChecked(map.value(DepHandler::FileAppend, true).toBool());
 }
@@ -70,20 +79,14 @@ void DepHandlerWidget::openCsvFileDialog()
 
 /********************************************************/
 
-void DepHandlerWidget::openDefFileDialog()
+void DepHandlerWidget::onTypeValueCmbChanged()
 {
-    QString dirPath = QCoreApplication::applicationDirPath();
-    QString fileName = ui->editDefFile->text();
-    const QFileInfo fileInfo(fileName);
-    if (fileInfo.exists()) {
-        dirPath = fileInfo.path();
-    }
-
-    fileName = QFileDialog::getOpenFileName(this, tr("Choose Def Config File"),
-                                            dirPath,
-                                            "DEF files (*.def)");
-    if (!fileName.isEmpty()) {
-        ui->editDefFile->setText(fileName);
+    if (ui->cmbTypeValue->currentIndex()) {
+        ui->lblTypeColumn->setHidden(true);
+        ui->spinTypeColumn->setHidden(true);
+    } else {
+        ui->lblTypeColumn->setHidden(false);
+        ui->spinTypeColumn->setHidden(false);
     }
 }
 

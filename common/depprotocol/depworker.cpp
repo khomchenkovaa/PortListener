@@ -4,23 +4,24 @@
 
 #include <QDebug>
 
-void DEPWorker::work(bool try_next)
+bool DEPWorker::work(bool try_next)
 {
-    if (d.buffer.isEmpty()) return;
+    if (d.buffer.isEmpty()) return false;
     if (!try_next) {
         emit signalMsg(QString("DEPWorker: try work received bytes, buffer size is %1")
                        .arg(d.buffer.size()));
     }
 
     bool ok;
-    DEPHeader header = tryGetHeader(ok);
-    if (!ok) return;
-    if (isPackChecksumOk(header)) {
-        QByteArray body_ba(d.buffer.mid(DEPHeader::REC_SIZE, header.bodySize));
-        DEPData data = parseBodyPacket(body_ba);
-        emit dataReceived(data);
+    d.packet.header = tryGetHeader(ok);
+    if (!ok) return false;
+    if (isPackChecksumOk()) {
+        QByteArray body_ba(d.buffer.mid(DEPHeader::REC_SIZE, d.packet.header.bodySize));
+        d.packet.data = parseBodyPacket(body_ba);
+        emit dataReceived(d.packet.data);
     }
-    d.buffer.remove(0, header.packetSize());
+    d.buffer.remove(0, d.packet.header.packetSize());
+    return true;
 //    d.buffer.clear();
 }
 
@@ -61,27 +62,28 @@ DEPHeader DEPWorker::tryGetHeader(bool &ok)
     return header;
 }
 
-bool DEPWorker::isPackChecksumOk(const DEPHeader &header)
+bool DEPWorker::isPackChecksumOk()
 {
-    if (d.buffer.size() < (int)header.packetSize()) {
+    if (d.buffer.size() < (int)d.packet.header.packetSize()) {
         emit signalError(QString("DEPWorker: buffer size (%1) is less than packet size (%2)")
-                         .arg(d.buffer.size()).arg(header.packetSize()));
+                         .arg(d.buffer.size()).arg(d.packet.header.packetSize()));
         return false;
     }
 
     // размер всего полного пакета без КС в конце него
-    quint32 checksum = qChecksum(d.buffer.data(), header.packetSizeWithoutCs());
+    quint32 checksum = qChecksum(d.buffer.data(), d.packet.header.packetSizeWithoutCs());
     // КС в конце пакета
     quint32 packCS;
     QDataStream stream(d.buffer);
     stream.setByteOrder(d.byteOrder);
     stream.setFloatingPointPrecision(d.precision);
-    stream.skipRawData(header.packetSizeWithoutCs());
+    stream.skipRawData(d.packet.header.packetSizeWithoutCs());
     stream >> packCS;
     if (checksum != packCS) {
         emit signalError(QString("DEPWorker: invalid checksum of all packet, 0x%1").arg(packCS, 0, 16));
         return false;
     }
+    d.packet.cs = packCS;
     return true;
 }
 

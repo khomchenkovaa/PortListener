@@ -6,14 +6,17 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>275</width>
-    <height>156</height>
+    <width>295</width>
+    <height>273</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QFormLayout" name="formLayout">
+   <property name="verticalSpacing">
+    <number>2</number>
+   </property>
    <item row="0" column="0">
     <widget class="QLabel" name="lblCsvFile">
      <property name="text">
@@ -39,47 +42,119 @@
     </layout>
    </item>
    <item row="1" column="0">
-    <widget class="QLabel" name="lblDefFile">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
+    <widget class="QLabel" name="lblTypeValue">
      <property name="text">
-      <string>Def conf</string>
+      <string>Type Value</string>
      </property>
     </widget>
    </item>
    <item row="1" column="1">
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
-     <property name="spacing">
-      <number>0</number>
-     </property>
+    <widget class="QComboBox" name="cmbTypeValue">
      <item>
-      <widget class="QLineEdit" name="editDefFile">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-      </widget>
+      <property name="text">
+       <string>NONE</string>
+      </property>
      </item>
      <item>
-      <widget class="QToolButton" name="btnDefFile">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="text">
-        <string>...</string>
-       </property>
-      </widget>
+      <property name="text">
+       <string>FLOATVALID</string>
+      </property>
      </item>
-    </layout>
+     <item>
+      <property name="text">
+       <string>SDWORDVALID</string>
+      </property>
+     </item>
+    </widget>
    </item>
    <item row="2" column="0">
+    <widget class="QLabel" name="lblTypeColumn">
+     <property name="text">
+      <string>Type Column</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QSpinBox" name="spinTypeColumn">
+     <property name="minimum">
+      <number>-1</number>
+     </property>
+     <property name="maximum">
+      <number>20</number>
+     </property>
+     <property name="value">
+      <number>-1</number>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="lblIndexColumn">
+     <property name="text">
+      <string>Index Column</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QSpinBox" name="spinIndexColumn">
+     <property name="minimum">
+      <number>-1</number>
+     </property>
+     <property name="maximum">
+      <number>20</number>
+     </property>
+     <property name="value">
+      <number>-1</number>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="lblKksColumn">
+     <property name="text">
+      <string>KKS Column</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="1">
+    <widget class="QSpinBox" name="spinKksColumn">
+     <property name="minimum">
+      <number>-1</number>
+     </property>
+     <property name="maximum">
+      <number>20</number>
+     </property>
+     <property name="value">
+      <number>-1</number>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0">
+    <widget class="QLabel" name="lblIidColumn">
+     <property name="text">
+      <string>IID Column</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1">
+    <widget class="QSpinBox" name="spinIidColumn">
+     <property name="minimum">
+      <number>-1</number>
+     </property>
+     <property name="maximum">
+      <number>20</number>
+     </property>
+     <property name="value">
+      <number>-1</number>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0">
     <widget class="QLabel" name="lblOutputFile">
      <property name="text">
       <string>Output</string>
      </property>
     </widget>
    </item>
-   <item row="2" column="1">
+   <item row="6" column="1">
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <property name="spacing">
       <number>0</number>
@@ -96,7 +171,7 @@
      </item>
     </layout>
    </item>
-   <item row="3" column="1">
+   <item row="7" column="1">
     <widget class="QCheckBox" name="chkAppend">
      <property name="text">
       <string>append</string>

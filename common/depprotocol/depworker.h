@@ -16,10 +16,10 @@ class DEPWorker : public QObject
     Q_OBJECT
 
     struct DEPWorkerData {
-        QByteArray buffer;           ///< receiving bytes
+        QByteArray buffer;    ///< receiving bytes
         QDataStream::FloatingPointPrecision precision = QDataStream::SinglePrecision;
         QDataStream::ByteOrder byteOrder = QDataStream::LittleEndian;
-        quint32    packCS;           ///< контрольная сумма последнего пакета целиком
+        DEP packet;           ///< received packet
     };
 
 public:
@@ -31,10 +31,21 @@ public:
         return QString("DEP worker object");
     }
 
+    DEPData packetData() const {
+        return d.packet.data;
+    }
+
     /// добавить новые пришедшие байты в  текущий буфер m_buffer, затем выполнить work()
     void addToBuffer(const QByteArray& ba) {
-        d.buffer.append(ba);
-        work();
+        d.buffer.append(ba);        
+    }
+
+    bool isBufferEmpty() const {
+        return d.buffer.isEmpty();
+    }
+
+    bool doWork() {
+        return work();
     }
 
     /// устанавливает порядок байт для чтения из потока
@@ -73,11 +84,11 @@ private:
      * затем если хватает данных(размер в DEPHeader - len) на весь пакет, то считывается весь пакет и целиком удаляется из m_buffer
      * если на весь пакет байт не хватает то  ждем следующего цикла и заново считываем тот же заголовок и т.д.
      */
-    void work(bool try_next = false);
+    bool work(bool try_next = false);
 
     // функции, которые выполняются при считывании пакетов из m_buffer
     /// проверка контрольной суммы текущего читаемого пакета целиком
-    bool isPackChecksumOk(const DEPHeader& header);
+    bool isPackChecksumOk();
 
     /// попытаться найти валидный заголовок в начале m_buffer, 2-й парметр результат поиска
     DEPHeader tryGetHeader(bool& ok);

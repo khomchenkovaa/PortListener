@@ -15,14 +15,17 @@ class DepHandler : public MessageHandler
 
     struct DepHandlerPrivate {
         Gate::CsvConf csvConf;
-//        Gate::DefConf defConf;
         QFile         outFile;
         DEPWorker    *depWorker = Q_NULLPTR; ///< обьект для обработки (паковки/распаковки DEP-пакетов)
     };
 public:
     enum Settings {
         CsvFileName,
-//        DefFileName,
+        TypeValue,
+        TypeColumn,
+        IndexColumn,
+        KksColumn,
+        IidColumn,
         OutFileName,
         FileAppend
     };
