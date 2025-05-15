@@ -92,8 +92,8 @@ struct DEPDataHeader
     quint32 version    = DEP_PARAM_PACK_VERSION;       ///< Версия (Сейчас 0x10000 = "0.1.0.0")
     quint32 packType   = PackingType::ptIndividual;    ///< способ паковки: 1 - Индивидуально, 2 - Массив (реализовано только для варианта - 1)
     quint32 dataType   = 0;                            ///< id типа данных  (елемент множества DEPDataType), реализовано только для типов: dpdtFloatValid, dpdtSDWordValid
-    quint32 commonTime = DEPTimePoint::tptUTmsecUTC;   ///< Тип общей метки времени: 0 - нет, или значение из множества DEPTimePoint
-    quint32 paramTime  = DEPTimePoint::tptUTmsecUTC;   ///< Тип индивидуальной метки времени параметров: аналогично предыдущему
+    quint32 commonTime = DEPTimePoint::dptpUTmsecUTC;   ///< Тип общей метки времени: 0 - нет, или значение из множества DEPTimePoint
+    quint32 paramTime  = DEPTimePoint::dptpUTmsecUTC;   ///< Тип индивидуальной метки времени параметров: аналогично предыдущему
     quint32 startIndex = 0;                            ///< Начальный индекс для паковки последовательным массивом (иначе 0)
     quint32 paramCount = 0;                            ///< Число параметров
 

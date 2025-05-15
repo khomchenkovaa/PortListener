@@ -71,8 +71,8 @@ void DEPDataHeader::prepare(int p_type, int p_count, quint32 pos)
     version    = quint32(DEP_PARAM_PACK_VERSION);
     packType   = ptIndividual;
     dataType   = p_type;
-    commonTime = tptUTmsecUTC;
-    paramTime  = tptUTmsecUTC;
+    commonTime = dptpUTmsecUTC;
+    paramTime  = dptpUTmsecUTC;
     startIndex = pos;
     paramCount = p_count;
 }
@@ -83,11 +83,11 @@ void DEPDataRecord::fromDataStream(QDataStream &stream, const DEPDataHeader &i_h
 {
     stream >> pack_index;
     switch (i_header.paramTime) {
-    case DEPTimePoint::tptNone:
+    case DEPTimePoint::dptpNone:
         dt = QDateTime::currentDateTime();
         stream.skipRawData(sizeof(w32_time_us));
         break;
-    case DEPTimePoint::tptUTmsecUTC:
+    case DEPTimePoint::dptpUTmsecUTC:
     {
         w32_time_us t;
         t.fromStream(stream);

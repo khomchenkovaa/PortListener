@@ -15,6 +15,7 @@ bool DEPWorker::work(bool try_next)
     bool ok;
     d.packet.header = tryGetHeader(ok);
     if (!ok) return false;
+
     if (isPackChecksumOk()) {
         QByteArray body_ba(d.buffer.mid(DEPHeader::REC_SIZE, d.packet.header.bodySize));
         d.packet.data = parseBodyPacket(body_ba);
@@ -94,7 +95,7 @@ void DEPWorker::wrapPacket(QByteArray& packet_ba) const
     //prepare stream for writing packet
     QByteArray ba;
     QDataStream stream(&ba, QIODevice::WriteOnly);
-    stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+    stream.setFloatingPointPrecision(d.precision);
     stream.setByteOrder(d.byteOrder);
 
     //prepare external header
@@ -134,11 +135,11 @@ DEPData DEPWorker::parseBodyPacket(const QByteArray &ba)
 
     // read optional data (timepoint)
     switch(result.header.commonTime) {
-    case DEPTimePoint::tptNone:
+    case DEPTimePoint::dptpNone:
         emit signalMsg("DEPWorker: No time pont");
         result.commonTime = QDateTime::currentDateTimeUtc();
         break;
-    case DEPTimePoint::tptUTmsecUTC:
+    case DEPTimePoint::dptpUTmsecUTC:
         if (int(result.header.headerSize) > DEPDataHeader::REC_SIZE) {
             w32_time_us t;
             t.fromStream(stream);
@@ -175,6 +176,8 @@ DEPDataRecords DEPWorker::readData(const QByteArray &ba, const DEPDataHeader &i_
         return result;
     }
 
+    QByteArray view_ba;     ///< массив байт предназначенный для вьюхи, туда будут порциями(8 байт) складываться значения и валидности
+    QList<quint16> indexes; ///< список индексов-позиций параметров в пакете DEP для сопоставления с местом положения во вьюхе
     QDataStream stream(ba);
     stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
     stream.setByteOrder(d.byteOrder);
@@ -183,7 +186,13 @@ DEPDataRecords DEPWorker::readData(const QByteArray &ba, const DEPDataHeader &i_
         DEPDataRecord rec;
         rec.fromDataStream(stream, i_header);
         result << rec;
+        /// позиция текущей записи(offset)
+        int rec_pos = i_header.headerSize + DEPDataRecord::REC_SIZE * i;
+        view_ba.append(ba.mid(rec_pos + 3 * sizeof(quint32), VIEW_PARAM_SIZE));
+        indexes.append(rec.pack_index);
     }
+
+    emit signalRewriteReceivedPacket(indexes, view_ba);
 
     return result;
 }

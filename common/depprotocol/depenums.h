@@ -35,18 +35,18 @@ enum DEPDataType
 /// тип временной метки
 enum DEPTimePoint
 {
-    tptNone = 0,      ///< 0 No timepoint
-    tptRaw,           ///< 1 Raw bytearray (only look on change)
-    tptUnixTime,      ///< 2 Unix time: second from 1970-01-01 00:00:00 UTC
-    tptLocalUnixTime, ///< 3 "Unix time" second from 1970-01-01 00:00:00 Local
-    tptKILocal,       ///< 4 KI "timeval": second from 1970-01-01 00:00:00  Local + usec (microseconds)
-    tptKIUTC,         ///< 5 UTC KI "timeval": second from 1970-01-01 00:00:00 UTC + usec (microseconds)
-    tptUTmsecUTC,     ///< 6 Unix time: (UTC) seconds + msec (milliseconds)
-    tptUTmsecLocal,   ///< 7 Local "Unix time" seconds + msec (milliseconds)
-    tptUTdoubleUTC,   ///< 8 Unix time: (UTC) seconds with fractional
-    tptUTdoubleLocal, ///< 9 Local "Unix time" seconds  with fractional
-    tptTimeSpec,      ///< 10 timespec (32 bits) second from 1970-01-01 00:00:00 UTC + nsec (nanoseconds) (int32+int32)
-    tptTimeSpec64,    ///< 11 timespec (64 bits) second from 1970-01-01 00:00:00 UTC + nsec (nanoseconds) (int64+int64)
+    dptpNone = 0,      ///< 0 No timepoint
+    dptpRaw,           ///< 1 Raw bytearray (only look on change)
+    dptpUnixTime,      ///< 2 Unix time: second from 1970-01-01 00:00:00 UTC
+    dptpLocalUnixTime, ///< 3 "Unix time" second from 1970-01-01 00:00:00 Local
+    dptpKILocal,       ///< 4 KI "timeval": second from 1970-01-01 00:00:00  Local + usec (microseconds)
+    dptpKIUTC,         ///< 5 UTC KI "timeval": second from 1970-01-01 00:00:00 UTC + usec (microseconds)
+    dptpUTmsecUTC,     ///< 6 Unix time: (UTC) seconds + msec (milliseconds)
+    dptpUTmsecLocal,   ///< 7 Local "Unix time" seconds + msec (milliseconds)
+    dptpUTdoubleUTC,   ///< 8 Unix time: (UTC) seconds with fractional
+    dptpUTdoubleLocal, ///< 9 Local "Unix time" seconds  with fractional
+    dptpTimeSpec,      ///< 10 timespec (32 bits) second from 1970-01-01 00:00:00 UTC + nsec (nanoseconds) (int32+int32)
+    dptpTimeSpec64,    ///< 11 timespec (64 bits) second from 1970-01-01 00:00:00 UTC + nsec (nanoseconds) (int64+int64)
 };
 
 #endif //DEP_ENUMS_H
