@@ -4,7 +4,6 @@
 #include "xcsvmodel.h"
 #include "xutils.h"
 
-#include <QFile>
 #include <QTextCodec>
 
 namespace Gate {
@@ -56,30 +55,72 @@ enum DPDataType {
     TIMESPEC64         = 43  ///< timespec для 64-ти битовых time_t and nsec: time_t (8 байт) + наносекунды (8 байт) (16-ти байтовая структура)
 };
 
-inline DPDataType typeValueFromString(const QString &typeName) {
-    static const QStringList names = QString(
-                "NONE,BYTE,SBYTE,WORD,SWORD,DWORD,SDWORD,QWORD,SQWORD,FLOAT,"
-                "DOUBLE,(LongDouble),BIT,(BitField),(SBitField),BOOL,ASCIIZ,SM2MCODE,FLOATVALID,SDWORDVALID,"
-                "TIME_T32,FLOATSTATE,SDWORDSTATE,TIMEVAL,BLOBQSTRING,KIVALID,KISTATE,ERRCODEDWORD,VNIIEMDWORD,VNIIEMBYTE,"
-                "FLOATERRCODE,SDWORDERRCODE,WORDDISCRETE,DTSFLOAT,DTSSDWORD,DTSSDWORDDISCRETE,SWORDERRCODE,ERRCODEWORD,TIMESPEC,TIMEWITHMSECS,"
-                "DOUBLEDAYSECSUTC,DOUBLEDAYSECSLOCAL,DOUBLEVALID,TIMESPEC64"
-                ).split(',');
-    return names.contains(typeName) ?
-                static_cast<DPDataType>(names.indexOf(typeName)) :
-                DPDataType::NONE;
+inline QString depDataTypeName(int idx) {
+    switch (idx) {
+    case DPDataType::BYTE:               return "BYTE";
+    case DPDataType::SBYTE:              return "SBYTE";
+    case DPDataType::WORD:               return "WORD";
+    case DPDataType::SWORD:              return "SWORD";
+    case DPDataType::DWORD:              return "DWORD";
+    case DPDataType::SDWORD:             return "SDWORD";
+    case DPDataType::QWORD:              return "QWORD";
+    case DPDataType::SQWORD:             return "SQWORD";
+    case DPDataType::FLOAT:              return "FLOAT";
+    case DPDataType::DOUBLE:             return "DOUBLE";
+    case DPDataType::LongDouble:         return "(LongDouble)";
+    case DPDataType::BIT:                return "BIT";
+    case DPDataType::BitField:           return "(BitField)";
+    case DPDataType::SBitField:          return "(SBitField)";
+    case DPDataType::BOOL:               return "BOOL";
+    case DPDataType::ASCIIZ:             return "ASCIIZ";
+    case DPDataType::SM2MCODE:           return "SM2MCODE";
+    case DPDataType::FLOATVALID:         return "FLOATVALID";
+    case DPDataType::SDWORDVALID:        return "SDWORDVALID";
+    case DPDataType::TIME_T32:           return "TIME_T32";
+    case DPDataType::FLOATSTATE:         return "FLOATSTATE";
+    case DPDataType::SDWORDSTATE:        return "SDWORDSTATE";
+    case DPDataType::TIMEVAL:            return "TIMEVAL";
+    case DPDataType::BLOBQSTRING:        return "BLOBQSTRING";
+    case DPDataType::KIVALID:            return "KIVALID";
+    case DPDataType::KISTATE:            return "KISTATE";
+    case DPDataType::ERRCODEDWORD:       return "ERRCODEDWORD";
+    case DPDataType::VNIIEMDWORD:        return "VNIIEMDWORD";
+    case DPDataType::VNIIEMBYTE:         return "VNIIEMBYTE";
+    case DPDataType::FLOATERRCODE:       return "FLOATERRCODE";
+    case DPDataType::SDWORDERRCODE:      return "SDWORDERRCODE";
+    case DPDataType::WORDDISCRETE:       return "WORDDISCRETE";
+    case DPDataType::DTSFLOAT:           return "DTSFLOAT";
+    case DPDataType::DTSSDWORD:          return "DTSSDWORD";
+    case DPDataType::DTSSDWORDDISCRETE:  return "DTSSDWORDDISCRETE";
+    case DPDataType::SWORDERRCODE:       return "SWORDERRCODE";
+    case DPDataType::ERRCODEWORD:        return "ERRCODEWORD";
+    case DPDataType::TIMESPEC:           return "TIMESPEC";
+    case DPDataType::TIMEWITHMSECS:      return "TIMEWITHMSECS";
+    case DPDataType::DOUBLEDAYSECSUTC:   return "DOUBLEDAYSECSUTC";
+    case DPDataType::DOUBLEDAYSECSLOCAL: return "DOUBLEDAYSECSLOCAL";
+    case DPDataType::DOUBLEVALID:        return "DOUBLEVALID";
+    case DPDataType::TIMESPEC64:         return "TIMESPEC64";
+    }
+    return QString();
 }
 
-inline DPDataType typeByString(const QString &str) {
-    if(str.compare("A", Qt::CaseInsensitive) == 0 || str.compare("R", Qt::CaseInsensitive) == 0) {
-        return DPDataType::DTSFLOAT;
+inline DPDataType depDataTypeFromString(const QString &typeName) {
+    for (int i=DPDataType::BYTE; i<=DPDataType::TIMESPEC64; ++i) {
+        if (typeName.compare(depDataTypeName(i), Qt::CaseInsensitive) == 0) {
+            return static_cast<DPDataType>(i);
+        }
     }
-    if(str.compare("D", Qt::CaseInsensitive) == 0 || str.compare("B", Qt::CaseInsensitive) == 0){
-        return DPDataType::DTSSDWORDDISCRETE;
-    }
-    if(str.compare("I", Qt::CaseInsensitive) == 0 || str.compare("N", Qt::CaseInsensitive) == 0){
-        return DPDataType::DTSSDWORD;
-    }
-    return static_cast<DPDataType>(typeValueFromString(str));
+    return DPDataType::NONE;
+}
+
+inline DPDataType depTypeByString(const QString &str) {
+    if (str.compare("A", Qt::CaseInsensitive) == 0) return DPDataType::DTSFLOAT;
+    if (str.compare("R", Qt::CaseInsensitive) == 0) return DPDataType::DTSFLOAT;
+    if (str.compare("D", Qt::CaseInsensitive) == 0) return DPDataType::DTSSDWORDDISCRETE;
+    if (str.compare("B", Qt::CaseInsensitive) == 0) return DPDataType::DTSSDWORDDISCRETE;
+    if (str.compare("I", Qt::CaseInsensitive) == 0) return DPDataType::DTSSDWORD;
+    if (str.compare("N", Qt::CaseInsensitive) == 0) return DPDataType::DTSSDWORD;
+    return static_cast<DPDataType>(depDataTypeFromString(str));
 }
 
 
@@ -120,7 +161,7 @@ struct CsvConf
         if (csvModel.columnCount() <= csv.maxIndex()) {
             return -1; // lines too short
         }
-        DPDataType defaultType = typeByString(csv.typeValue);
+        DPDataType defaultType = depTypeByString(csv.typeValue);
         if (defaultType == DPDataType::NONE && csv.typeColumn == -1) {
             return -2; // type value is not defined
         }
@@ -134,7 +175,7 @@ struct CsvConf
             CsvConfItem item;
             if (csv.typeColumn != -1) {
                 QString typeStr = csvModel.data(csvModel.index(i, csv.typeColumn)).toString();
-                item.type = typeByString(csv.typeValue);
+                item.type = depTypeByString(typeStr);
             } else {
                 item.type = defaultType;
             }
@@ -149,121 +190,6 @@ struct CsvConf
         }
         return items.size();
     }
-};
-
-class DefConf {
-
-    enum {
-        NameColumn,
-        TypeColumn,
-        OffsetColumn,
-        LayersColumn,
-        RowsColumn,
-        ColumnsColumn
-    };
-
-    struct DefConfItem {
-        QString name;        ///< код параметра (kks, rtm и iid)
-        QString type;        ///< тип
-        quint64 offset  = 0; ///< Смещение в байтах от начала области
-        quint16 layers  = 1; ///< Слои - позволяет задать массивы, но используются только 1 (один слой)
-        quint16 rows    = 1; ///< Ряды - позволяет задать массивы, но используются только 1 (один ряд)
-        quint16 columns = 1; ///< Колонки - позволяет задать массивы, но используются только 1 (одна колонка)
-    };
-
-    struct DefConfItemPrivate {
-        quint32 fields = 0;  ///< Число полей (параметров), игнорируется, по умолчанию - 0
-        int     size   = 4;  ///< Размер области памяти в байтах (должно вмещать все параметры, но может быть и с запасом)
-        QList<DefConfItem> items;
-    };
-
-public:
-    void load(const QString &fileName) {
-        quint8 state = 0;
-        QFile file(fileName);
-        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            return;
-        }
-        while (!file.atEnd()) {
-            QString line = file.readLine().trimmed();
-            if (line.isEmpty()) continue;
-            if (line.startsWith('#')) continue;
-            if (state == 0) {
-                d.fields = line.toUInt();
-                state = 1;
-                continue;
-            }
-            if (state == 1) {
-                d.size = line.toInt();
-                state = 2;
-                continue;
-            }
-            const auto values = Utils::parseCsvRow(line, ',');
-            DefConfItem item;
-            if (values.size() > NameColumn)    item.name    = values.at(NameColumn);
-            if (values.size() > TypeColumn)    item.type    = values.at(TypeColumn);
-            if (values.size() > OffsetColumn)  item.offset  = values.at(OffsetColumn).toUInt();
-            if (values.size() > LayersColumn)  item.layers  = values.at(LayersColumn).toUInt();
-            if (values.size() > RowsColumn)    item.rows    = values.at(RowsColumn).toUInt();
-            if (values.size() > ColumnsColumn) item.columns = values.at(ColumnsColumn).toUInt();
-            d.items << item;
-        }
-
-        file.close();
-    }
-
-    int size() const {
-        return d.size;
-    }
-
-    int fields() const {
-        return d.items.size();
-    }
-
-    QString name(int idx) const {
-        if (idx < d.items.size()) return d.items.at(idx).name;
-        return QString();
-    }
-
-    QString type(int idx) const {
-        if (idx < d.items.size()) return d.items.at(idx).type;
-        return QString();
-    }
-
-    int typeId(int idx) const {
-        static const QStringList typeVals = QStringList()
-                << "type_timeval"            //  1 - TIMEVAL
-                << "type_rval"               //  2 - FLOATVALID
-                << "type_ival"               //  3 - SDWORDVALID
-                << "type_srval"              //  4 - FLOATSTATE
-                << "type_sival"              //  5 - SDWORDSTATE
-                << "type_longint"            //  6 - SDWORD (int32)
-                << "type_float"              //  7 - FLOAT (float)
-                << "type_shortint"           //  8 - SWORD (int16)
-                << "type_binshortint"        //  9 - WORDDISCRETE (int16 0/1/-1)
-                << "type_double"             // 10 - DOUBLE (double)
-                << "type_errshortintval"     // 11 - SWORDERRCODE (int16+int16)
-                << "type_errival"            // 12 - SDWORDERRCODE (int32+int32)
-                << "type_errrval"            // 13 - FLOATERRCODE (float+int32)
-                << "type_sbyte"              // 14 - SBYTE (int8)
-                << "type_binbyte"            // 15 - BOOL ((u)int8 с 0 and 1(не 0))
-                << "type_timespec"           // 16 - TIMESPEC (8-ми байтная структура)
-                << "type_doubledaysecsuts"   // 17 - DOUBLEDAYSECSUTC (double)
-                << "type_doubledaysecslocal" // 18 - DOUBLEDAYSECSLOCAL (double)
-                << "type_longuint"           // 19 - DWORD (uint32)
-                << "type_timespec64"         // 20 - TIMESPEC64 (8 байт+8 байт)
-                << "type_int64"              // 21 - SQWORD (int64)
-                << "type_uint64";            // 22 - QWORD (uint64)
-        return typeVals.indexOf(type(idx)) + 1; // not found (-1) is mapped to NONE (0)
-    };
-
-    quint64 offset(int idx) const {
-        if (idx < d.items.size()) return d.items.at(idx).offset;
-        return 0;
-    }
-
-private:
-    DefConfItemPrivate d;
 };
 
 } // namespace Gate

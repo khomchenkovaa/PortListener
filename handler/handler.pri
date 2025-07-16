@@ -12,6 +12,7 @@ HEADERS += \
     $$PWD/modbushandler.h \
     $$PWD/modbushandlerconf.h \
     $$PWD/modbushelper.h \
+    $$PWD/mqhandlerconf.h \
     $$PWD/sockhandler.h \
     $$PWD/tcphandler.h \
     $$PWD/udphandler.h
