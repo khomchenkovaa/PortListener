@@ -2,6 +2,7 @@
 #define MQUEUELISTENER_H
 
 #include "listenerwidget.h"
+#include "mqworker.h"
 
 namespace Ui {
 class MQueueListener;
@@ -22,6 +23,7 @@ protected:
     QTextBrowser *textLog() const;
 
 private Q_SLOTS:
+    void onReadyRead();
     void doConnect();
     void doDisconnect();
     void onInputFormatChanged();
@@ -37,6 +39,8 @@ private:
 
 private:
     Ui::MQueueListener *ui;
+    MQWorker *mq_worker;
+    QTimer   *mq_exchangeTimer; ///< таймер для записи/чтении в/из очередей, включается/выключается пользователем кнопками старт/стоп
 };
 
 #endif // MQUEUELISTENER_H
