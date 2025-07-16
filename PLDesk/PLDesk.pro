@@ -1,8 +1,11 @@
-QT       += core gui network sql
+QT += core gui network sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
+# comment next line if you don't want the modbus
 QT += serialbus
+
+unix:!macx: DEFINES += MQUEUE
 
 CONFIG += c++11
 
@@ -16,6 +19,12 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # In order to do so, uncomment the following line.
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
+
+include("../common/ext/ext.pri")
+include("../common/depprotocol/depprotocol.pri")
+include("../messaging/messaging.pri")
+include("../handler/handler.pri")
+include("../handlerwgt/handlerwgt.pri")
 
 SOURCES += \
     datasender.cpp \
@@ -55,11 +64,11 @@ contains(QT, serialbus) {
         modbustcplistener.ui
 }
 
-include("../common/ext/ext.pri")
-include("../common/depprotocol/depprotocol.pri")
-include("../messaging/messaging.pri")
-include("../handler/handler.pri")
-include("../handlerwgt/handlerwgt.pri")
+contains(DEFINES, MQUEUE) {
+    include("../common/mq/mq.pri")
+
+    LIBS += -lrt
+}
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
