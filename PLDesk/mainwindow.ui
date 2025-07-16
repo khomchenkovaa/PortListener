@@ -91,6 +91,20 @@
                </property>
               </widget>
              </item>
+             <item row="4" column="0">
+              <widget class="QPushButton" name="btnMqueue">
+               <property name="text">
+                <string>MQueue</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="1">
+              <widget class="QLabel" name="lblMqueue">
+               <property name="text">
+                <string>via mqueue</string>
+               </property>
+              </widget>
+             </item>
             </layout>
            </widget>
           </item>
@@ -118,7 +132,7 @@
               </widget>
              </item>
              <item row="1" column="1">
-              <widget class="QLabel" name="label">
+              <widget class="QLabel" name="lblModbusTcpServer">
                <property name="text">
                 <string>via QModbusTcpServer</string>
                </property>
@@ -132,7 +146,7 @@
               </widget>
              </item>
              <item row="2" column="1">
-              <widget class="QLabel" name="label_2">
+              <widget class="QLabel" name="lblModbusTcpClient">
                <property name="text">
                 <string>via QModbusTcpClient</string>
                </property>
@@ -192,6 +206,7 @@
     <addaction name="actionTCP_port"/>
     <addaction name="actionUDP_port"/>
     <addaction name="actionSocket"/>
+    <addaction name="actionMQueue"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
@@ -245,6 +260,11 @@
   <action name="actionDataSender">
    <property name="text">
     <string>Data Sender</string>
+   </property>
+  </action>
+  <action name="actionMQueue">
+   <property name="text">
+    <string>MQueue</string>
    </property>
   </action>
  </widget>

@@ -19,6 +19,7 @@ private slots:
     void addTcpListener();
     void addUdpListener();
     void addSocketListener();
+    void addMqueueListener();
     void addModbusTcpServer();
     void addModbusTcpClient();
     void addDataSender();

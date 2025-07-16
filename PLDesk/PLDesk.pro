@@ -67,6 +67,15 @@ contains(QT, serialbus) {
 contains(DEFINES, MQUEUE) {
     include("../common/mq/mq.pri")
 
+    SOURCES += \
+        mqueuelistener.cpp
+
+    HEADERS += \
+        mqueuelistener.h
+
+    FORMS += \
+        mqueuelistener.ui
+
     LIBS += -lrt
 }
 

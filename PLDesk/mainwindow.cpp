@@ -11,6 +11,10 @@
 #include "modbustcplistener.h"
 #endif
 
+#ifdef MQUEUE
+#include "mqueuelistener.h"
+#endif
+
 #include <QTabBar>
 
 /********************************************************/
@@ -71,6 +75,21 @@ void MainWindow::addSocketListener()
 
 /********************************************************/
 
+void MainWindow::addMqueueListener()
+{
+#ifdef MQUEUE
+    auto widget = new MQueueListener(this);
+    ui->tabWidget->addTab(widget, tr("MQ [-]"));
+    ui->tabWidget->setCurrentWidget(widget);
+    connect(widget, &MQueueListener::tabText, this, [this, widget](const QString &label) {
+        int idx = ui->tabWidget->indexOf(widget);
+        ui->tabWidget->setTabText(idx, label);
+    });
+#endif
+}
+
+/********************************************************/
+
 void MainWindow::addModbusTcpServer()
 {
 #ifdef QT_SERIALBUS_LIB
@@ -118,6 +137,8 @@ void MainWindow::setupUI()
             ui->actionUDP_port, &QAction::triggered);
     connect(ui->btnSocket, &QPushButton::clicked,
             ui->actionSocket, &QAction::triggered);
+    connect(ui->btnMqueue, &QPushButton::clicked,
+            ui->actionMQueue, &QAction::triggered);
     connect(ui->btnModbusTcpServer, &QPushButton::clicked,
             ui->actionModbusTcpServer, &QAction::triggered);
     connect(ui->btnModbusTcpClient, &QPushButton::clicked,
@@ -129,6 +150,8 @@ void MainWindow::setupUI()
             this, &MainWindow::addUdpListener);
     connect(ui->actionSocket, &QAction::triggered,
             this, &MainWindow::addSocketListener);
+    connect(ui->actionMQueue, &QAction::triggered,
+            this, &MainWindow::addMqueueListener);
     connect(ui->actionModbusTcpServer, &QAction::triggered,
             this, &MainWindow::addModbusTcpServer);
     connect(ui->actionModbusTcpClient, &QAction::triggered,
@@ -141,6 +164,11 @@ void MainWindow::setupUI()
     ui->actionModbusTcpServer->setDisabled(true);
     ui->btnModbusTcpClient->setDisabled(true);
     ui->actionModbusTcpClient->setDisabled(true);
+#endif
+
+#ifndef MQUEUE
+    ui->btnMqueue->setDisabled(true);
+    ui->actionMQueue->setDisabled(true);
 #endif
 
     connect(ui->tabWidget->tabBar(), &QTabBar::tabCloseRequested, this, [this](int index){
