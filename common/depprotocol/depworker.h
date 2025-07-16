@@ -65,17 +65,22 @@ public:
         return makeDEPPacket(indexes, view_ba, dpdtFloatValid);
     }
 
+    /// создать готовый пакет для отправки со значениями типа dpdtFloatValid
+    QByteArray makeFloatValidPacket(const DEPDataRecords &data) const {
+        return makeDEPPacket(data, dpdtFloatValid);
+    }
+
     /// создать готовый пакет для отправки со значениями типа dpdtSDWordValid
     QByteArray makeIntValidPacket(const QList<quint16> &indexes, const QByteArray &view_ba) const {
         return makeDEPPacket(indexes, view_ba, dpdtSDWordValid);
     }
 
+    /// создать готовый пакет для отправки со значениями типа dpdtSDWordValid
+    QByteArray makeIntValidPacket(const DEPDataRecords &data) const {
+        return makeDEPPacket(data, dpdtSDWordValid);
+    }
+
 signals:
-    /**
-     * @brief эмитится когда был упешно спарсен полностью очередной пришедшедший пакет
-     * далее он конвертируется в спец. QByteArray - формат понятный для вьюхи (xmlpack lib)
-     */
-    void signalRewriteReceivedPacket(const QList<quint16>& indexes, const QByteArray& view_ba);
     void dataReceived(const DEPData& data);
     void signalError(const QString& msg);
     void signalMsg(const QString& msg);
@@ -100,13 +105,16 @@ private:
     DEPData parseBodyPacket(const QByteArray& ba);
 
     /// извлечь данные после заголовка из тела пакета
-    DEPDataRecords readData(const QByteArray& ba, const DEPDataHeader& i_header);
+    DEPDataRecords readData(const QByteArray &ba, const DEPDataHeader &i_header);
 
     /// обернуть готовый внутренний пакет в DEPHeader и checksum
     void wrapPacket(QByteArray& packet_ba) const;
 
     /// make DEP packet by data type
     QByteArray makeDEPPacket(const QList<quint16> &indexes, const QByteArray &view_ba, int p_type) const;
+
+    /// make DEP packet by data type
+    QByteArray makeDEPPacket(const DEPDataRecords &data, int p_type) const;
 
 private:
     DEPWorkerData d;

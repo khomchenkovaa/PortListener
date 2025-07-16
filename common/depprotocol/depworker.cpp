@@ -23,7 +23,6 @@ bool DEPWorker::work(bool try_next)
     }
     d.buffer.remove(0, d.packet.header.packetSize());
     return true;
-//    d.buffer.clear();
 }
 
 DEPHeader DEPWorker::tryGetHeader(bool &ok)
@@ -176,24 +175,15 @@ DEPDataRecords DEPWorker::readData(const QByteArray &ba, const DEPDataHeader &i_
         return result;
     }
 
-    QByteArray view_ba;     ///< массив байт предназначенный для вьюхи, туда будут порциями(8 байт) складываться значения и валидности
-    QList<quint16> indexes; ///< список индексов-позиций параметров в пакете DEP для сопоставления с местом положения во вьюхе
     QDataStream stream(ba);
-    stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+    stream.setFloatingPointPrecision(d.precision);
     stream.setByteOrder(d.byteOrder);
     stream.skipRawData(i_header.headerSize);
     for (quint32 i=0; i < i_header.paramCount; i++) {
         DEPDataRecord rec;
         rec.fromDataStream(stream, i_header);
         result << rec;
-        /// позиция текущей записи(offset)
-        int rec_pos = i_header.headerSize + DEPDataRecord::REC_SIZE * i;
-        view_ba.append(ba.mid(rec_pos + 3 * sizeof(quint32), VIEW_PARAM_SIZE));
-        indexes.append(rec.pack_index);
     }
-
-    emit signalRewriteReceivedPacket(indexes, view_ba);
-
     return result;
 }
 
@@ -221,6 +211,40 @@ QByteArray DEPWorker::makeDEPPacket(const QList<quint16> &indexes, const QByteAr
         body_stream << quint32(indexes.at(i));
         t.toStream(body_stream);
         body_stream.writeRawData(view_ba.mid(VIEW_PARAM_SIZE*i, VIEW_PARAM_SIZE).data(), VIEW_PARAM_SIZE);
+    }
+    //make full DEP packet
+    wrapPacket(packet_ba);
+    return packet_ba;
+}
+
+QByteArray DEPWorker::makeDEPPacket(const DEPDataRecords &data, int p_type) const
+{
+    //prepare data stream for pack BA
+    QByteArray packet_ba;
+    QDataStream body_stream(&packet_ba, QIODevice::WriteOnly);
+    body_stream.setFloatingPointPrecision(d.precision);
+    body_stream.setByteOrder(d.byteOrder);
+
+    //prepare internal header
+    DEPDataHeader i_header;
+    i_header.prepare(p_type, data.size());
+    i_header.toStream(body_stream);
+
+    //prepare time
+    w32_time_us t;
+    t.setCurrentTime();
+    t.dwLow /= 1000;
+    t.toStream(body_stream);
+
+    //write params data
+    for (const auto &rec : data) {
+        body_stream << rec.pack_index;
+        t.toStream(body_stream);
+        if (p_type == DEPDataType::dpdtFloatValid) {
+            body_stream << rec.value.toFloat() << rec.validity;
+        } else {
+            body_stream << rec.value.toInt() << rec.validity;
+        }
     }
     //make full DEP packet
     wrapPacket(packet_ba);

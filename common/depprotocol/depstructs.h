@@ -101,6 +101,8 @@ struct DEPDataHeader
     void fromDataStream(QDataStream& stream);
     void toStream(QDataStream& stream);
 
+    quint32 packSize() const;
+
     /// инициализировать заголовок перед отправкой пакета
     void prepare(int p_type, int p_count, quint32 pos = 0);
 };

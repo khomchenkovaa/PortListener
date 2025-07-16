@@ -64,6 +64,13 @@ void DEPDataHeader::toStream(QDataStream &stream)
 
 /********************************************************/
 
+quint32 DEPDataHeader::packSize() const
+{
+    return DEPHeader::REC_SIZE + headerSize + paramCount * DEPDataRecord::REC_SIZE + sizeof(quint32);
+}
+
+/********************************************************/
+
 void DEPDataHeader::prepare(int p_type, int p_count, quint32 pos)
 {
     //prepare internal header fields
