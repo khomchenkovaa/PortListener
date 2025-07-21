@@ -6,8 +6,10 @@ DEPENDPATH += $$PWD
 
 HEADERS += \
     $$PWD/mq.h \
-    $$PWD/mqworker.h
+    $$PWD/mqworker.h \
+    $$PWD/qmqueue.h
 
 SOURCES += \
     $$PWD/mq.cpp \
-    $$PWD/mqworker.cpp
+    $$PWD/mqworker.cpp \
+    $$PWD/qmqueue.cpp
