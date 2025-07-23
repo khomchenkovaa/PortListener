@@ -3,11 +3,11 @@
 #include <mqueue.h>
 #include <cstring>
 
+#include <QTimer>
+
 enum {
     MSG_PRIOR = 1
 };
-
-#define MQ_LINUX_DIR "/dev/mqueue"
 
 QT_BEGIN_NAMESPACE
 
@@ -55,8 +55,8 @@ QString generateErrorString(QMQueue::MQueueError error, const QString &function)
 int q_mqMode(int qIODeviceMode)
 {
     switch (qIODeviceMode) {
-    case QIODevice::WriteOnly: return O_WRONLY;
-    case QIODevice::ReadWrite: return O_RDWR;
+    case QIODevice::WriteOnly: return O_CREAT | O_WRONLY;
+    case QIODevice::ReadWrite: return O_CREAT | O_RDWR;
     default: break;
     }
     return O_RDONLY;
@@ -64,10 +64,10 @@ int q_mqMode(int qIODeviceMode)
 
 struct QMQueuePrivate {
     QString  queueName;          ///< имя очереди POSIX
-    QString  fullQueueName;
-    int		 handle = -99;	     ///< дескриптор очереди posix
+    mqd_t    handle = -1;	     ///< дескриптор очереди posix
     QMQueue::MQueueState state = QMQueue::UnconnectedState; ///< MQState enum element
     mq_attr  attrs;              ///< current attributes
+    QTimer   timer;
 
     /// текущий размер очереди
     int size() {
@@ -96,11 +96,11 @@ bool QMQueue::connectToQueue(OpenMode mode)
     }
 
     setErrorString(QString());
-    d->handle = -99;
+    d->handle = -1;
     d->state = ConnectingState;
     emit stateChanged(d->state);
 
-    if (d->fullQueueName.isEmpty()) {
+    if (d->queueName.isEmpty()) {
         QString errorString = generateErrorString(QMQueue::MQueueNotFoundError, "QMQueue::connectToQueue");
         setErrorString(errorString);
         emit errorOccurred(QMQueue::MQueueNotFoundError);
@@ -111,9 +111,9 @@ bool QMQueue::connectToQueue(OpenMode mode)
         return false;
     }
 
-    d->handle = mq_open(qPrintable(d->fullQueueName), q_mqMode(mode));
+    d->handle = mq_open(qPrintable(d->queueName), q_mqMode(mode), 0666, NULL);
 
-    if (d->handle <= 0) {
+    if (d->handle == (mqd_t)-1) {
         QString errorString = generateErrorString(QMQueue::UnsupportedMQueueOperationError, "QMQueue::connectToQueue");
         setErrorString(errorString);
         emit errorOccurred(QMQueue::UnsupportedMQueueOperationError);
@@ -124,14 +124,14 @@ bool QMQueue::connectToQueue(OpenMode mode)
         return false;
     }
 
-    if (mq_getattr(d->handle , &(d->attrs)) != 0) {
-        // is error?
-    }
-
     setOpenMode(mode);
     d->state = ConnectedState;
     emit stateChanged(d->state);
     emit connected();
+
+    connect(&d->timer, &QTimer::timeout, this, &QMQueue::checkNewMessages);
+    d->timer.start(1000);
+
     return isOpen();
 }
 
@@ -143,11 +143,17 @@ bool QMQueue::connectToQueue(const QString &name, OpenMode mode)
 
 void QMQueue::disconnectFromQueue()
 {
-    int result_code = mq_unlink(qPrintable(d->fullQueueName));
+    d->state = ClosingState;
+    emit stateChanged(d->state);
+
+    d->timer.stop();
+
+    int result_code = mq_close(d->handle);
     setErrorString(result_code ? std::strerror(errno) : QString());
-    d->handle = -99;
+    d->handle = -1;
     d->state = UnconnectedState;
     setOpenMode(QIODevice::NotOpen);
+
     emit stateChanged(d->state);
     emit disconnected();
 }
@@ -159,17 +165,12 @@ void QMQueue::setQueueName(const QString &name)
         return;
     }
     d->queueName = name;
-    d->fullQueueName = QString(MQ_LINUX_DIR) + "/" + name;
+    if (!d->queueName.startsWith('/')) d->queueName.prepend('/');
 }
 
 QString QMQueue::queueName() const
 {
     return d->queueName;
-}
-
-QString QMQueue::fullQueueName() const
-{
-    return d->fullQueueName;
 }
 
 bool QMQueue::isSequential() const
@@ -180,7 +181,7 @@ bool QMQueue::isSequential() const
 qint64 QMQueue::bytesAvailable() const
 {
     if (mq_getattr(d->handle , &(d->attrs)) != 0) {
-        // error
+        return 0;
     }
     return d->size();
 }
@@ -207,16 +208,15 @@ qint64 QMQueue::readData(char *data, qint64 maxSize)
          setErrorString(std::strerror(errno));
          return -1;
     }
-    uint prior = 0;
-    size_t len = d->attrs.mq_msgsize;
-    int resultCode = mq_receive(d->handle, data, len, &prior);
+    uint prior = MSG_PRIOR;
+    qint64 maxLen = qMin<qint64>(maxSize, d->attrs.mq_msgsize);
+    int resultCode = mq_receive(d->handle, data, maxLen, &prior);
     if (resultCode) {
         setErrorString(std::strerror(errno));
         return -1;
     }
     setErrorString(QString());
-    mq_getattr(d->handle, &(d->attrs));
-    return len;
+    return qstrlen(data);
 }
 
 qint64 QMQueue::writeData(const char *data, qint64 maxSize)
@@ -225,14 +225,24 @@ qint64 QMQueue::writeData(const char *data, qint64 maxSize)
          setErrorString(std::strerror(errno));
          return -1;
     }
-    int resultCode = mq_send(d->handle, data, maxSize, MSG_PRIOR);
+    qint64 maxLen = qMin<qint64>(maxSize, d->attrs.mq_msgsize);
+    maxLen = qMin<qint64>(maxLen, qstrlen(data));
+    int resultCode = mq_send(d->handle, data, maxLen, MSG_PRIOR);
     if (resultCode) {
         setErrorString(std::strerror(errno));
         return -1;
     }
     setErrorString(QString());
-    mq_getattr(d->handle, &(d->attrs));
-    return maxSize;
+    return maxLen;
+}
+
+void QMQueue::checkNewMessages()
+{
+    if (mq_getattr(d->handle , &(d->attrs)) == 0) {
+        if (d->attrs.mq_curmsgs) {
+            emit readyRead();
+        }
+    }
 }
 
 

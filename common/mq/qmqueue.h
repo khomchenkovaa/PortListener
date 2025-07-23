@@ -37,17 +37,16 @@ public:
     explicit QMQueue(QObject *parent = nullptr);
     ~QMQueue();
 
-    bool connectToQueue(OpenMode mode = ReadWrite);
-    bool connectToQueue(const QString &name, OpenMode mode = ReadWrite);
+    bool connectToQueue(QIODevice::OpenMode mode = QIODevice::ReadWrite);
+    bool connectToQueue(const QString &name, QIODevice::OpenMode mode = QIODevice::ReadWrite);
     void disconnectFromQueue();
 
     void setQueueName(const QString &name);
     QString queueName() const;
-    QString fullQueueName() const;
 
     bool isSequential() const override;
     qint64 bytesAvailable() const override;
-    bool open(OpenMode openMode = ReadWrite) override;
+    bool open(QIODevice::OpenMode openMode = QIODevice::ReadWrite) override;
     void close() override;
     MQueueState state() const;
 
@@ -60,6 +59,9 @@ Q_SIGNALS:
 protected:
     qint64 readData(char *data, qint64 maxSize) override;
     qint64 writeData(const char* data, qint64 maxSize) override;
+
+private Q_SLOTS:
+    void checkNewMessages();
 
 private:
     Q_DISABLE_COPY(QMQueue)
