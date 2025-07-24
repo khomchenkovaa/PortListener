@@ -8,6 +8,8 @@
 #include <QMessageBox>
 #include <QTimer>
 
+#define SIZE 8192
+
 MQueueListener::MQueueListener(QWidget *parent) :
     ListenerWidget(parent),
     ui(new Ui::MQueueListener)
@@ -31,13 +33,20 @@ MQueueListener::MQueueListener(QWidget *parent) :
     connect(ui->rbText, &QRadioButton::toggled,
             this, &MQueueListener::onInputFormatChanged);
 
-    mq_worker = new MQWorker(this);
-    connect(mq_worker, &MQWorker::logError,   this, &MQueueListener::printError);
-    connect(mq_worker, &MQWorker::logMessage, this, &MQueueListener::printMessage);
-
-    mq_exchangeTimer = new QTimer(this);
-    mq_exchangeTimer->stop();
-    connect(mq_exchangeTimer, &QTimer::timeout, this, &MQueueListener::onReadyRead);
+    mq_worker = new QMQueue(this);
+    connect(mq_worker, &QMQueue::connected, this, [this](){
+        printInfo(mq_worker->queueName(), "Connected");
+    });
+    connect(mq_worker, &QMQueue::disconnected, this, [this](){
+        printInfo(mq_worker->queueName(), "Disonnected");
+    });
+    connect(mq_worker, &QMQueue::errorOccurred, this, [this](QMQueue::MQueueError queueError){
+        printError(mq_worker->queueName(), QMQueue::mqErrorString(queueError));
+    });
+    connect(mq_worker, &QMQueue::stateChanged,  this, [this](QMQueue::MQueueState socketState){
+        printMessage(mq_worker->queueName(), QMQueue::mqStateString(socketState));
+    });
+    connect(mq_worker, &QIODevice::readyRead,   this, &MQueueListener::onReadyRead);
 
     updateStatus();
     updateCodecs();
@@ -45,6 +54,9 @@ MQueueListener::MQueueListener(QWidget *parent) :
 
 MQueueListener::~MQueueListener()
 {
+    if (mq_worker->isOpen()) doDisconnect();
+    disconnect(mq_worker, nullptr, nullptr, nullptr);
+    mq_worker->deleteLater();
     disconnect(this, nullptr, nullptr, nullptr);
     delete ui;
 }
@@ -56,26 +68,31 @@ QTextBrowser *MQueueListener::textLog() const
 
 void MQueueListener::onReadyRead()
 {
-    auto mqueue = mq_worker->firstQueue();
-    if (!mqueue) return;
-    if (!mqueue->hasMsg()) return;
-    QByteArray data = mqueue->tryReadMsg();
-    QByteArray replyData = processData(mqueue->name(), data);
-    if (!replyData.isEmpty()) {
-        // TODO write data to reply mqueue
-        //sender->write(replyData);
+    while(mq_worker->messages()) {
+        QByteArray data = mq_worker->read(SIZE);
+        if (data.size()) {
+            QByteArray replyData = processData(mq_worker->queueName(), data);
+            if (!replyData.isEmpty()) {
+                // TODO write data to reply mqueue
+                //sender->write(replyData);
+            }
+        } else {
+            printError("MQ", QString("Cannot read message from queue: %1").arg(mq_worker->errorString()));
+            break;
+        }
     }
 }
 
 void MQueueListener::doConnect()
 {
     QString mqName = ui->editConnection->text();
-    mq_worker->createQueueObj(mqName);
-    mq_exchangeTimer->setInterval(ui->spinInterval->value());
-    mq_exchangeTimer->start();
-    printInfo("MQ", QString("Data exchange started, interval %1 ms.").arg(mq_exchangeTimer->interval()));
+    mq_worker->setInterval(ui->spinInterval->value());
+    if (!mq_worker->connectToQueue(mqName)) {
+        printInfo("MQ", mq_worker->errorString());
+        return;
+    }
+    printInfo("MQ", QString("Data exchange started, interval %1 ms.").arg(ui->spinInterval->value()));
 
-    // TODO open mqueue
     if (initHandler(ui->rbBinary->isChecked())) {
         connect(handler(), &MessageHandler::logMessage,
                 this, &MQueueListener::printMessage);
@@ -91,11 +108,8 @@ void MQueueListener::doConnect()
 
 void MQueueListener::doDisconnect()
 {
-    mq_exchangeTimer->stop();
+    mq_worker->disconnectFromQueue();
     printInfo("MQ", "Data exchanging stopped.");
-    for (int i = 0; i < mq_worker->count(); i++) {
-        mq_worker->removePosixFile(i);
-    }
     disconnectHandler();
     updateStatus();
 }
@@ -141,7 +155,7 @@ void MQueueListener::setupUiDefaultState()
 
 void MQueueListener::updateStatus()
 {
-    if (mq_worker->count()) { // TODO change criteria
+    if (mq_worker->isOpen()) {
         ui->lblConnection->setText(tr("<font color=\"darkRed\">Listening the MQueue</font>"));
         ui->editConnection->setEnabled(false);
         ui->btnConnect->setVisible(false);
@@ -149,7 +163,7 @@ void MQueueListener::updateStatus()
         ui->boxAction->setEnabled(false);
         emit tabText(QString("MQ [%1]").arg(ui->editConnection->text()));
     } else {
-        ui->lblConnection->setText(tr("<font color=\"black\">Socket to listen</font>"));
+        ui->lblConnection->setText(tr("<font color=\"black\">Queue to listen</font>"));
         ui->editConnection->setEnabled(true);
         ui->btnConnect->setVisible(true);
         ui->btnDisconnect->setVisible(false);

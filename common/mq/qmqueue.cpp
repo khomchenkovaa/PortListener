@@ -66,13 +66,8 @@ struct QMQueuePrivate {
     QString  queueName;          ///< имя очереди POSIX
     mqd_t    handle = -1;	     ///< дескриптор очереди posix
     QMQueue::MQueueState state = QMQueue::UnconnectedState; ///< MQState enum element
-    mq_attr  attrs;              ///< current attributes
     QTimer   timer;
-
-    /// текущий размер очереди
-    int size() {
-        return attrs.mq_curmsgs * attrs.mq_msgsize;
-    }
+    int      interval = 1000; ///< interval in ms
 };
 
 QMQueue::QMQueue(QObject *parent)
@@ -130,7 +125,7 @@ bool QMQueue::connectToQueue(OpenMode mode)
     emit connected();
 
     connect(&d->timer, &QTimer::timeout, this, &QMQueue::checkNewMessages);
-    d->timer.start(1000);
+    d->timer.start(d->interval);
 
     return isOpen();
 }
@@ -178,12 +173,18 @@ bool QMQueue::isSequential() const
     return true;
 }
 
+void QMQueue::setInterval(int interval)
+{
+    d->interval = interval;
+}
+
 qint64 QMQueue::bytesAvailable() const
 {
-    if (mq_getattr(d->handle , &(d->attrs)) != 0) {
+    mq_attr attrs;
+    if (mq_getattr(d->handle , &attrs) != 0) {
         return 0;
     }
-    return d->size();
+    return attrs.mq_curmsgs * attrs.mq_msgsize;
 }
 
 bool QMQueue::open(OpenMode openMode)
@@ -201,31 +202,88 @@ QMQueue::MQueueState QMQueue::state() const
     return d->state;
 }
 
+int QMQueue::messages() const
+{
+    mq_attr attrs;
+    if (mq_getattr(d->handle , &attrs) != 0) {
+        return 0;
+    }
+    return attrs.mq_curmsgs;
+}
+
+QString QMQueue::mqErrorString(MQueueError queueError)
+{
+    switch (queueError) {
+    case QMQueue::ConnectionRefusedError:
+        return "QMQueue::ConnectionRefusedError";
+    case QMQueue::MQueueClosedError:
+        return "QMQueue::MQueueClosedError";
+    case QMQueue::MQueueNotFoundError:
+        return "QMQueue::MQueueNotFoundError";
+    case QMQueue::MQueueAccessError:
+        return "QMQueue::MQueueAccessError";
+    case QMQueue::MQueueResourceError:
+        return "QMQueue::MQueueResourceError";
+    case QMQueue::MQueueTimeoutError:
+        return "QMQueue::MQueueTimeoutError";
+    case QMQueue::DatagramTooLargeError:
+        return "QMQueue::DatagramTooLargeError";
+    case QMQueue::ConnectionError:
+        return "QMQueue::ConnectionError";
+    case QMQueue::UnsupportedMQueueOperationError:
+        return "QMQueue::UnsupportedMQueueOperationError";
+    case QMQueue::UnknownMQueueError:
+        return "QMQueue::UnknownMQueueError";
+    case QMQueue::OperationError:
+        return "QMQueue::OperationError";
+    default:
+        break;
+    }
+    return QString("QMQueue::SocketError(%1)").arg(queueError);
+}
+
+QString QMQueue::mqStateString(MQueueState socketState)
+{
+    switch (socketState) {
+    case QMQueue::UnconnectedState:
+        return "QMQueue::UnconnectedState";
+    case QMQueue::ConnectingState:
+        return "QMQueue::ConnectingState";
+    case QMQueue::ConnectedState:
+        return "QMQueue::ConnectedState";
+    case QMQueue::ClosingState:
+        return "QMQueue::ClosingState";
+    default:
+        break;
+    }
+    return QString("QMQueue::SocketState(%1)").arg(socketState);
+}
+
 qint64 QMQueue::readData(char *data, qint64 maxSize)
 {
     Q_UNUSED(maxSize)
-    if (mq_getattr(d->handle, &(d->attrs))) {
-         setErrorString(std::strerror(errno));
-         return -1;
-    }
-    uint prior = MSG_PRIOR;
-    qint64 maxLen = qMin<qint64>(maxSize, d->attrs.mq_msgsize);
-    int resultCode = mq_receive(d->handle, data, maxLen, &prior);
-    if (resultCode) {
+    mq_attr attrs;
+    if (mq_getattr(d->handle , &attrs) != 0) {
         setErrorString(std::strerror(errno));
         return -1;
     }
-    setErrorString(QString());
-    return qstrlen(data);
+    uint prior = MSG_PRIOR;
+    qint64 maxLen = qMax<qint64>(maxSize, attrs.mq_msgsize);
+    int len = mq_receive(d->handle, data, maxLen, &prior);
+    if (len == -1) {
+        setErrorString(std::strerror(errno));
+    }
+    return len;
 }
 
 qint64 QMQueue::writeData(const char *data, qint64 maxSize)
 {
-    if (mq_getattr(d->handle, &(d->attrs))) {
+    mq_attr attrs;
+    if (mq_getattr(d->handle, &attrs)) {
          setErrorString(std::strerror(errno));
          return -1;
     }
-    qint64 maxLen = qMin<qint64>(maxSize, d->attrs.mq_msgsize);
+    qint64 maxLen = qMin<qint64>(maxSize, attrs.mq_msgsize);
     maxLen = qMin<qint64>(maxLen, qstrlen(data));
     int resultCode = mq_send(d->handle, data, maxLen, MSG_PRIOR);
     if (resultCode) {
@@ -238,57 +296,20 @@ qint64 QMQueue::writeData(const char *data, qint64 maxSize)
 
 void QMQueue::checkNewMessages()
 {
-    if (mq_getattr(d->handle , &(d->attrs)) == 0) {
-        if (d->attrs.mq_curmsgs) {
+    mq_attr attrs;
+    if (mq_getattr(d->handle , &attrs) == 0) {
+        if (attrs.mq_curmsgs) {
             emit readyRead();
         }
     }
 }
-
 
 #ifndef QT_NO_DEBUG_STREAM
 QDebug operator<<(QDebug debug, QMQueue::MQueueError error)
 {
     QDebugStateSaver saver(debug);
     debug.resetFormat().nospace();
-    switch (error) {
-    case QMQueue::ConnectionRefusedError:
-        debug << "QMQueue::ConnectionRefusedError";
-        break;
-    case QMQueue::MQueueClosedError:
-        debug << "QMQueue::MQueueClosedError";
-        break;
-    case QMQueue::MQueueNotFoundError:
-        debug << "QMQueue::MQueueNotFoundError";
-        break;
-    case QMQueue::MQueueAccessError:
-        debug << "QMQueue::MQueueAccessError";
-        break;
-    case QMQueue::MQueueResourceError:
-        debug << "QMQueue::MQueueResourceError";
-        break;
-    case QMQueue::MQueueTimeoutError:
-        debug << "QMQueue::MQueueTimeoutError";
-        break;
-    case QMQueue::DatagramTooLargeError:
-        debug << "QMQueue::DatagramTooLargeError";
-        break;
-    case QMQueue::ConnectionError:
-        debug << "QMQueue::ConnectionError";
-        break;
-    case QMQueue::UnsupportedMQueueOperationError:
-        debug << "QMQueue::UnsupportedMQueueOperationError";
-        break;
-    case QMQueue::UnknownMQueueError:
-        debug << "QMQueue::UnknownMQueueError";
-        break;
-    case QMQueue::OperationError:
-        debug << "QMQueue::OperationError";
-        break;
-    default:
-        debug << "QMQueue::SocketError(" << int(error) << ')';
-        break;
-    }
+    debug << QMQueue::mqErrorString(error);
     return debug;
 }
 
@@ -296,23 +317,7 @@ QDebug operator<<(QDebug debug, QMQueue::MQueueState state)
 {
     QDebugStateSaver saver(debug);
     debug.resetFormat().nospace();
-    switch (state) {
-    case QMQueue::UnconnectedState:
-        debug << "QMQueue::UnconnectedState";
-        break;
-    case QMQueue::ConnectingState:
-        debug << "QMQueue::ConnectingState";
-        break;
-    case QMQueue::ConnectedState:
-        debug << "QMQueue::ConnectedState";
-        break;
-    case QMQueue::ClosingState:
-        debug << "QMQueue::ClosingState";
-        break;
-    default:
-        debug << "QMQueue::SocketState(" << int(state) << ')';
-        break;
-    }
+    debug << QMQueue::mqStateString(state);
     return debug;
 }
 #endif

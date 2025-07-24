@@ -2,7 +2,7 @@
 #define MQUEUELISTENER_H
 
 #include "listenerwidget.h"
-#include "mqworker.h"
+#include "qmqueue.h"
 
 namespace Ui {
 class MQueueListener;
@@ -39,8 +39,7 @@ private:
 
 private:
     Ui::MQueueListener *ui;
-    MQWorker *mq_worker;
-    QTimer   *mq_exchangeTimer; ///< таймер для записи/чтении в/из очередей, включается/выключается пользователем кнопками старт/стоп
+    QMQueue *mq_worker;
 };
 
 #endif // MQUEUELISTENER_H

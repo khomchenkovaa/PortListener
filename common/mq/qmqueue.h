@@ -44,11 +44,17 @@ public:
     void setQueueName(const QString &name);
     QString queueName() const;
 
+    void setInterval(int interval);
+
     bool isSequential() const override;
     qint64 bytesAvailable() const override;
     bool open(QIODevice::OpenMode openMode = QIODevice::ReadWrite) override;
     void close() override;
     MQueueState state() const;
+    int messages() const;
+
+    static QString mqErrorString(QMQueue::MQueueError queueError);
+    static QString mqStateString(QMQueue::MQueueState socketState);
 
 Q_SIGNALS:
     void connected();
