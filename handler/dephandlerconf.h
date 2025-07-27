@@ -124,7 +124,7 @@ inline DPDataType depTypeByString(const QString &str) {
 }
 
 
-struct CsvConf
+struct CsvConfig
 {
     struct CsvProperties {
         QString typeValue = "NONE";  ///< datatype name
@@ -145,14 +145,14 @@ struct CsvConf
         }
     };
 
-    struct CsvConfItem {
+    struct CsvConfigItem {
         DPDataType type;  ///< data type
         quint32    index; ///< номер
         QString    kks;   ///< Код KKS
         QString    iid;   ///< Interal ID
     };
 
-    QList<CsvConfItem> items;
+    QList<CsvConfigItem> items;
     CsvProperties csv;
 
     int load(const QString &fileName, QChar separator = ',', QTextCodec *codec = Q_NULLPTR) {
@@ -172,7 +172,7 @@ struct CsvConf
             return -4; // kks or iid is not defined
         }
         for (int i = 0; i < csvModel.rowCount(); ++i) {
-            CsvConfItem item;
+            CsvConfigItem item;
             if (csv.typeColumn != -1) {
                 QString typeStr = csvModel.data(csvModel.index(i, csv.typeColumn)).toString();
                 item.type = depTypeByString(typeStr);

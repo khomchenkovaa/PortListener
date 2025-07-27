@@ -67,7 +67,7 @@ struct QMQueuePrivate {
     mqd_t    handle = -1;	     ///< дескриптор очереди posix
     QMQueue::MQueueState state = QMQueue::UnconnectedState; ///< MQState enum element
     QTimer   timer;
-    int      interval = 1000; ///< interval in ms
+    qint64   interval = 1000; ///< interval in ms
 };
 
 QMQueue::QMQueue(QObject *parent)
@@ -283,9 +283,13 @@ qint64 QMQueue::writeData(const char *data, qint64 maxSize)
          setErrorString(std::strerror(errno));
          return -1;
     }
+    qint64 timeout = d->interval / 2;
+    struct timespec ts;
+    ts.tv_sec  = time(NULL) + timeout / 1000;
+    ts.tv_nsec = (timeout % 1000) * 1000000L;
     qint64 maxLen = qMin<qint64>(maxSize, attrs.mq_msgsize);
     maxLen = qMin<qint64>(maxLen, qstrlen(data));
-    int resultCode = mq_send(d->handle, data, maxLen, MSG_PRIOR);
+    int resultCode = mq_timedsend(d->handle, data, maxLen, MSG_PRIOR, &ts);
     if (resultCode) {
         setErrorString(std::strerror(errno));
         return -1;

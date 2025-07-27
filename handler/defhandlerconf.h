@@ -1,5 +1,5 @@
-#ifndef MQHANDLERCONF_H
-#define MQHANDLERCONF_H
+#ifndef DEFHANDLERCONF_H
+#define DEFHANDLERCONF_H
 
 #include "xutils.h"
 
@@ -70,7 +70,7 @@ inline DefDataType defDataType(const QString &typeName) {
     return DefDataType::defNone;
 }
 
-class DefConf
+class DefConfig
 {
     enum {
         NameColumn,
@@ -81,7 +81,7 @@ class DefConf
         ColumnsColumn
     };
 
-    struct DefConfItem {
+    struct DefConfigItem {
         QString     name;        ///< код параметра (kks, rtm и iid)
         DefDataType type;        ///< тип
         size_t      offset  = 0; ///< Смещение в байтах от начала области
@@ -94,7 +94,7 @@ class DefConf
         size_t areaSize        = 0;
         size_t timePointOffset = 0;
         size_t timePointSize   = 0;
-        QList<DefConfItem> items;
+        QList<DefConfigItem> items;
     };
 
 public:
@@ -121,7 +121,7 @@ public:
             }
             const auto values = Utils::parseCsvRow(line, ',');
             if (values.size() > ColumnsColumn) {
-            DefConfItem item;
+            DefConfigItem item;
                 item.name    = values.at(NameColumn);
                 item.type    = defDataType(values.at(TypeColumn));
                 item.offset  = values.at(OffsetColumn).toUInt();
@@ -166,4 +166,4 @@ private:
 
 } // namespace Gate
 
-#endif // MQHANDLERCONF_H
+#endif // DEFHANDLERCONF_H

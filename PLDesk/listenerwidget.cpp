@@ -16,6 +16,11 @@
 #include "dephandlerwidget.h"
 #include "modbushandlerwidget.h"
 
+#ifdef MQUEUE
+#include "mqueuehandler.h"
+#include "mqueuehandlerwidget.h"
+#endif // MQUEUE
+
 #include <QTextBrowser>
 
 /********************************************************/
@@ -112,6 +117,14 @@ MessageHandlerWgt *ListenerWidget::updateHandler(int index)
         d.handler = new DepHandler(this);
         d.editor  = new DepHandlerWidget(this);
         break;
+#ifdef MQUEUE
+    case ActionHandler::MqueueActionHandler:
+        d.handler = new MqueueHandler(this);
+        d.editor  = new MqueueHandlerWidget(this);
+        break;
+#endif
+    default:
+        break;
     }
     return d.editor;
 }
@@ -206,7 +219,8 @@ QStringList ListenerWidget::handlers()
             << tr("Send to UDP")
             << tr("Send to TCP")
             << tr("Send to Socket")
-            << tr("DEP Gate");
+            << tr("DEP Gate")
+            << tr("Send to MQueue");
 }
 
 /********************************************************/

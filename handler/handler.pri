@@ -4,6 +4,7 @@ DEPENDPATH += $$PWD
 HEADERS += \
     $$PWD/dbhandler.h \
     $$PWD/dbhandlerconf.h \
+    $$PWD/defhandlerconf.h \
     $$PWD/dephandler.h \
     $$PWD/dephandlerconf.h \
     $$PWD/filehandler.h \
@@ -12,7 +13,6 @@ HEADERS += \
     $$PWD/modbushandler.h \
     $$PWD/modbushandlerconf.h \
     $$PWD/modbushelper.h \
-    $$PWD/mqhandlerconf.h \
     $$PWD/sockhandler.h \
     $$PWD/tcphandler.h \
     $$PWD/udphandler.h
@@ -26,3 +26,11 @@ SOURCES += \
     $$PWD/sockhandler.cpp \
     $$PWD/tcphandler.cpp \
     $$PWD/udphandler.cpp
+
+contains(DEFINES, MQUEUE) {
+    SOURCES += \
+        $$PWD/mqueuehandler.cpp
+
+    HEADERS += \
+        $$PWD/mqueuehandler.h
+}

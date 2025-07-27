@@ -14,7 +14,7 @@ class DepHandler : public MessageHandler
     Q_OBJECT
 
     struct DepHandlerPrivate {
-        Gate::CsvConf csvConf;
+        Gate::CsvConfig csvConf;
         QFile         outFile;
         DEPWorker    *depWorker = Q_NULLPTR; ///< обьект для обработки (паковки/распаковки DEP-пакетов)
     };
