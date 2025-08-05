@@ -112,6 +112,18 @@
         </widget>
        </item>
        <item>
+        <widget class="QGroupBox" name="boxDecoder">
+         <property name="title">
+          <string>Decoder</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayoutDecoder">
+          <item>
+           <widget class="QComboBox" name="cmbDecoder"/>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
         <widget class="QGroupBox" name="boxReply">
          <property name="title">
           <string>Reply</string>

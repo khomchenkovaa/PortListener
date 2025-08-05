@@ -136,22 +136,22 @@ void ModbusTcpListener::doDisconnect()
 
 void ModbusTcpListener::activateHandler()
 {
-    if (d.editor) {
-        d.editor->deleteLater();
-        d.editor = Q_NULLPTR;
+    if (d.actionEditor) {
+        d.actionEditor->deleteLater();
+        d.actionEditor = Q_NULLPTR;
     }
-    if (d.handler) {
-        d.handler->deleteLater();
-        d.handler = Q_NULLPTR;
+    if (d.actionHandler) {
+        d.actionHandler->deleteLater();
+        d.actionHandler = Q_NULLPTR;
     }
 
     if (ui->boxAction->isChecked()) {
-        d.handler = new ModbusHandler(this);
-        d.editor  = new ModbusHandlerWidget(this);
+        d.actionHandler = new ModbusHandler(this);
+        d.actionEditor  = new ModbusHandlerWidget(this);
     }
 
-    if (d.editor) {
-        ui->boxAction->layout()->addWidget(d.editor);
+    if (d.actionEditor) {
+        ui->boxAction->layout()->addWidget(d.actionEditor);
     }
 }
 

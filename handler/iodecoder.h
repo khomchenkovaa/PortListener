@@ -3,7 +3,9 @@
 
 #include <QString>
 
-#define MIB_UNICODE 1000
+enum {
+    MIB_UNICODE = 1000
+};
 
 class IODecoder
 {

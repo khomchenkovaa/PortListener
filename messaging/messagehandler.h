@@ -10,7 +10,8 @@
 typedef QMap<int, QVariant> SettingsMap;
 class MessageHandlerWgt;
 
-class MessageHandler : public QObject {
+class MessageHandler : public QObject
+{
     Q_OBJECT
 
     struct MessageHandlerPrivate {
@@ -52,6 +53,14 @@ public:
 
     virtual void doDisconnect() {
         setDisconnected();
+    }
+
+    virtual bool allowBinary() const {
+        return true;
+    }
+
+    virtual bool allowText() const {
+        return false;
     }
 
     QString name() const {

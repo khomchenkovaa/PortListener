@@ -368,22 +368,22 @@ void ModbusTcpClient::doDisconnect()
 
 void ModbusTcpClient::activateHandler()
 {
-    if (d.editor) {
-        d.editor->deleteLater();
-        d.editor = Q_NULLPTR;
+    if (d.actionEditor) {
+        d.actionEditor->deleteLater();
+        d.actionEditor = Q_NULLPTR;
     }
-    if (d.handler) {
-        d.handler->deleteLater();
-        d.handler = Q_NULLPTR;
+    if (d.actionHandler) {
+        d.actionHandler->deleteLater();
+        d.actionHandler = Q_NULLPTR;
     }
 
     if (ui->boxAction->isChecked()) {
-        d.handler = new FileHandler(this);
-        d.editor  = new FileHandlerWidget(this);
+        d.actionHandler = new FileHandler(this);
+        d.actionEditor  = new FileHandlerWidget(this);
     }
 
-    if (d.editor) {
-        ui->boxAction->layout()->addWidget(d.editor);
+    if (d.actionEditor) {
+        ui->boxAction->layout()->addWidget(d.actionEditor);
     }
 }
 

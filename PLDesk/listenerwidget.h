@@ -11,20 +11,26 @@ class ListenerWidget : public QWidget
 {
     Q_OBJECT
 
+    enum DecodeHandler {
+        NoDecodeHandler,
+        DbDecodeHandler,
+        DepDecodeHandler
+    };
+
     enum ActionHandler {
         NoActionHandler,
         FileActionHandler,
-        DbActionHandler,
         UdpActionHandler,
         TcpActionHandler,
         SocketActionHandler,
-        DepActionHandler,
         MqueueActionHandler
     };
 
     struct ListenerWidgetData {
-        MessageHandler    *handler = Q_NULLPTR;
-        MessageHandlerWgt *editor  = Q_NULLPTR;
+        MessageHandler    *decodeHandler = Q_NULLPTR;
+        MessageHandlerWgt *decodeEditor  = Q_NULLPTR;
+        MessageHandler    *actionHandler = Q_NULLPTR;
+        MessageHandlerWgt *actionEditor  = Q_NULLPTR;
     };
 
 public:
@@ -39,6 +45,18 @@ public:
     explicit ListenerWidget(QWidget *parent = nullptr);
 
 protected:
+    // decoders
+    QString decoderName() const;
+    bool isDecoderConnected() const;
+    bool initDecoder(bool binaryInput = true);
+    void disconnectDecoder();
+    MessageHandler *decoder() const;
+    MessageHandlerWgt *updateDecoder(int index);
+    QByteArray doDecode(PMessage data);
+    QByteArray doDecode(const QByteArray& data);
+    QByteArray doDecode(const QString& data);
+    QStringList decoderErrors() const;
+    // action handlers
     QString handlerName() const;
     bool isHandlerConnected() const;
     bool initHandler(bool binaryInput = true);
@@ -62,6 +80,7 @@ protected Q_SLOTS:
     void printLog(const QString& msg);
 
 protected:
+    static QStringList decoders();
     static QStringList handlers();
 
 protected:
