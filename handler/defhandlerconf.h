@@ -32,7 +32,8 @@ enum DefDataType {
     defCount              //!< fake element for count enum's members
 };
 
-inline QString defDataTypeName(int idx) {
+inline QString defDataTypeName(int idx)
+{
     switch (idx) {
     case DefDataType::defTimeval:            return "type_timeval";
     case DefDataType::defRVal:               return "type_rval";
@@ -61,6 +62,51 @@ inline QString defDataTypeName(int idx) {
     return QString();
 }
 
+inline size_t defDataTypeSize(int defType)
+{
+    switch (defType) {
+    case defTimeval:
+    case defTimespec:
+        return sizeof(quint32) + sizeof(quint32);
+    case defTimespec64:
+        return sizeof(qint64) + sizeof(qint64);
+    case defRVal:
+    case defSRVal:
+    case defErrRVal:
+        return sizeof(float) + sizeof(qint32);
+    case defIVal:
+    case defSIVal:
+    case defErrIVal:
+        return sizeof(qint32) + sizeof(qint32);
+    case defLongInt:
+        return sizeof(qint32);
+    case defFloat:
+        return sizeof(float);
+    case defDouble:
+    case defDoubleDaySecsUTC:
+    case defDoubleDaySecsLocal:
+        return sizeof(double);
+    case defShortInt:
+    case defBinShortInt:
+        return sizeof(qint16);
+    case defSByte:
+    case defBinByte:
+        return sizeof(qint8);
+    case defErrShortIntVal:
+        return sizeof(qint16) + sizeof(qint16);
+    case defLongUInt:
+        return sizeof(quint32);
+    case defInt64:
+        return sizeof(qint64);
+    case defUInt64:
+        return sizeof(quint64);
+    case defNone:
+    default:
+        break;
+    }
+    return 0;
+}
+
 inline DefDataType defDataType(const QString &typeName) {
     for (int i=DefDataType::defTimeval; i<DefDataType::defCount; ++i) {
         if (typeName.compare(defDataTypeName(i), Qt::CaseInsensitive) == 0) {
@@ -81,20 +127,27 @@ class DefConfig
         ColumnsColumn
     };
 
-    struct DefConfigItem {
+    struct DefRecord {
         QString     name;        ///< код параметра (kks, rtm и iid)
-        DefDataType type;        ///< тип
+        DefDataType defType;        ///< тип
         size_t      offset  = 0; ///< Смещение в байтах от начала области
         size_t      layers  = 1; ///< Слои - позволяет задать массивы, но используются только 1 (один слой)
         size_t      rows    = 1; ///< Ряды - позволяет задать массивы, но используются только 1 (один ряд)
         size_t      columns = 1; ///< Колонки - позволяет задать массивы, но используются только 1 (одна колонка)
+
+        size_t count() const {
+            return layers*rows*columns;
+        }
+        size_t size() const {
+            return count() * defDataTypeSize(defType);
+        }
     };
 
     struct DefConfItemPrivate {
         size_t areaSize        = 0;
         size_t timePointOffset = 0;
         size_t timePointSize   = 0;
-        QList<DefConfigItem> items;
+        QList<DefRecord> items;
     };
 
 public:
@@ -121,9 +174,9 @@ public:
             }
             const auto values = Utils::parseCsvRow(line, ',');
             if (values.size() > ColumnsColumn) {
-            DefConfigItem item;
+            DefRecord item;
                 item.name    = values.at(NameColumn);
-                item.type    = defDataType(values.at(TypeColumn));
+                item.defType    = defDataType(values.at(TypeColumn));
                 item.offset  = values.at(OffsetColumn).toUInt();
                 item.layers  = values.at(LayersColumn).toUInt();
                 item.rows    = values.at(RowsColumn).toUInt();
@@ -155,15 +208,19 @@ public:
     }
 
     QString type(int idx) const {
-        return idx < d.items.size() ? defDataTypeName(d.items.at(idx).type) : QString();
+        return idx < d.items.size() ? defDataTypeName(d.items.at(idx).defType) : QString();
     }
 
     DefDataType typeId(int idx) const {
-        return idx < d.items.size() ? d.items.at(idx).type : DefDataType::defNone;
+        return idx < d.items.size() ? d.items.at(idx).defType : DefDataType::defNone;
     };
 
     quint64 offset(int idx) const {
         return idx < d.items.size() ? d.items.at(idx).offset : 0;
+    }
+
+    size_t size(int idx) const {
+        return idx < d.items.size() ? d.items.at(idx).size() : 0;
     }
 
 private:

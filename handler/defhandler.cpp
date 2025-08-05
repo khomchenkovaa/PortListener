@@ -26,45 +26,36 @@ QByteArray DefHandler::processData(const QByteArray &data)
     for (int i=0; i < d.defConf.itemsCount(); ++i) {
         QString name = d.defConf.name(i);
         Gate::DefDataType typeId = d.defConf.typeId(i);
-        quint64 offset = d.defConf.offset(i);
+        const QByteArray ba = data.mid(d.defConf.offset(i), d.defConf.size(i));
+        QDataStream ds(ba);
 
         switch(typeId) {
         case Gate::defTimeval:
         { // type_timeval
-            const QByteArray ba = data.mid(offset, 8);
-            QDataStream ds(ba);
             int time = 0;
             ds >> time;
             emit logMessage(name, QString::number(time));
         } break;
         case Gate::defLongInt:
         { // type_longint
-            const QByteArray ba = data.mid(offset, 4);
-            QDataStream ds(ba);
             qint32 value = 0;
             ds >> value;
             emit logMessage(name, QString::number(value));
         } break;
         case Gate::defFloat:
         { // type_float
-            const QByteArray ba = data.mid(offset, 4);
-            QDataStream ds(ba);
             float value = 0.0;
             ds >> value;
             emit logMessage(name, QString::number(value, 'f', 2));
         } break;
         case Gate::defDouble:
         { // type_double
-            const QByteArray ba = data.mid(offset, 8);
-            QDataStream ds(ba);
             qreal value = 0.0;
             ds >> value;
             emit logMessage(name, QString::number(value, 'f', 2));
         } break;
         case Gate::defBinByte:
         { // type_binbyte
-            const QByteArray ba = data.mid(offset, 1);
-            QDataStream ds(ba);
             qint8 value = 0;
             ds >> value;
             emit logMessage(name, QString::number(value));
