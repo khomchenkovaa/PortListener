@@ -3,6 +3,7 @@ DEPENDPATH += $$PWD
 
 HEADERS += \
     $$PWD/dbhandlerwidget.h \
+    $$PWD/defhandlerwidget.h \
     $$PWD/dephandlerwidget.h \
     $$PWD/filehandlerwidget.h \
     $$PWD/messagehandlerwgt.h \
@@ -14,6 +15,7 @@ HEADERS += \
 
 FORMS += \
     $$PWD/dbhandlerwidget.ui \
+    $$PWD/defhandlerwidget.ui \
     $$PWD/dephandlerwidget.ui \
     $$PWD/filehandlerwidget.ui \
     $$PWD/modbushandlerwidget.ui \
@@ -24,6 +26,7 @@ FORMS += \
 
 SOURCES += \
     $$PWD/dbhandlerwidget.cpp \
+    $$PWD/defhandlerwidget.cpp \
     $$PWD/dephandlerwidget.cpp \
     $$PWD/filehandlerwidget.cpp \
     $$PWD/modbushandlerwidget.cpp \

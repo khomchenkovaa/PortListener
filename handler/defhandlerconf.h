@@ -135,6 +135,13 @@ public:
         file.close();
     }
 
+    void clear() {
+        d.areaSize = 0;
+        d.timePointOffset = 0;
+        d.timePointSize = 0;
+        d.items.clear();
+    }
+
     int areaSize() const {
         return d.areaSize;
     }
@@ -144,8 +151,7 @@ public:
     }
 
     QString name(int idx) const {
-        if (idx < d.items.size()) return d.items.at(idx).name;
-        return QString();
+        return idx < d.items.size() ? d.items.at(idx).name : QString();
     }
 
     QString type(int idx) const {

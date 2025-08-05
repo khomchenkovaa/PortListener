@@ -14,7 +14,8 @@ class ListenerWidget : public QWidget
     enum DecodeHandler {
         NoDecodeHandler,
         DbDecodeHandler,
-        DepDecodeHandler
+        DepDecodeHandler,
+        DefDecodeHandler
     };
 
     enum ActionHandler {

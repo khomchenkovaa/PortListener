@@ -4,6 +4,7 @@ DEPENDPATH += $$PWD
 HEADERS += \
     $$PWD/dbhandler.h \
     $$PWD/dbhandlerconf.h \
+    $$PWD/defhandler.h \
     $$PWD/defhandlerconf.h \
     $$PWD/dephandler.h \
     $$PWD/dephandlerconf.h \
@@ -19,6 +20,7 @@ HEADERS += \
 
 SOURCES += \
     $$PWD/dbhandler.cpp \
+    $$PWD/defhandler.cpp \
     $$PWD/dephandler.cpp \
     $$PWD/filehandler.cpp \
     $$PWD/iodecoder.cpp \

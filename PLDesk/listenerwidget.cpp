@@ -6,6 +6,7 @@
 #include "tcphandler.h"
 #include "sockhandler.h"
 #include "dephandler.h"
+#include "defhandler.h"
 #include "modbushandler.h"
 
 #include "filehandlerwidget.h"
@@ -14,6 +15,7 @@
 #include "tcphandlerwidget.h"
 #include "udphandlerwidget.h"
 #include "dephandlerwidget.h"
+#include "defhandlerwidget.h"
 #include "modbushandlerwidget.h"
 
 #ifdef MQUEUE
@@ -80,6 +82,10 @@ MessageHandlerWgt *ListenerWidget::updateDecoder(int index)
     case DecodeHandler::DepDecodeHandler:
         d.decodeHandler = new DepHandler(this);
         d.decodeEditor  = new DepHandlerWidget(this);
+        break;
+    case DecodeHandler::DefDecodeHandler:
+        d.decodeHandler = new DefHandler(this);
+        d.decodeEditor  = new DefHandlerWidget(this);
         break;
     default:
         break;
@@ -242,7 +248,8 @@ QStringList ListenerWidget::decoders()
     return QStringList()
             << tr("No Decode")
             << tr("CSV to DB")
-            << tr("DEP Gate");
+            << tr("DEP Gate")
+            << tr("DEF Stream");
 }
 
 QStringList ListenerWidget::handlers()
