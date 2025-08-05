@@ -22,7 +22,6 @@ public:
 private slots:
     void openCsvFileDialog();
     void onTypeValueCmbChanged();
-    void openOutputFileDialog();
 
 private:
     Ui::DepHandlerWidget *ui;

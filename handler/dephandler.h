@@ -4,8 +4,6 @@
 #include "messagehandler.h"
 #include "dephandlerconf.h"
 
-#include <QFile>
-
 class DEPWorker;
 
 /// Data exchange protocol
@@ -15,8 +13,7 @@ class DepHandler : public MessageHandler
 
     struct DepHandlerPrivate {
         Gate::CsvConfig csvConf;
-        QFile         outFile;
-        DEPWorker    *depWorker = Q_NULLPTR; ///< обьект для обработки (паковки/распаковки DEP-пакетов)
+        DEPWorker *depWorker = Q_NULLPTR; ///< обьект для обработки (паковки/распаковки DEP-пакетов)
     };
 public:
     enum Settings {
@@ -25,9 +22,7 @@ public:
         TypeColumn,
         IndexColumn,
         KksColumn,
-        IidColumn,
-        OutFileName,
-        FileAppend
+        IidColumn
     };
 
     explicit DepHandler(QObject *parent = nullptr);

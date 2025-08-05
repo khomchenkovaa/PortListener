@@ -69,13 +69,7 @@ QByteArray DepHandler::processData(const QByteArray &data)
 //        }
 //    }
 
-    if (isConnected() && d.outFile.isOpen()) {
-        QTextStream fout(&d.outFile);
-        fout << output;
-    } else {
-        addError(tr("Cannot write data to file"));
-    }
-    return MessageHandler::processData(data);
+    return data;
 }
 
 /********************************************************/
@@ -83,6 +77,10 @@ QByteArray DepHandler::processData(const QByteArray &data)
 void DepHandler::doConnect(bool binary)
 {
     clearErrors();
+    if (!binary) {
+        addError(tr("Only binary mode alowed"));
+        return;
+    }
     const auto csvFileName = settings()->value(Settings::CsvFileName).toString();
     if (csvFileName.isEmpty()) {
         emit logMessage(name(), tr("No CSV config file to open"));
@@ -112,25 +110,6 @@ void DepHandler::doConnect(bool binary)
         }
     }
 
-    const auto outFileName = settings()->value(Settings::OutFileName).toString();
-    if (outFileName.isEmpty()) {
-        emit logMessage(name(), tr("No output file to open"));
-    } else {
-        d.outFile.setFileName(outFileName);
-        QIODevice::OpenMode flags;
-        if (settings()->value(Settings::FileAppend, true).toBool()) {
-            flags = QIODevice::Append;
-        } else {
-            flags = QIODevice::WriteOnly;
-        }
-        if (!binary) {
-            flags |= QIODevice::Text;
-        }
-        if (!d.outFile.open(flags)) {
-            addError(tr("Could not open file"));
-        }
-    }
-
     d.depWorker = new DEPWorker(this);
     connect(d.depWorker, &DEPWorker::signalError, this, [this](const QString& msg){
         emit logError(name(), msg);
@@ -151,9 +130,6 @@ void DepHandler::doConnect(bool binary)
 
 void DepHandler::doDisconnect()
 {
-    if (d.outFile.isOpen()) {
-        d.outFile.close();
-    }
     setDisconnected();
 }
 

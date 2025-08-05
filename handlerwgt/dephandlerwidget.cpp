@@ -16,8 +16,6 @@ DepHandlerWidget::DepHandlerWidget(QWidget *parent) :
             this, &DepHandlerWidget::openCsvFileDialog);
     connect(ui->cmbTypeValue, &QComboBox::currentTextChanged,
             this, &DepHandlerWidget::onTypeValueCmbChanged);
-    connect(ui->btnOutputFile, &QAbstractButton::clicked,
-            this, &DepHandlerWidget::openOutputFileDialog);
     onTypeValueCmbChanged();
 }
 
@@ -39,8 +37,6 @@ SettingsMap DepHandlerWidget::settings() const
     map.insert(DepHandler::IndexColumn, ui->spinIndexColumn->value());
     map.insert(DepHandler::KksColumn, ui->spinKksColumn->value());
     map.insert(DepHandler::IidColumn, ui->spinIidColumn->value());
-    map.insert(DepHandler::OutFileName, ui->editOutputFile->text());
-    map.insert(DepHandler::FileAppend, ui->chkAppend->isChecked());
     return map;
 }
 
@@ -54,8 +50,6 @@ void DepHandlerWidget::setSettings(const SettingsMap &map)
     ui->spinIndexColumn->setValue(map.value(DepHandler::IndexColumn, -1).toInt());
     ui->spinKksColumn->setValue(map.value(DepHandler::KksColumn, -1).toInt());
     ui->spinIidColumn->setValue(map.value(DepHandler::IidColumn, -1).toInt());
-    ui->editOutputFile->setText(map.value(DepHandler::OutFileName).toString());
-    ui->chkAppend->setChecked(map.value(DepHandler::FileAppend, true).toBool());
 }
 
 /********************************************************/
@@ -87,23 +81,6 @@ void DepHandlerWidget::onTypeValueCmbChanged()
     } else {
         ui->lblTypeColumn->setHidden(false);
         ui->spinTypeColumn->setHidden(false);
-    }
-}
-
-/********************************************************/
-
-void DepHandlerWidget::openOutputFileDialog()
-{
-    QString dirPath = QCoreApplication::applicationDirPath();
-    QString fileName = ui->editOutputFile->text();
-    const QFileInfo fileInfo(fileName);
-    if (fileInfo.exists()) {
-        dirPath = fileInfo.path();
-    }
-
-    fileName = QFileDialog::getSaveFileName(this, tr("Choose Output File"), dirPath);
-    if (!fileName.isEmpty()) {
-        ui->editOutputFile->setText(fileName);
     }
 }
 

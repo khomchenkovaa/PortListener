@@ -36,13 +36,11 @@ public:
 
     virtual QByteArray processData(const QByteArray& data) {
         Q_UNUSED(data)
-        clearErrors();
         return QByteArray();
     }
 
     virtual QByteArray processData(const QString& data) {
         Q_UNUSED(data)
-        clearErrors();
         return QByteArray();
     }
 
