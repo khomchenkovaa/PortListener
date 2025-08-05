@@ -17,6 +17,7 @@ SocketListener::SocketListener(QWidget *parent) :
     m_LocalServer(this)
 {
     ui->setupUi(this);
+    ui->cmbDecoder->addItems(decoders());
     ui->cmbHandler->addItems(handlers());
 
     connect(ui->btnConnect, &QAbstractButton::clicked,
@@ -25,6 +26,8 @@ SocketListener::SocketListener(QWidget *parent) :
             this, &SocketListener::doDisconnect);
     connect(ui->cmbReplyType, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &SocketListener::changeReplyType);
+    connect(ui->cmbDecoder, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &SocketListener::changeDecoder);
     connect(ui->cmbHandler, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &SocketListener::changeHandler);
 
@@ -44,7 +47,7 @@ SocketListener::SocketListener(QWidget *parent) :
 SocketListener::~SocketListener()
 {
     disconnect(this, nullptr, nullptr, nullptr);
-    m_LocalServer.close();
+    doDisconnect();
     delete ui;
 }
 
@@ -111,6 +114,12 @@ void SocketListener::doConnect()
                               .arg(socketName, m_LocalServer.errorString()));
     }
     if (m_LocalServer.isListening()) {
+        if (initDecoder(ui->rbBinary->isChecked())) {
+            connect(decoder(), &MessageHandler::logMessage,
+                    this, &SocketListener::printMessage);
+            connect(decoder(), &MessageHandler::logError,
+                    this, &SocketListener::printError);
+        }
         if (initHandler(ui->rbBinary->isChecked())) {
             connect(handler(), &MessageHandler::logMessage,
                     this, &SocketListener::printMessage);
@@ -118,8 +127,12 @@ void SocketListener::doConnect()
                     this, &SocketListener::printError);
         }
     }
-    const auto errors = handlerErrors();
-    for (const auto &error : errors) {
+    const auto decodeErrors = decoderErrors();
+    for (const auto &error : decodeErrors) {
+        printError(decoderName(), error);
+    }
+    const auto actionErrors = handlerErrors();
+    for (const auto &error : actionErrors) {
         printError(handlerName(), error);
     }
     updateStatus();
@@ -130,6 +143,7 @@ void SocketListener::doConnect()
 void SocketListener::doDisconnect()
 {
     m_LocalServer.close();
+    disconnectDecoder();
     disconnectHandler();
     updateStatus();
 }
@@ -139,6 +153,16 @@ void SocketListener::doDisconnect()
 void SocketListener::onInputFormatChanged()
 {
     ui->cmbCodec->setVisible(ui->rbText->isChecked());
+}
+
+/********************************************************/
+
+void SocketListener::changeDecoder(int index)
+{
+    auto editor = updateDecoder(index);
+    if (editor) {
+        ui->boxDecoder->layout()->addWidget(editor);
+    }
 }
 
 /********************************************************/
@@ -190,6 +214,7 @@ void SocketListener::updateStatus()
         ui->editSocket->setEnabled(false);
         ui->btnConnect->setVisible(false);
         ui->btnDisconnect->setVisible(true);
+        ui->boxDecoder->setEnabled(false);
         ui->boxAction->setEnabled(false);
         emit tabText(QString("Socket [%1]").arg(ui->editSocket->text()));
     } else {
@@ -197,6 +222,7 @@ void SocketListener::updateStatus()
         ui->editSocket->setEnabled(true);
         ui->btnConnect->setVisible(true);
         ui->btnDisconnect->setVisible(false);
+        ui->boxDecoder->setEnabled(true);
         ui->boxAction->setEnabled(true);
         emit tabText(QString("Socket [-]"));
     }
@@ -219,28 +245,44 @@ QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArr
 {
     int mib = ui->cmbCodec->itemData(ui->cmbCodec->currentIndex()).toInt();
     IODecoder ioDecoder(mib);
-    QString displayData = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
+    QString textData    = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
+    QString displayHost = QString::number(socketDescriptor);
 
     // log payload data
-    printMessage(QString::number(socketDescriptor), displayData);
+    printMessage(QString::number(socketDescriptor), textData);
 
-    QByteArray reply;
-    // Handler
+    // Decoder
+    QByteArray binData;
     if (ui->rbText->isChecked()) {
-        reply = doHandle(displayData);
+        binData = doDecode(textData);
     } else {
-        reply = doHandle(data);
+        binData = doDecode(data);
     }
+    // log decode errors
+    const auto decodeErrors = decoderErrors();
+    for (const auto &error : decodeErrors) {
+        printError(displayHost, error);
+    }
+
+    // Handler
+    QByteArray reply;
+    if (ui->rbText->isChecked()) {
+        reply = doHandle(QString(binData));
+    } else {
+        reply = doHandle(binData);
+    }
+    // log errors
+    const auto actionErrors = handlerErrors();
+    for (const auto &error : actionErrors) {
+        printError(displayHost, error);
+    }
+
     // log reply data
     if (!reply.isEmpty()) {
         QString replyData = ioDecoder.toUnicode(reply, ui->rbBinary->isChecked());
-        printReply(QString::number(socketDescriptor), replyData);
+        printReply(displayHost, replyData);
     }
-    // log errors
-    const auto errors = handlerErrors();
-    for (const auto &error : errors) {
-        printError(QString::number(socketDescriptor), error);
-    }
+    clearErrors();
 
     // make reply
     switch (ui->cmbReplyType->currentIndex()) {
@@ -259,6 +301,7 @@ QByteArray SocketListener::processData(quintptr socketDescriptor, const QByteArr
     case ReplyType::ActionReply:
         break;
     }
+
     return reply;
 }
 

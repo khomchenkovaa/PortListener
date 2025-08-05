@@ -8,13 +8,16 @@
 #include <QMessageBox>
 #include <QTimer>
 
-#define SIZE 8192
+enum {
+    MQ_MSG_SIZE = 8192
+};
 
 MQueueListener::MQueueListener(QWidget *parent) :
     ListenerWidget(parent),
     ui(new Ui::MQueueListener)
 {
     ui->setupUi(this);
+    ui->cmbDecoder->addItems(decoders());
     ui->cmbHandler->addItems(handlers());
 
     connect(ui->btnConnect, &QAbstractButton::clicked,
@@ -23,6 +26,8 @@ MQueueListener::MQueueListener(QWidget *parent) :
             this, &MQueueListener::doDisconnect);
     connect(ui->cmbReplyType, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &MQueueListener::changeReplyType);
+    connect(ui->cmbDecoder, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &MQueueListener::changeDecoder);
     connect(ui->cmbHandler, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &MQueueListener::changeHandler);
 
@@ -69,7 +74,7 @@ QTextBrowser *MQueueListener::textLog() const
 void MQueueListener::onReadyRead()
 {
     while(mq_worker->messages()) {
-        QByteArray data = mq_worker->read(SIZE);
+        QByteArray data = mq_worker->read(MQ_MSG_SIZE);
         if (data.size()) {
             QByteArray replyData = processData(mq_worker->queueName(), data);
             if (!replyData.isEmpty()) {
@@ -93,16 +98,27 @@ void MQueueListener::doConnect()
     }
     printInfo("MQ", QString("Data exchange started, interval %1 ms.").arg(ui->spinInterval->value()));
 
+    if (initDecoder(ui->rbBinary->isChecked())) {
+        connect(decoder(), &MessageHandler::logMessage,
+                this, &MQueueListener::printMessage);
+        connect(decoder(), &MessageHandler::logError,
+                this, &MQueueListener::printError);
+    }
     if (initHandler(ui->rbBinary->isChecked())) {
         connect(handler(), &MessageHandler::logMessage,
                 this, &MQueueListener::printMessage);
         connect(handler(), &MessageHandler::logError,
                 this, &MQueueListener::printError);
     }
-    const auto errors = handlerErrors();
-    for (const auto &error : errors) {
+    const auto decodeErrors = decoderErrors();
+    for (const auto &error : decodeErrors) {
+        printError(decoderName(), error);
+    }
+    const auto actionErrors = handlerErrors();
+    for (const auto &error : actionErrors) {
         printError(handlerName(), error);
     }
+
     updateStatus();
 }
 
@@ -110,6 +126,7 @@ void MQueueListener::doDisconnect()
 {
     mq_worker->disconnectFromQueue();
     printInfo("MQ", "Data exchanging stopped.");
+    disconnectDecoder();
     disconnectHandler();
     updateStatus();
 }
@@ -117,6 +134,14 @@ void MQueueListener::doDisconnect()
 void MQueueListener::onInputFormatChanged()
 {
     ui->cmbCodec->setVisible(ui->rbText->isChecked());
+}
+
+void MQueueListener::changeDecoder(int index)
+{
+    auto editor = updateDecoder(index);
+    if (editor) {
+        ui->boxDecoder->layout()->addWidget(editor);
+    }
 }
 
 void MQueueListener::changeReplyType(int index)
@@ -160,6 +185,7 @@ void MQueueListener::updateStatus()
         ui->editConnection->setEnabled(false);
         ui->btnConnect->setVisible(false);
         ui->btnDisconnect->setVisible(true);
+        ui->boxDecoder->setEnabled(false);
         ui->boxAction->setEnabled(false);
         emit tabText(QString("MQ [%1]").arg(ui->editConnection->text()));
     } else {
@@ -167,6 +193,7 @@ void MQueueListener::updateStatus()
         ui->editConnection->setEnabled(true);
         ui->btnConnect->setVisible(true);
         ui->btnDisconnect->setVisible(false);
+        ui->boxDecoder->setEnabled(true);
         ui->boxAction->setEnabled(true);
         emit tabText(QString("MQ [-]"));
     }
@@ -185,28 +212,44 @@ QByteArray MQueueListener::processData(const QString &mqName, const QByteArray &
 {
     int mib = ui->cmbCodec->itemData(ui->cmbCodec->currentIndex()).toInt();
     IODecoder ioDecoder(mib);
-    QString displayData = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
+    QString textData    = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
+    QString displayHost = mqName;
 
     // log payload data
-    printMessage(mqName, displayData);
+    printMessage(mqName, textData);
 
-    QByteArray reply;
-    // Handler
+    // Decoder
+    QByteArray binData;
     if (ui->rbText->isChecked()) {
-        reply = doHandle(displayData);
+        binData = doDecode(textData);
     } else {
-        reply = doHandle(data);
+        binData = doDecode(data);
     }
+    // log decode errors
+    const auto decodeErrors = decoderErrors();
+    for (const auto &error : decodeErrors) {
+        printError(displayHost, error);
+    }
+
+    // Handler
+    QByteArray reply;
+    if (ui->rbText->isChecked()) {
+        reply = doHandle(QString(binData));
+    } else {
+        reply = doHandle(binData);
+    }
+    // log errors
+    const auto actionErrors = handlerErrors();
+    for (const auto &error : actionErrors) {
+        printError(displayHost, error);
+    }
+
     // log reply data
     if (!reply.isEmpty()) {
         QString replyData = ioDecoder.toUnicode(reply, ui->rbBinary->isChecked());
         printReply(mqName, replyData);
     }
-    // log errors
-    const auto errors = handlerErrors();
-    for (const auto &error : errors) {
-        printError(mqName, error);
-    }
+    clearErrors();
 
     // make reply
     switch (ui->cmbReplyType->currentIndex()) {
@@ -225,5 +268,6 @@ QByteArray MQueueListener::processData(const QString &mqName, const QByteArray &
     case ReplyType::ActionReply:
         break;
     }
+
     return reply;
 }

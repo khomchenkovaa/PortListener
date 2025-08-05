@@ -18,6 +18,7 @@ UdpListener::UdpListener(QWidget *parent) :
     m_UdpSocket(Q_NULLPTR)
 {
     ui->setupUi(this);
+    ui->cmbDecoder->addItems(decoders());
     ui->cmbHandler->addItems(handlers());
 
     connect(ui->btnConnect, &QAbstractButton::clicked,
@@ -26,6 +27,8 @@ UdpListener::UdpListener(QWidget *parent) :
             this, &UdpListener::doDisconnect);
     connect(ui->cmbReplyType, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &UdpListener::changeReplyType);
+    connect(ui->cmbDecoder, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &UdpListener::changeDecoder);
     connect(ui->cmbHandler, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &UdpListener::changeHandler);
 
@@ -45,9 +48,7 @@ UdpListener::UdpListener(QWidget *parent) :
 UdpListener::~UdpListener()
 {
     disconnect(this, nullptr, nullptr, nullptr);
-    if (m_UdpSocket) {
-        m_UdpSocket->close();
-    }
+    doDisconnect();
     delete ui;
 }
 
@@ -89,6 +90,12 @@ void UdpListener::doConnect()
         m_UdpSocket = Q_NULLPTR;
     }
     if (m_UdpSocket) {
+        if (initDecoder(ui->rbBinary->isChecked())) {
+            connect(decoder(), &MessageHandler::logMessage,
+                    this, &UdpListener::printMessage);
+            connect(decoder(), &MessageHandler::logError,
+                    this, &UdpListener::printError);
+        }
         if (initHandler(ui->rbBinary->isChecked())) {
             connect(handler(), &MessageHandler::logMessage,
                     this, &UdpListener::printMessage);
@@ -96,8 +103,12 @@ void UdpListener::doConnect()
                     this, &UdpListener::printError);
         }
     }
-    const auto errors = handlerErrors();
-    for (const auto &error : errors) {
+    const auto decodeErrors = decoderErrors();
+    for (const auto &error : decodeErrors) {
+        printError(decoderName(), error);
+    }
+    const auto actionErrors = handlerErrors();
+    for (const auto &error : actionErrors) {
         printError(handlerName(), error);
     }
     updateStatus();
@@ -112,6 +123,7 @@ void UdpListener::doDisconnect()
         m_UdpSocket->deleteLater();
         m_UdpSocket = Q_NULLPTR;
     }
+    disconnectDecoder();
     disconnectHandler();
     updateStatus();
 }
@@ -121,6 +133,16 @@ void UdpListener::doDisconnect()
 void UdpListener::onInputFormatChanged()
 {
     ui->cmbCodec->setVisible(ui->rbText->isChecked());
+}
+
+/********************************************************/
+
+void UdpListener::changeDecoder(int index)
+{
+    auto editor = updateDecoder(index);
+    if (editor) {
+        ui->boxDecoder->layout()->addWidget(editor);
+    }
 }
 
 /********************************************************/
@@ -172,6 +194,7 @@ void UdpListener::updateStatus()
         ui->spinPort->setEnabled(false);
         ui->btnConnect->setVisible(false);
         ui->btnDisconnect->setVisible(true);
+        ui->boxDecoder->setEnabled(false);
         ui->boxAction->setEnabled(false);
         emit tabText(QString("UDP [%1]").arg(ui->spinPort->value()));
     } else {
@@ -179,6 +202,7 @@ void UdpListener::updateStatus()
         ui->spinPort->setEnabled(true);
         ui->btnConnect->setVisible(true);
         ui->btnDisconnect->setVisible(false);
+        ui->boxDecoder->setEnabled(true);
         ui->boxAction->setEnabled(true);
         emit tabText(QString("UDP [-]"));
     }
@@ -201,28 +225,44 @@ QByteArray UdpListener::processData(const QHostAddress &host, const QByteArray &
 {
     int mib = ui->cmbCodec->itemData(ui->cmbCodec->currentIndex()).toInt();
     IODecoder ioDecoder(mib);
-    QString displayData = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
+    QString textData    = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
+    QString displayHost = host.toString();
 
     // log payload data
-    printMessage(host.toString(), displayData);
+    printMessage(displayHost, textData);
 
-    QByteArray reply;
-    // Handler
+    // Decoder
+    QByteArray binData;
     if (ui->rbText->isChecked()) {
-        reply = doHandle(displayData);
+        binData = doDecode(textData);
     } else {
-        reply = doHandle(data);
+        binData = doDecode(data);
     }
+    // log decode errors
+    const auto decodeErrors = decoderErrors();
+    for (const auto &error : decodeErrors) {
+        printError(displayHost, error);
+    }
+
+    // Handler
+    QByteArray reply;
+    if (ui->rbText->isChecked()) {
+        reply = doHandle(QString(binData));
+    } else {
+        reply = doHandle(binData);
+    }
+    // log errors
+    const auto actionErrors = handlerErrors();
+    for (const auto &error : actionErrors) {
+        printError(displayHost, error);
+    }
+
     // log reply data
     if (!reply.isEmpty()) {
         QString replyData = ioDecoder.toUnicode(reply, ui->rbBinary->isChecked());
         printReply(host.toString(), replyData);
     }
-    // log errors
-    const auto errors = handlerErrors();
-    for (const auto &error : errors) {
-        printError(host.toString(), error);
-    }
+    clearErrors();
 
     // make reply
     switch (ui->cmbReplyType->currentIndex()) {

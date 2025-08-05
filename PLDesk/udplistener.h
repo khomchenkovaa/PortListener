@@ -30,6 +30,7 @@ private Q_SLOTS:
     void doConnect();
     void doDisconnect();
     void onInputFormatChanged();
+    void changeDecoder(int index);
     void changeReplyType(int index);
     void changeHandler(int index);
 
