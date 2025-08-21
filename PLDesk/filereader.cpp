@@ -37,6 +37,8 @@ FileReader::FileReader(QWidget *parent) :
             this, &FileReader::onInputFormatChanged);
     connect(ui->rbText, &QRadioButton::toggled,
             this, &FileReader::onInputFormatChanged);
+    connect(ui->cmbReadMode, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &FileReader::onInputFormatChanged);
 
     updateStatus();
     updateCodecs();
@@ -55,8 +57,18 @@ QTextBrowser *FileReader::textLog() const
 }
 
 void FileReader::onReadyRead()
-{    
-    QByteArray data = d.file.readAll();
+{
+    if (d.file.atEnd() && d.rotate) d.file.seek(0);
+    QByteArray data;
+    if (d.readMode == ReadMode::READ_ALL) {
+        data = d.file.readAll();
+    } else {
+        if (d.binary) {
+            data = d.file.read(d.binLength);
+        } else {
+            data = d.file.readLine();
+        }
+    }
     if (data.size()) {
         processData(d.fileName(), data);
     } else {
@@ -75,9 +87,14 @@ void FileReader::doConnect()
         printError("FileReader", QString("File '%1' doesn't exists").arg(QFileInfo(fileName).fileName()));
         return;
     }
-    d.timer.setInterval(ui->spinInterval->value());
-    d.binary = ui->rbBinary->isChecked();
     d.file.setFileName(fileName);
+    d.binary = ui->rbBinary->isChecked();
+    d.rotate = ui->chkRotate->isChecked();
+    d.timer.setInterval(ui->spinInterval->value());
+    d.readMode = static_cast<ReadMode>(ui->cmbReadMode->currentIndex());
+    d.binLength = ui->spinBytes->value();
+    d.textFileFormat = static_cast<TextFileFormat>(ui->cmbFileFormat->currentIndex());
+
     QIODevice::OpenMode openMode = d.binary ? (QIODevice::ReadOnly) : (QIODevice::ReadOnly | QIODevice::Text);
     if (!d.file.open(openMode)) {
         printError("FileReader", d.file.errorString());
@@ -115,7 +132,7 @@ void FileReader::doDisconnect()
 {
     disconnect(&d.timer, nullptr, nullptr, nullptr);
     d.file.close();
-    printInfo("FileReader", "Data exchanging stopped.");
+    printInfo("FileReader", "Data reading stopped.");
     disconnectDecoder();
     disconnectHandler();
     updateStatus();
@@ -123,7 +140,13 @@ void FileReader::doDisconnect()
 
 void FileReader::onInputFormatChanged()
 {
-    ui->cmbCodec->setVisible(ui->rbText->isChecked());
+    bool isText = ui->rbText->isChecked();
+    ui->cmbCodec->setVisible(isText);
+    ui->cmbReadMode->setItemText(ReadMode::READ_CHUNK, isText ? "Read next line" : "Read next bytes");
+    ui->lblBytes->setVisible(!isText && ui->cmbReadMode->currentIndex());
+    ui->spinBytes->setVisible(!isText && ui->cmbReadMode->currentIndex());
+    ui->lblFileFormat->setVisible(isText);
+    ui->cmbFileFormat->setVisible(isText);
 }
 
 void FileReader::changeDecoder(int index)
@@ -159,6 +182,18 @@ void FileReader::changeHandler(int index)
 
 void FileReader::setupUiDefaultState()
 {
+    QStringList fileFormatItems = QStringList() << "Plain text" << "Hex content" << "Structure 1";
+    ui->cmbFileFormat->addItems(fileFormatItems);
+    ui->cmbFileFormat->setCurrentIndex(d.textFileFormat);
+
+    QStringList readModeItems = QStringList() << "Read All" << "Read next line";
+    ui->cmbReadMode->addItems(readModeItems);
+    ui->cmbReadMode->setCurrentIndex(ReadMode::READ_ALL);
+
+    ui->lblBytes->setVisible(false);
+    ui->spinBytes->setVisible(false);
+    ui->spinBytes->setValue(d.binLength);
+
     ui->rbBinary->setChecked(false);
     ui->rbText->setChecked(true);
     ui->cmbReplyType->setCurrentIndex(ReplyType::NoReply);
