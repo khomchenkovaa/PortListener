@@ -28,6 +28,7 @@ include("../handlerwgt/handlerwgt.pri")
 
 SOURCES += \
     datasender.cpp \
+    filereader.cpp \
     listenerwidget.cpp \
     main.cpp \
     mainwindow.cpp \
@@ -37,6 +38,7 @@ SOURCES += \
 
 HEADERS += \
     datasender.h \
+    filereader.h \
     listenerwidget.h \
     mainwindow.h \
     socketlistener.h \
@@ -45,6 +47,7 @@ HEADERS += \
 
 FORMS += \
     datasender.ui \
+    filereader.ui \
     mainwindow.ui \
     socketlistener.ui \
     tcplistener.ui \

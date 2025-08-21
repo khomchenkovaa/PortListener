@@ -48,9 +48,9 @@ TcpListener::TcpListener(QWidget *parent) :
 
 TcpListener::~TcpListener()
 {
+    disconnect(this, nullptr, nullptr, nullptr);
     if (m_TcpServer.isListening()) doDisconnect();
     disconnect(&m_TcpServer, nullptr, nullptr, nullptr);
-    disconnect(this, nullptr, nullptr, nullptr);
     delete ui;
 }
 

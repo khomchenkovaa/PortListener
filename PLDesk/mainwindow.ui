@@ -222,6 +222,7 @@
      <string>Tools</string>
     </property>
     <addaction name="actionDataSender"/>
+    <addaction name="actionFileReader"/>
    </widget>
    <addaction name="menuConnect"/>
    <addaction name="menuModbus"/>
@@ -265,6 +266,11 @@
   <action name="actionMQueue">
    <property name="text">
     <string>MQueue</string>
+   </property>
+  </action>
+  <action name="actionFileReader">
+   <property name="text">
+    <string>File Reader</string>
    </property>
   </action>
  </widget>

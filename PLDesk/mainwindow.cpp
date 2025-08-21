@@ -4,6 +4,7 @@
 #include "tcplistener.h"
 #include "udplistener.h"
 #include "socketlistener.h"
+#include "filereader.h"
 #include "datasender.h"
 
 #ifdef QT_SERIALBUS_LIB
@@ -120,6 +121,19 @@ void MainWindow::addModbusTcpClient()
 
 /********************************************************/
 
+void MainWindow::addFileReader()
+{
+    auto widget = new FileReader(this);
+    ui->tabWidget->addTab(widget, tr("File [-]"));
+    ui->tabWidget->setCurrentWidget(widget);
+    connect(widget, &FileReader::tabText, this, [this, widget](const QString &label){
+        int idx = ui->tabWidget->indexOf(widget);
+        ui->tabWidget->setTabText(idx, label);
+    });
+}
+
+/********************************************************/
+
 void MainWindow::addDataSender()
 {
     auto widget = new DataSender(this);
@@ -158,6 +172,8 @@ void MainWindow::setupUI()
             this, &MainWindow::addModbusTcpClient);
     connect(ui->actionDataSender, &QAction::triggered,
             this, &MainWindow::addDataSender);
+    connect(ui->actionFileReader, &QAction::triggered,
+            this, &MainWindow::addFileReader);
 
 #ifndef QT_SERIALBUS_LIB
     ui->btnModbusTcpServer->setDisabled(true);

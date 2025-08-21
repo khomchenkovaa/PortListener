@@ -22,6 +22,7 @@ private slots:
     void addMqueueListener();
     void addModbusTcpServer();
     void addModbusTcpClient();
+    void addFileReader();
     void addDataSender();
 
 private:
