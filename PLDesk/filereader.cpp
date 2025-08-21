@@ -70,7 +70,11 @@ void FileReader::onReadyRead()
         }
     }
     if (data.size()) {
-        processData(d.fileName(), data);
+        if (!d.binary && d.textFileFormat == TextFileFormat::HEX_CONTENT) {
+            processData(d.fileName(), QByteArray::fromHex(data));
+        } else {
+            processData(d.fileName(), data);
+        }
     } else {
         printError(d.fileName(), "Cannot read data from file");
     }
@@ -237,18 +241,18 @@ QByteArray FileReader::processData(const QString &fileName, const QByteArray &da
 {
     int mib = ui->cmbCodec->itemData(ui->cmbCodec->currentIndex()).toInt();
     IODecoder ioDecoder(mib);
-    QString textData    = ioDecoder.toUnicode(data, ui->rbBinary->isChecked());
+    QString textData    = ioDecoder.toUnicode(data, d.isBin());
     QString displayHost = fileName;
 
     // log payload data
     printMessage(fileName, textData);
 
     // Decoder
-    QByteArray binData;
-    if (ui->rbText->isChecked()) {
-        binData = doDecode(textData);
+    QByteArray decodedData;
+    if (d.isBin()) {
+        decodedData = doDecode(data);
     } else {
-        binData = doDecode(data);
+        decodedData = doDecode(textData);
     }
     // log decode errors
     const auto decodeErrors = decoderErrors();
@@ -258,10 +262,10 @@ QByteArray FileReader::processData(const QString &fileName, const QByteArray &da
 
     // Handler
     QByteArray reply;
-    if (ui->rbText->isChecked()) {
-        reply = doHandle(QString(binData));
+    if (d.isBin()) {
+        reply = doHandle(decodedData);
     } else {
-        reply = doHandle(binData);
+        reply = doHandle(QString(decodedData));
     }
     // log errors
     const auto actionErrors = handlerErrors();
@@ -271,7 +275,7 @@ QByteArray FileReader::processData(const QString &fileName, const QByteArray &da
 
     // log reply data
     if (!reply.isEmpty()) {
-        QString replyData = ioDecoder.toUnicode(reply, ui->rbBinary->isChecked());
+        QString replyData = ioDecoder.toUnicode(reply, d.isBin());
         printReply(fileName, replyData);
     }
     clearErrors();

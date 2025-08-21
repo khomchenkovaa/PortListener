@@ -38,6 +38,10 @@ class FileReader : public ListenerWidget
         QString fileName() const {
             return QFileInfo(file).fileName();
         }
+
+        bool isBin() const {
+            return binary || (textFileFormat == TextFileFormat::HEX_CONTENT);
+        }
     };
 
 public:
