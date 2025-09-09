@@ -20,27 +20,26 @@ class FileReader : public ListenerWidget
         READ_CHUNK  ///< read line by line (text files) or number of bytes (bin files)
     };
 
-    enum TextFileFormat {
+    enum FileFormat {
         PLAIN_TEXT,  ///< text file
         HEX_CONTENT, ///< convert hex-text to binary output
-        STRUCTURE_1  ///< special data format
+        BIN_CONTENT  ///< binary format
     };
 
     struct FileReaderData {
-        QFile          file;
-        bool           binary = false;
-        bool           rotate = false;
-        QTimer         timer;
-        ReadMode       readMode = ReadMode::READ_ALL;
-        std::size_t    binLength = 12;                              ///< chunk size for binary input
-        TextFileFormat textFileFormat = TextFileFormat::PLAIN_TEXT; ///< text file format
+        QFile       file;
+        bool        rotate = false;
+        QTimer      timer;
+        ReadMode    readMode = ReadMode::READ_ALL;
+        std::size_t binLength = 12;                      ///< chunk size for binary input
+        FileFormat  fileFormat = FileFormat::PLAIN_TEXT; ///< input file format
 
         QString fileName() const {
             return QFileInfo(file).fileName();
         }
 
         bool isBin() const {
-            return binary || (textFileFormat == TextFileFormat::HEX_CONTENT);
+            return (fileFormat != FileFormat::HEX_CONTENT);
         }
     };
 

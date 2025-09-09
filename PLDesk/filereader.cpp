@@ -37,6 +37,8 @@ FileReader::FileReader(QWidget *parent) :
             this, &FileReader::onInputFormatChanged);
     connect(ui->rbText, &QRadioButton::toggled,
             this, &FileReader::onInputFormatChanged);
+    connect(ui->rbHex, &QRadioButton::toggled,
+            this, &FileReader::onInputFormatChanged);
     connect(ui->cmbReadMode, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &FileReader::onInputFormatChanged);
 
@@ -63,14 +65,14 @@ void FileReader::onReadyRead()
     if (d.readMode == ReadMode::READ_ALL) {
         data = d.file.readAll();
     } else {
-        if (d.binary) {
+        if (d.fileFormat == FileFormat::BIN_CONTENT) {
             data = d.file.read(d.binLength);
         } else {
             data = d.file.readLine();
         }
     }
     if (data.size()) {
-        if (!d.binary && d.textFileFormat == TextFileFormat::HEX_CONTENT) {
+        if (d.fileFormat == FileFormat::HEX_CONTENT) {
             processData(d.fileName(), QByteArray::fromHex(data));
         } else {
             processData(d.fileName(), data);
@@ -92,14 +94,15 @@ void FileReader::doConnect()
         return;
     }
     d.file.setFileName(fileName);
-    d.binary = ui->rbBinary->isChecked();
+    if (ui->rbBinary->isChecked()) d.fileFormat = FileFormat::BIN_CONTENT;
+    if (ui->rbText->isChecked())   d.fileFormat = FileFormat::PLAIN_TEXT;
+    if (ui->rbHex->isChecked())    d.fileFormat = FileFormat::HEX_CONTENT;
     d.rotate = ui->chkRotate->isChecked();
     d.timer.setInterval(ui->spinInterval->value());
     d.readMode = static_cast<ReadMode>(ui->cmbReadMode->currentIndex());
     d.binLength = ui->spinBytes->value();
-    d.textFileFormat = static_cast<TextFileFormat>(ui->cmbFileFormat->currentIndex());
 
-    QIODevice::OpenMode openMode = d.binary ? (QIODevice::ReadOnly) : (QIODevice::ReadOnly | QIODevice::Text);
+    QIODevice::OpenMode openMode = (d.fileFormat == FileFormat::BIN_CONTENT) ? (QIODevice::ReadOnly) : (QIODevice::ReadOnly | QIODevice::Text);
     if (!d.file.open(openMode)) {
         printError("FileReader", d.file.errorString());
         return;
@@ -108,13 +111,13 @@ void FileReader::doConnect()
     d.timer.start();
     printInfo("FileReader", QString("Data reading started, interval %1 ms.").arg(ui->spinInterval->value()));
 
-    if (initDecoder(d.binary)) {
+    if (initDecoder(d.fileFormat == FileFormat::BIN_CONTENT)) {
         connect(decoder(), &MessageHandler::logMessage,
                 this, &FileReader::printMessage);
         connect(decoder(), &MessageHandler::logError,
                 this, &FileReader::printError);
     }
-    if (initHandler(d.binary)) {
+    if (initHandler(d.fileFormat == FileFormat::BIN_CONTENT)) {
         connect(handler(), &MessageHandler::logMessage,
                 this, &FileReader::printMessage);
         connect(handler(), &MessageHandler::logError,
@@ -144,13 +147,15 @@ void FileReader::doDisconnect()
 
 void FileReader::onInputFormatChanged()
 {
+    bool isBin  = ui->rbBinary->isChecked();
     bool isText = ui->rbText->isChecked();
+    bool isHex  = ui->rbHex->isChecked();
     ui->cmbCodec->setVisible(isText);
-    ui->cmbReadMode->setItemText(ReadMode::READ_CHUNK, isText ? "Read next line" : "Read next bytes");
-    ui->lblBytes->setVisible(!isText && ui->cmbReadMode->currentIndex());
-    ui->spinBytes->setVisible(!isText && ui->cmbReadMode->currentIndex());
-    ui->lblFileFormat->setVisible(isText);
-    ui->cmbFileFormat->setVisible(isText);
+    ui->cmbReadMode->setDisabled(isHex);
+    ui->cmbReadMode->setItemText(ReadMode::READ_CHUNK, isBin ? "Read next bytes" : "Read next line");
+    if (isHex) ui->cmbReadMode->setCurrentIndex(ReadMode::READ_CHUNK);
+    ui->lblBytes->setVisible(isBin && ui->cmbReadMode->currentIndex());
+    ui->spinBytes->setVisible(isBin && ui->cmbReadMode->currentIndex());
 }
 
 void FileReader::changeDecoder(int index)
@@ -186,10 +191,6 @@ void FileReader::changeHandler(int index)
 
 void FileReader::setupUiDefaultState()
 {
-    QStringList fileFormatItems = QStringList() << "Plain text" << "Hex content" << "Structure 1";
-    ui->cmbFileFormat->addItems(fileFormatItems);
-    ui->cmbFileFormat->setCurrentIndex(d.textFileFormat);
-
     QStringList readModeItems = QStringList() << "Read All" << "Read next line";
     ui->cmbReadMode->addItems(readModeItems);
     ui->cmbReadMode->setCurrentIndex(ReadMode::READ_ALL);
