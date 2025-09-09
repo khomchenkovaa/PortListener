@@ -5,6 +5,7 @@
 #include "xcsvmodel.h"
 
 #include <QFile>
+#include <QFileInfo>
 #include <QTextCodec>
 
 /// Signal list description
@@ -25,6 +26,10 @@ struct ModbusSigConf
         Modbus::DataType dt;     ///< Data type
         QString  descr;  ///< Описание сигнала
     };
+
+    void load(const QFileInfo &fileInfo) {
+        load(fileInfo.absoluteFilePath());
+    }
 
     void load(const QString &fileName) {
         XCsvModel csv;

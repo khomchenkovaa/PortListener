@@ -5,6 +5,7 @@
 #include "modbusclientconf.h"
 
 #include <QModbusTcpClient>
+#include <QTimer>
 
 namespace Ui {
 class ModbusTcpClient;
@@ -17,7 +18,7 @@ class ModbusTcpClient : public ListenerWidget
     struct ModbusTcpClientData {
         QModbusTcpClient modbusDevice;
         ModbusSigConf    conf;
-        QTimer           *timer = Q_NULLPTR;
+        QTimer           timer;
     };
 
 public:

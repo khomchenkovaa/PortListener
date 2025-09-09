@@ -303,7 +303,7 @@ void ModbusTcpClient::doModbusRequest()
         }
     }
 
-    m.timer->start(); // singleShort
+    m.timer.start(); // singleShort
 }
 
 /********************************************************/
@@ -476,9 +476,8 @@ void ModbusTcpClient::setupCycleRequestBlock()
         }
     });
 
-    m.timer = new QTimer(this);
-    m.timer->setSingleShot(true);
-    connect(m.timer, &QTimer::timeout,
+    m.timer.setSingleShot(true);
+    connect(&m.timer, &QTimer::timeout,
             this, &ModbusTcpClient::doModbusRequest);
 
     connect(ui->btnStart, &QAbstractButton::clicked, this, [this](){
@@ -487,11 +486,11 @@ void ModbusTcpClient::setupCycleRequestBlock()
         m.conf.items.clear();
         m.conf.load(sigFile);
         int msec = ui->spinFrequency->value() * 1000;
-        m.timer->setInterval(msec);
-        m.timer->start();
+        m.timer.setInterval(msec);
+        m.timer.start();
     });
     connect(ui->btnStop, &QAbstractButton::clicked, this, [this](){
-        m.timer->stop();
+        m.timer.stop();
     });
 }
 

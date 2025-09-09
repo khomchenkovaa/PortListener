@@ -1,6 +1,9 @@
 QT -= gui
 QT += network sql
 
+# comment next line if you don't want the modbus
+QT += serialbus
+
 CONFIG += c++11 console
 CONFIG -= app_bundle
 
@@ -33,6 +36,16 @@ HEADERS += \
     tcpservice.h \
     udpdaemon.h \
     udpservice.h
+
+contains(QT, serialbus) {
+    SOURCES += \
+        modbusdaemon.cpp \
+        modbusservice.cpp
+
+    HEADERS += \
+        modbusdaemon.h \
+        modbusservice.h
+}
 
 RESOURCES += \
     ../PortListener.qrc

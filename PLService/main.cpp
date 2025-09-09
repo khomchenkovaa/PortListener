@@ -1,5 +1,6 @@
 #include "tcpservice.h"
 #include "udpservice.h"
+#include "modbusservice.h"
 
 #include "settings.h"
 
@@ -31,6 +32,7 @@ int main(int argc, char *argv[]) {
     qWarning("(Version uses dummy settings file: %s/QtSoftware.conf)", QDir::tempPath().toLatin1().constData());
 #endif
 //    TcpService service(argc, argv);
-    UdpService service(argc, argv);
+//    UdpService service(argc, argv);
+    ModbusService service(argc, argv);
     return service.exec();
 }

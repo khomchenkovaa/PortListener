@@ -5,7 +5,8 @@
 
 #include <QCoreApplication>
 
-class UdpService: public QtService<QCoreApplication> {
+class UdpService: public QtService<QCoreApplication>
+{
 
 public:
     UdpService(int argc, char **argv);
