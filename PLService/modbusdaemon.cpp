@@ -4,19 +4,6 @@
 #include <QDir>
 #include <QTime>
 
-inline QString takeHost(const QString &sensor, const QVector<quint16> &vars) {
-    switch (vars.size()) {
-    case 1:
-        return QString("%1 [%2]").arg(sensor)
-                .arg(vars.constFirst(), 4, 16, QLatin1Char('0'));
-    case 2:
-        return QString("%1 [%2 %3]").arg(sensor)
-                .arg(vars.constFirst(), 4, 16, QLatin1Char('0'))
-                .arg(vars.constLast(), 4, 16, QLatin1Char('0'));
-    }
-    return sensor;
-}
-
 ModbusDaemon::ModbusDaemon(QObject *parent)
     : QObject{parent}
 {
@@ -34,15 +21,17 @@ ModbusDaemon::ModbusDaemon(QObject *parent)
 void ModbusDaemon::startServer()
 {
     if (!loadOptions()) {
-        qWarning("(Cannot read config file: %s)", MB_CONFIG_FILE);
+//        d.opt.save();
+        qWarning("(Cannot read config file: %s)", QCoreApplication::applicationName().toLatin1().constData());
     }
     if (!loadSigConf()) {
         qWarning("(Cannot read sig file: %s)", MB_SIG_FILE);
     }
+    d.timer.setInterval(d.opt.frequency * 1000);
     d.modbusDevice.setConnectionParameter(QModbusDevice::NetworkPortParameter, d.opt.port);
     d.modbusDevice.setConnectionParameter(QModbusDevice::NetworkAddressParameter, d.opt.host1);
-    d.modbusDevice.setTimeout(1);
-    d.modbusDevice.setNumberOfRetries(3);
+    d.modbusDevice.setTimeout(d.opt.timeout);
+    d.modbusDevice.setNumberOfRetries(d.opt.retries);
     if (!d.modbusDevice.connectDevice()) {
         qCritical("(Modbus client %s:%i connection error!\n%s)",
                  d.opt.host1.toLatin1().constData(),
@@ -140,12 +129,9 @@ void ModbusDaemon::doModbusRequest()
         auto time = QTime::currentTime().msecsSinceStartOfDay() / 1000;
         qDebug("Sec from start of day: %i", time);
 
-        const auto table = QModbusDataUnit::HoldingRegisters;
-        int serverId = 1; // TODO
-
         for (const auto &item : qAsConst(d.conf.items)) {
-            QModbusDataUnit request(table, item.ad, Modbus::dataTypeSizeOf(item.dt));
-            if (auto *response = d.modbusDevice.sendReadRequest(request, serverId)) {
+            QModbusDataUnit request(QModbusDataUnit::HoldingRegisters, item.ad, Modbus::dataTypeSizeOf(item.dt));
+            if (auto *response = d.modbusDevice.sendReadRequest(request, d.opt.serverId)) {
                 if (!response->isFinished())
                     connect(response, &QModbusReply::finished, this, [this, item](){
                         auto reply = qobject_cast<QModbusReply *>(sender());
@@ -157,22 +143,19 @@ void ModbusDaemon::doModbusRequest()
                             case Modbus::RealType: {
                                 auto arg = QVector<quint16>() << unit.value(0) << unit.value(1);
                                 auto val = Modbus::takeFloat(arg);
-                                auto host = takeHost(item.pin, arg);
                                 auto info = QString::number(val, 'f', 3);
-                                qDebug("Value: %s;%s", host.toLatin1().constData(), info.toLatin1().constData());
+                                qDebug("Value: %s;%s", item.pin.toLatin1().constData(), info.toLatin1().constData());
                             } break;
                             case Modbus::DWordType: {
                                 auto arg = QVector<quint16>() << unit.value(0) << unit.value(1);
                                 auto val = Modbus::takeUInt(arg);
-                                auto host = takeHost(item.pin, arg);
                                 auto info = QString::number(val);
-                                qDebug("Value: %s;%s", host.toLatin1().constData(), info.toLatin1().constData());
+                                qDebug("Value: %s;%s", item.pin.toLatin1().constData(), info.toLatin1().constData());
                             } break;
                             case Modbus::IntType: {
                                 quint16 val = unit.value(0);
-                                auto host = takeHost(item.pin, QVector<quint16>() << val);
                                 auto info = QString::number(val);
-                                qDebug("Value: %s;%s", host.toLatin1().constData(), info.toLatin1().constData());
+                                qDebug("Value: %s;%s", item.pin.toLatin1().constData(), info.toLatin1().constData());
                             } break;
                             default:
                                 break;

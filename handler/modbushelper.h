@@ -5,7 +5,7 @@
 
 #include <QVector>
 
-#define REG_MAX 2000
+#define REG_MAX 20000
 
 namespace Modbus {
 

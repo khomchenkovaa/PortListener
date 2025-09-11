@@ -3,6 +3,8 @@
 
 #include "global.h"
 
+#include <QCoreApplication>
+
 #define MB_CONFIG_FILE "scrload.conf"
 //INPUT_METHOD=NETWORK
 //HOST1=gate1
@@ -35,6 +37,12 @@
 #define DEF_OUTPUT_DIR   "/export/home/ska/sacor/tmp"
 #define DEF_LOG_LEVEL    "VERY_LOW"
 
+// modbus
+#define GRP_MODBUS "Modbus"
+#define MB_TIMEOUT "Timeout"
+#define MB_RETRIES "Retries"
+#define MB_SRV_ID  "ServerId"
+
 enum {
     DEF_PORT      = 1024,
     DEF_FREQUENCY = 4,
@@ -56,8 +64,15 @@ struct ModbusOptions {
     QString logLevel;
     QString optFilePath;
 
+    int timeout  = 1;
+    int retries  = 3;
+    int serverId = 1;
+
     void load() {
-        QSettings s(MB_CONFIG_FILE);
+        QSettings s(QSettings::NativeFormat,
+                    QSettings::SystemScope,
+                    QCoreApplication::organizationName(),
+                    QCoreApplication::applicationName());
         inputMethod = s.value(MB_INPUT_METHOD, DEF_INPUT_METHOD).toString();
         host1       = s.value(MB_HOST1, DEF_HOST1).toString();
         host2       = s.value(MB_HOST2, DEF_HOST2).toString();
@@ -68,10 +83,19 @@ struct ModbusOptions {
         logSize     = s.value(MB_LOG_SIZE, DEF_LOG_SIZE).toInt();
         logLevel    = s.value(MB_LOG_LEVEL, DEF_LOG_LEVEL).toString();
         optFilePath = s.fileName();
+
+        s.beginGroup(GRP_MODBUS);
+        timeout  = s.value(MB_TIMEOUT, timeout).toInt();
+        retries  = s.value(MB_RETRIES, retries).toInt();
+        serverId = s.value(MB_SRV_ID, serverId).toInt();
+        s.endGroup();
     };
 
     void save() {
-        QSettings s(MB_CONFIG_FILE);
+        QSettings s(QSettings::NativeFormat,
+                    QSettings::SystemScope,
+                    QCoreApplication::organizationName(),
+                    QCoreApplication::applicationName());
         s.setValue(MB_INPUT_METHOD, inputMethod);
         s.setValue(MB_HOST1, host1);
         s.setValue(MB_HOST2, host2);

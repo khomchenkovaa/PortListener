@@ -33,7 +33,7 @@ signals:
 
 private Q_SLOTS:
     bool loadOptions() {
-        d.opt.get();
+        d.opt.load();
         return !(d.opt.optFilePath.isEmpty());
     }
 

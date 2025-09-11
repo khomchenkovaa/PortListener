@@ -39,8 +39,7 @@ HEADERS += \
 
 contains(QT, serialbus) {
     SOURCES += \
-        modbusdaemon.cpp \
-        modbusservice.cpp
+        modbusdaemon.cpp
 
     HEADERS += \
         modbusdaemon.h \

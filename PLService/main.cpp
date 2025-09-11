@@ -6,6 +6,7 @@
 
 #include <QDir>
 #include <QSettings>
+#include <QFileInfo>
 
 /*
  * Command line arguments
@@ -22,15 +23,21 @@
 
 int main(int argc, char *argv[]) {
     QCoreApplication::setOrganizationName(ORGANIZATION_NAME);
-    QCoreApplication::setOrganizationDomain(ORGANIZATION_DOMAIN);
-    QCoreApplication::setApplicationName(APPLICATION_NAME);
+//    QCoreApplication::setOrganizationDomain(ORGANIZATION_DOMAIN);
+//    QCoreApplication::setApplicationName(APPLICATION_NAME);
+    QCoreApplication::setApplicationName("scrload");
 
 #if !defined(Q_OS_WIN)
     // QtService stores service settings in SystemScope, which normally require root privileges.
     // To allow testing this example as non-root, we change the directory of the SystemScope settings file.
-    QSettings::setPath(QSettings::NativeFormat, QSettings::SystemScope, QDir::tempPath());
-    qWarning("(Version uses dummy settings file: %s/QtSoftware.conf)", QDir::tempPath().toLatin1().constData());
+    QFileInfo execFile(argv[0]);
+    QSettings::setPath(QSettings::NativeFormat, QSettings::SystemScope, execFile.absolutePath());
+    qWarning("(Version uses dummy settings file: %s/%s/%s.conf)",
+             execFile.absolutePath().toLatin1().constData(),
+             QCoreApplication::organizationName().toLatin1().constData(),
+             QCoreApplication::applicationName().toLatin1().constData());
 #endif
+
 //    TcpService service(argc, argv);
 //    UdpService service(argc, argv);
     ModbusService service(argc, argv);
