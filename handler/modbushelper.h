@@ -16,6 +16,7 @@ union ModbusValue {
     } in;
     float   outFloat;
     quint32 outUInt;
+    qint32  outInt;
 };
 
 enum DataType {
@@ -56,6 +57,14 @@ inline quint32 takeUInt(const QVector<quint16> &values) {
     v.in.first = values.constFirst();
     v.in.last  = values.constLast();
     return v.outUInt;
+}
+
+inline quint32 takeInt(const QVector<quint16> &values) {
+    Q_ASSERT(values.size() == 2);
+    ModbusValue v;
+    v.in.first = values.constFirst();
+    v.in.last  = values.constLast();
+    return v.outInt;
 }
 
 }

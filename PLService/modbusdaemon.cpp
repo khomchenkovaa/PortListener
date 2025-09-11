@@ -9,13 +9,12 @@ ModbusDaemon::ModbusDaemon(QObject *parent)
 {
     d.timer.setSingleShot(true);
     connect(&d.timer, &QTimer::timeout,
-            this, &ModbusDaemon::doModbusRequest);
+            this, &ModbusDaemon::doWork);
 
     connect(&d.modbusDevice, &QModbusClient::stateChanged,
             this, &ModbusDaemon::onStateChanged);
     connect(&d.modbusDevice, &QModbusClient::errorOccurred,
             this, &ModbusDaemon::handleDeviceError);
-
 }
 
 void ModbusDaemon::startServer()
@@ -27,6 +26,7 @@ void ModbusDaemon::startServer()
     if (!loadSigConf()) {
         qWarning("(Cannot read sig file: %s)", MB_SIG_FILE);
     }
+    prepareSensors();
     d.timer.setInterval(d.opt.frequency * 1000);
     d.modbusDevice.setConnectionParameter(QModbusDevice::NetworkPortParameter, d.opt.port);
     d.modbusDevice.setConnectionParameter(QModbusDevice::NetworkAddressParameter, d.opt.host1);
@@ -46,6 +46,8 @@ void ModbusDaemon::stopServer()
 {
     pauseServer();
     d.modbusDevice.disconnectDevice();
+    d.conf.items.clear();
+    d.sensors.clear();
 }
 
 void ModbusDaemon::pauseServer()
@@ -68,6 +70,21 @@ bool ModbusDaemon::loadSigConf()
         d.conf.load(sigFile);
     }
     return !(d.conf.items.isEmpty());
+}
+
+void ModbusDaemon::prepareSensors()
+{
+    for (const auto &item : qAsConst(d.conf.items)) {
+        if (!d.sensors.contains(item.pin)) {
+            d.sensors.insert(item.pin, PSensorValue::create());
+            d.sensors[item.pin]->type = item.dt;
+        }
+        if (item.avg) {
+            if (d.sensors[item.pin]->input.size() < item.avg) {
+                d.sensors[item.pin]->input.resize(item.avg);
+            }
+        }
+    }
 }
 
 void ModbusDaemon::onStateChanged()
@@ -120,14 +137,35 @@ void ModbusDaemon::handleDeviceError(QModbusDevice::Error newError)
     }
 }
 
+void ModbusDaemon::doWork()
+{
+    // FIXME async request
+    // set all values as invalid
+//    for (const auto &item : qAsConst(d.conf.items)) {
+//        d.sensors[item.pin]->valid = false;
+//    }
+    // fill sensor's values
+    doModbusRequest();
+    // calc averages
+    for (auto &item : qAsConst(d.conf.items)) {
+        if (d.sensors[item.pin]->needCalc()) {
+            d.sensors[item.pin]->doCalc();
+        }
+    }
+    // print output
+    auto time = QTime::currentTime().msecsSinceStartOfDay() / 1000;
+    qDebug("Sec from start of day: \n%i", time);
+    for (auto &item : qAsConst(d.conf.items)) {
+        // TODO check valid
+        qDebug("%s; %s", item.pin.toLatin1().constData(), d.sensors[item.pin]->valAsString().toLatin1().constData());
+    }
+}
+
 void ModbusDaemon::doModbusRequest()
 {
     if (d.modbusDevice.state() == QModbusDevice::ConnectedState) {
         QString host = QString("%1:%2").arg(d.opt.host1).arg(d.opt.port);
         qDebug("Modbus Device Start request cycle: %s", host.toLatin1().constData());
-
-        auto time = QTime::currentTime().msecsSinceStartOfDay() / 1000;
-        qDebug("Sec from start of day: %i", time);
 
         for (const auto &item : qAsConst(d.conf.items)) {
             QModbusDataUnit request(QModbusDataUnit::HoldingRegisters, item.ad, Modbus::dataTypeSizeOf(item.dt));
@@ -143,19 +181,16 @@ void ModbusDaemon::doModbusRequest()
                             case Modbus::RealType: {
                                 auto arg = QVector<quint16>() << unit.value(0) << unit.value(1);
                                 auto val = Modbus::takeFloat(arg);
-                                auto info = QString::number(val, 'f', 3);
-                                qDebug("Value: %s;%s", item.pin.toLatin1().constData(), info.toLatin1().constData());
+                                d.sensors[item.pin]->setValue(item.avg, val);
                             } break;
                             case Modbus::DWordType: {
                                 auto arg = QVector<quint16>() << unit.value(0) << unit.value(1);
                                 auto val = Modbus::takeUInt(arg);
-                                auto info = QString::number(val);
-                                qDebug("Value: %s;%s", item.pin.toLatin1().constData(), info.toLatin1().constData());
+                                d.sensors[item.pin]->setValue(item.avg, val);
                             } break;
                             case Modbus::IntType: {
-                                quint16 val = unit.value(0);
-                                auto info = QString::number(val);
-                                qDebug("Value: %s;%s", item.pin.toLatin1().constData(), info.toLatin1().constData());
+                                auto val = unit.value(0);
+                                d.sensors[item.pin]->setValue(item.avg, val);
                             } break;
                             default:
                                 break;
