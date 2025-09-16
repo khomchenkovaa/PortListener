@@ -12,9 +12,13 @@ ModbusDaemon::ModbusDaemon(QObject *parent)
     connect(&d.timer, &QTimer::timeout,
             this, &ModbusDaemon::doWork);
 
-    connect(&d.modbusDevice, &QModbusClient::stateChanged,
+    connect(&d.modbusDevice1, &QModbusClient::stateChanged,
             this, &ModbusDaemon::onStateChanged);
-    connect(&d.modbusDevice, &QModbusClient::errorOccurred,
+    connect(&d.modbusDevice1, &QModbusClient::errorOccurred,
+            this, &ModbusDaemon::handleDeviceError);
+    connect(&d.modbusDevice2, &QModbusClient::stateChanged,
+            this, &ModbusDaemon::onStateChanged);
+    connect(&d.modbusDevice2, &QModbusClient::errorOccurred,
             this, &ModbusDaemon::handleDeviceError);
 }
 
@@ -29,24 +33,23 @@ void ModbusDaemon::startServer()
     }
     prepareSensors();
     d.timer.setInterval(1000); // 1 sec timer
-    d.modbusDevice.setConnectionParameter(QModbusDevice::NetworkPortParameter, d.opt.port);
-    d.modbusDevice.setConnectionParameter(QModbusDevice::NetworkAddressParameter, d.opt.host1);
-    d.modbusDevice.setTimeout(d.opt.timeout);
-    d.modbusDevice.setNumberOfRetries(d.opt.retries);
-    if (!d.modbusDevice.connectDevice()) {
-        qCritical("(Modbus client %s:%i connection error!\n%s)",
-                 d.opt.host1.toLatin1().constData(),
-                 d.opt.port,
-                 d.modbusDevice.errorString().toLatin1().constData());
-    } else {
-        resumeServer();
-    }
+    // prepare modbus device 1
+    d.modbusDevice1.setConnectionParameter(QModbusDevice::NetworkPortParameter, d.opt.port);
+    d.modbusDevice1.setConnectionParameter(QModbusDevice::NetworkAddressParameter, d.opt.host1);
+    d.modbusDevice1.setTimeout(d.opt.timeout);
+    d.modbusDevice1.setNumberOfRetries(d.opt.retries);
+    // prepare modbus device 2
+    d.modbusDevice2.setConnectionParameter(QModbusDevice::NetworkPortParameter, d.opt.port);
+    d.modbusDevice2.setConnectionParameter(QModbusDevice::NetworkAddressParameter, d.opt.host2);
+    d.modbusDevice2.setTimeout(d.opt.timeout);
+    d.modbusDevice2.setNumberOfRetries(d.opt.retries);
+
+    resumeServer();
 }
 
 void ModbusDaemon::stopServer()
 {
     pauseServer();
-    d.modbusDevice.disconnectDevice();
     d.conf.items.clear();
     d.sensors.clear();
 }
@@ -55,10 +58,22 @@ void ModbusDaemon::pauseServer()
 {
     d.disabled = true;
     d.timer.stop();
+    if (d.modbusDevice1.state() != QModbusDevice::UnconnectedState) {
+        d.modbusDevice1.disconnectDevice();
+    }
+    if (d.modbusDevice2.state() != QModbusDevice::UnconnectedState) {
+        d.modbusDevice2.disconnectDevice();
+    }
 }
 
 void ModbusDaemon::resumeServer()
 {
+    if (!d.modbusDevice1.connectDevice()) {
+        qCritical("(Modbus client %s:%i connection error!\n%s)",
+                 d.opt.host1.toLatin1().constData(),
+                 d.opt.port,
+                 d.modbusDevice1.errorString().toLatin1().constData());
+    }
     d.disabled = false;
     d.timerCounter = 0;
     d.responceSaved = true;
@@ -90,50 +105,57 @@ void ModbusDaemon::prepareSensors()
 
 void ModbusDaemon::onStateChanged()
 {
-    switch(d.modbusDevice.state()) {
+    QModbusTcpClient *s = qobject_cast<QModbusTcpClient *>(sender());
+    if (s == Q_NULLPTR) return;
+    int deviceNum = (s == &d.modbusDevice1) ? 1 : 2;
+    switch(s->state()) {
     case QModbusDevice::UnconnectedState:
-        qDebug("Modbus Device has Unconnected");
+        qDebug("Modbus Device %i has Unconnected", deviceNum);
         break;
     case QModbusDevice::ConnectingState:
-        qDebug("Modbus Device is Connecting");
+        qDebug("Modbus Device %i is Connecting", deviceNum);
         break;
     case QModbusDevice::ConnectedState:
-        qDebug("Modbus Device has Connected");
+        qDebug("Modbus Device %i has Connected", deviceNum);
         break;
     case QModbusDevice::ClosingState:
-        qDebug("Modbus Device is Closing");
+        qDebug("Modbus Device %i is Closing", deviceNum);
         break;
     }
 }
 
 void ModbusDaemon::handleDeviceError(QModbusDevice::Error newError)
 {
+    QModbusTcpClient *s = qobject_cast<QModbusTcpClient *>(sender());
+    if (s == Q_NULLPTR) return;
+    int deviceNum = (s == &d.modbusDevice1) ? 1 : 2;
+    QString errorString = (s == &d.modbusDevice1) ? d.modbusDevice1.errorString() : d.modbusDevice2.errorString();
     switch (newError) {
     case QModbusDevice::NoError:
         break;
     case QModbusDevice::ReadError:
-        qWarning("Modbus Device read error: %s", d.modbusDevice.errorString().toLatin1().constData());
+        qWarning("Modbus Device %i read error: %s", deviceNum, qPrintable(errorString));
         break;
     case QModbusDevice::WriteError:
-        qWarning("Modbus Device write error: %s", d.modbusDevice.errorString().toLatin1().constData());
+        qWarning("Modbus Device %i write error: %s", deviceNum, qPrintable(errorString));
         break;
     case QModbusDevice::ConnectionError:
-        qWarning("Modbus Device connection error: %s", d.modbusDevice.errorString().toLatin1().constData());
+        qWarning("Modbus Device %i connection error: %s", deviceNum, qPrintable(errorString));
         break;
     case QModbusDevice::ConfigurationError:
-        qWarning("Modbus Device configuration error: %s", d.modbusDevice.errorString().toLatin1().constData());
+        qWarning("Modbus Device %i configuration error: %s", deviceNum, qPrintable(errorString));
         break;
     case QModbusDevice::TimeoutError:
-        qWarning("Modbus Device timeout error: %s", d.modbusDevice.errorString().toLatin1().constData());
+        qWarning("Modbus Device %i timeout error: %s", deviceNum, qPrintable(errorString));
         break;
     case QModbusDevice::ProtocolError:
-        qWarning("Modbus Device protocol error: %s", d.modbusDevice.errorString().toLatin1().constData());
+        qWarning("Modbus Device %i protocol error: %s", deviceNum, qPrintable(errorString));
         break;
     case QModbusDevice::ReplyAbortedError:
-        qWarning("Modbus Device reply aborted error: %s", d.modbusDevice.errorString().toLatin1().constData());
+        qWarning("Modbus Device %i reply aborted error: %s", deviceNum, qPrintable(errorString));
         break;
     case QModbusDevice::UnknownError:
-        qWarning("Modbus Device unknown error: %s", d.modbusDevice.errorString().toLatin1().constData());
+        qWarning("Modbus Device %i unknown error: %s", deviceNum, qPrintable(errorString));
         break;
     }
 }
@@ -141,7 +163,7 @@ void ModbusDaemon::handleDeviceError(QModbusDevice::Error newError)
 void ModbusDaemon::doWork()
 {
     if (d.disabled) return;
-    // FIXME async request
+    // async request
     if (d.timerCounter <= 0) {
         if (!d.responceSaved) {
             debugOutput();
@@ -174,15 +196,27 @@ void ModbusDaemon::doWork()
 
 void ModbusDaemon::doModbusRequest()
 {
-    if (d.modbusDevice.state() == QModbusDevice::ConnectedState) {
-        QString host = QString("%1:%2").arg(d.opt.host1).arg(d.opt.port);
-        qDebug("Modbus Device Start request cycle: %s", host.toLatin1().constData());
+    QModbusTcpClient *s = Q_NULLPTR;
+    int deviceNum = 0;
+    QString host;
+    if (d.modbusDevice1.state() == QModbusDevice::ConnectedState) {
+        deviceNum = 1;
+        host = QString("%1:%2").arg(d.opt.host1).arg(d.opt.port);
+        s = &d.modbusDevice1;
+    } else if (d.modbusDevice2.state() == QModbusDevice::ConnectedState) {
+        deviceNum = 2;
+        host = QString("%1:%2").arg(d.opt.host2).arg(d.opt.port);
+        s = &d.modbusDevice2;
+    }
+
+    if (s != Q_NULLPTR) {
+        qDebug("Modbus Device %i Start request cycle: %s", deviceNum, qPrintable(host));
 
         for (const auto &item : qAsConst(d.conf.items)) {
             QModbusDataUnit request(QModbusDataUnit::HoldingRegisters, item.ad, Modbus::dataTypeSizeOf(item.dt));
-            if (auto *response = d.modbusDevice.sendReadRequest(request, d.opt.serverId)) {
+            if (auto *response = s->sendReadRequest(request, d.opt.serverId)) {
                 if (!response->isFinished())
-                    connect(response, &QModbusReply::finished, this, [this, item](){
+                    connect(response, &QModbusReply::finished, this, [this, item, deviceNum](){
                         auto reply = qobject_cast<QModbusReply *>(sender());
                         if (!reply) return;
 
@@ -207,13 +241,15 @@ void ModbusDaemon::doModbusRequest()
                                 break;
                             }
                         } else if (reply->error() == QModbusDevice::ProtocolError) {
-                            qWarning("Modbus Device read response error: %s (Modbus exception: %i)",
-                                   reply->errorString().toLatin1().constData(),
-                                   reply->rawResult().exceptionCode());
+                            qWarning("Modbus Device %i read response error: %s (Modbus exception: %i)",
+                                     deviceNum,
+                                     reply->errorString().toLatin1().constData(),
+                                     reply->rawResult().exceptionCode());
                         } else {
-                            qWarning("Modbus Device read response error: %s (code: %i)",
-                                   reply->errorString().toLatin1().constData(),
-                                   reply->error());
+                            qWarning("Modbus Device %i read response error: %s (code: %i)",
+                                     deviceNum,
+                                     reply->errorString().toLatin1().constData(),
+                                     reply->error());
                         }
 
                         reply->deleteLater();
@@ -221,9 +257,10 @@ void ModbusDaemon::doModbusRequest()
                 else
                     delete response; // broadcast replies return immediately
             } else {
-                qWarning("Modbus Device read register %s error: %s",
-                       item.pin.toLatin1().constData(),
-                       d.modbusDevice.errorString().toLatin1().constData());
+                qWarning("Modbus Device %i read register %s error: %s",
+                         deviceNum,
+                         item.pin.toLatin1().constData(),
+                         s->errorString().toLatin1().constData());
             }
         }
     }

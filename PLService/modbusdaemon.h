@@ -93,7 +93,8 @@ class ModbusDaemon : public QObject
 
     struct ModbusDaemonPrivate {
         bool disabled = false;
-        QModbusTcpClient modbusDevice;
+        QModbusTcpClient modbusDevice1;
+        QModbusTcpClient modbusDevice2;
         Settings::ModbusOptions opt;
         ModbusSigConf    conf;
         QMap<QString, PSensorValue> sensors;
@@ -115,6 +116,11 @@ public slots:
 signals:
 
 private Q_SLOTS:
+    void onStateChanged();
+    void handleDeviceError(QModbusDevice::Error newError);
+    void doWork();
+
+private:
     bool loadOptions() {
         d.opt.load();
         return !(d.opt.optFilePath.isEmpty());
@@ -122,12 +128,7 @@ private Q_SLOTS:
 
     bool loadSigConf();
     void prepareSensors();
-    void onStateChanged();
-    void handleDeviceError(QModbusDevice::Error newError);
-    void doWork();
     void doModbusRequest();
-
-private:
     bool isResponseValid() const;
     void printOutput();
     void debugOutput();
