@@ -3,6 +3,7 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QTime>
+#include <QTextStream>
 
 ModbusDaemon::ModbusDaemon(QObject *parent)
     : QObject{parent}
@@ -27,7 +28,7 @@ void ModbusDaemon::startServer()
         qWarning("(Cannot read sig file: %s)", MB_SIG_FILE);
     }
     prepareSensors();
-    d.timer.setInterval(d.opt.frequency * 1000);
+    d.timer.setInterval(1000); // 1 sec timer
     d.modbusDevice.setConnectionParameter(QModbusDevice::NetworkPortParameter, d.opt.port);
     d.modbusDevice.setConnectionParameter(QModbusDevice::NetworkAddressParameter, d.opt.host1);
     d.modbusDevice.setTimeout(d.opt.timeout);
@@ -59,6 +60,8 @@ void ModbusDaemon::pauseServer()
 void ModbusDaemon::resumeServer()
 {
     d.disabled = false;
+    d.timerCounter = 0;
+    d.responceSaved = true;
     d.timer.start();
 }
 
@@ -79,10 +82,8 @@ void ModbusDaemon::prepareSensors()
             d.sensors.insert(item.pin, PSensorValue::create());
             d.sensors[item.pin]->type = item.dt;
         }
-        if (item.avg) {
-            if (d.sensors[item.pin]->input.size() < item.avg) {
-                d.sensors[item.pin]->input.resize(item.avg);
-            }
+        if (d.sensors[item.pin]->value.size() <= item.avg) {
+            d.sensors[item.pin]->value.resize(item.avg + 1);
         }
     }
 }
@@ -139,26 +140,36 @@ void ModbusDaemon::handleDeviceError(QModbusDevice::Error newError)
 
 void ModbusDaemon::doWork()
 {
+    if (d.disabled) return;
     // FIXME async request
-    // set all values as invalid
-//    for (const auto &item : qAsConst(d.conf.items)) {
-//        d.sensors[item.pin]->valid = false;
-//    }
-    // fill sensor's values
-    doModbusRequest();
-    // calc averages
-    for (auto &item : qAsConst(d.conf.items)) {
-        if (d.sensors[item.pin]->needCalc()) {
-            d.sensors[item.pin]->doCalc();
+    if (d.timerCounter <= 0) {
+        if (!d.responceSaved) {
+            debugOutput();
+            printOutput();
+        }
+        d.timerCounter  = d.opt.frequency;
+        d.responceSaved = false;
+        d.requestTime   = QDateTime::currentDateTimeUtc();
+        // set all values as invalid
+        QMapIterator<QString, PSensorValue> i(d.sensors);
+        while (i.hasNext()) {
+            i.next();
+            i.value()->clear();
+        }
+        // request sensor's values
+        doModbusRequest();
+    }
+
+    d.timerCounter--;
+
+    if (!d.responceSaved) {
+        if (isResponseValid()) {
+            debugOutput();
+            printOutput();
+            d.responceSaved = true;
         }
     }
-    // print output
-    auto time = QTime::currentTime().msecsSinceStartOfDay() / 1000;
-    qDebug("Sec from start of day: \n%i", time);
-    for (auto &item : qAsConst(d.conf.items)) {
-        // TODO check valid
-        qDebug("%s; %s", item.pin.toLatin1().constData(), d.sensors[item.pin]->valAsString().toLatin1().constData());
-    }
+    d.timer.start();
 }
 
 void ModbusDaemon::doModbusRequest()
@@ -218,4 +229,58 @@ void ModbusDaemon::doModbusRequest()
     }
 
     d.timer.start(); // singleShort
+}
+
+bool ModbusDaemon::isResponseValid() const
+{
+    QMapIterator<QString, PSensorValue> i(d.sensors);
+    while (i.hasNext()) {
+        i.next();
+        if (!i.value()->isValid()) return false;
+    }
+    return true;
+}
+
+void ModbusDaemon::printOutput()
+{
+    int sec = d.requestTime.time().msecsSinceStartOfDay() / 1000;
+    QString fileName = outputFileName();
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+        qWarning("Cannot open file %s to write\n", fileName.toLatin1().constData());
+        debugOutput();
+        return;
+    }
+
+    QTextStream out(&file);
+    out << sec << Qt::endl;
+    QMapIterator<QString, PSensorValue> i(d.sensors);
+    while (i.hasNext()) {
+        i.next();
+        if (i.value()->isValid()) {
+            out << QString("%1; %2").arg(i.key(), i.value()->valAsString()) << Qt::endl;
+        }
+    }
+    out.flush();
+    file.close();
+}
+
+void ModbusDaemon::debugOutput()
+{
+    int sec = d.requestTime.time().msecsSinceStartOfDay() / 1000;
+    qDebug("Sec from start of day: \n%i", sec);
+    QMapIterator<QString, PSensorValue> i(d.sensors);
+    while (i.hasNext()) {
+        i.next();
+        if (i.value()->isValid()) {
+            qDebug("%s; %s", i.key().toLatin1().constData(), i.value()->valAsString().toLatin1().constData());
+        } else {
+            qDebug("%s; %s", i.key().toLatin1().constData(), "invalid");
+        }
+    }
+}
+
+QString ModbusDaemon::outputFileName() const
+{
+    return QString("%1/%2_%3").arg(d.opt.outputDir, d.opt.unit, d.requestTime.toString("yyyy_MM_dd"));
 }

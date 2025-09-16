@@ -7,52 +7,67 @@
 
 #include <QModbusTcpClient>
 #include <QTimer>
+#include <QDateTime>
 #include <QSharedPointer>
 
 struct SensorValue {
-    bool    valid = false;
     Modbus::DataType type = Modbus::UnkownType;
-    QVariant value;
-    QVector<QVariant> input;
+    QVector<QVariant> value;
+
+    bool isValid() const {
+        if (value.isEmpty()) return false;
+        if (value.size() == 1) {
+            return value.constFirst().isValid();
+        }
+        for (int i = 1; i < value.size(); ++i) {
+            if (!value[i].isValid()) return false;
+        }
+        return true;
+    }
+
+    void clear() {
+        for (int i = 0; i < value.size(); ++i) {
+            value[i].clear();
+        }
+    }
 
     bool needCalc() {
-        return input.size() > 0;
+        return value.size() > 1;
     }
 
     void setValue(int idx, QVariant val) {
-        valid = true;
-        if (needCalc()) {
-            if (idx > 0 && input.size() >= idx) {
-                input[idx-1] = val;
-            }
-        } else {
-            value = val;
+        if (idx >=0 && idx < value.size()) {
+            value[idx] = val;
         }
     }
 
     void doCalc() {
-        if (!needCalc()) return;
+        auto i = value.begin();
+        ++i; // skip first
         switch(type) {
         case Modbus::RealType: {
             float sum = 0;
-            for (auto i = input.begin(); i < input.end(); ++i) {
+            while (i != value.end()) {
                 sum += i->toFloat();
+                ++i;
             }
-            value = sum / input.size();
+            value[0] = sum / value.size();
         } break;
         case Modbus::DWordType: {
             quint32 sum = 0;
-            for (auto i = input.begin(); i < input.end(); ++i) {
+            while (i != value.end()) {
                 sum += i->toUInt();
+                ++i;
             }
-            value = sum / input.size();
+            value[0] = sum / value.size();
         } break;
         case Modbus::IntType: {
             quint16 sum = 0;
-            for (auto i = input.begin(); i < input.end(); ++i) {
+            while (i != value.end()) {
                 sum += i->toUInt();
+                ++i;
             }
-            value = sum / input.size();
+            value[0] = sum / value.size();
         } break;
         default:
             break;
@@ -60,10 +75,13 @@ struct SensorValue {
     }
 
     QString valAsString() {
+        // calc averages if needed
+        if (needCalc()) doCalc();
+
         if (Modbus::RealType == type) {
-            return QString::number(value.toFloat(), 'f', 3);
+            return QString::number(value.constFirst().toFloat(), 'f', 3);
         }
-        return QString::number(value.toUInt());
+        return QString::number(value.constFirst().toUInt());
     }
 };
 
@@ -78,8 +96,11 @@ class ModbusDaemon : public QObject
         QModbusTcpClient modbusDevice;
         Settings::ModbusOptions opt;
         ModbusSigConf    conf;
-        QTimer           timer;
         QMap<QString, PSensorValue> sensors;
+        QTimer timer;
+        QDateTime requestTime = QDateTime::currentDateTimeUtc();
+        int    timerCounter = 0;
+        bool   responceSaved = true;
     };
 
 public:
@@ -105,6 +126,12 @@ private Q_SLOTS:
     void handleDeviceError(QModbusDevice::Error newError);
     void doWork();
     void doModbusRequest();
+
+private:
+    bool isResponseValid() const;
+    void printOutput();
+    void debugOutput();
+    QString outputFileName() const;
 
 private:
     ModbusDaemonPrivate d;
