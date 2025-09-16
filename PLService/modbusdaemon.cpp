@@ -68,12 +68,6 @@ void ModbusDaemon::pauseServer()
 
 void ModbusDaemon::resumeServer()
 {
-    if (!d.modbusDevice1.connectDevice()) {
-        qCritical("(Modbus client %s:%i connection error!\n%s)",
-                 d.opt.host1.toLatin1().constData(),
-                 d.opt.port,
-                 d.modbusDevice1.errorString().toLatin1().constData());
-    }
     d.disabled = false;
     d.timerCounter = 0;
     d.responceSaved = true;
@@ -164,6 +158,8 @@ void ModbusDaemon::doWork()
 {
     if (d.disabled) return;
     // async request
+    checkAndConnect();
+
     if (d.timerCounter <= 0) {
         if (!d.responceSaved) {
             debugOutput();
@@ -320,4 +316,24 @@ void ModbusDaemon::debugOutput()
 QString ModbusDaemon::outputFileName() const
 {
     return QString("%1/%2_%3").arg(d.opt.outputDir, d.opt.unit, d.requestTime.toString("yyyy_MM_dd"));
+}
+
+void ModbusDaemon::checkAndConnect()
+{
+    if (d.modbusDevice1.state() == QModbusDevice::UnconnectedState) {
+        if (!d.modbusDevice1.connectDevice()) {
+            qCritical("(Modbus client 1 (%s:%i) connection error!\n%s)",
+                     d.opt.host1.toLatin1().constData(),
+                     d.opt.port,
+                     d.modbusDevice1.errorString().toLatin1().constData());
+        }
+    }
+    if (d.modbusDevice2.state() == QModbusDevice::UnconnectedState) {
+        if (!d.modbusDevice2.connectDevice()) {
+            qCritical("(Modbus client 2 (%s:%i) connection error!\n%s)",
+                     d.opt.host2.toLatin1().constData(),
+                     d.opt.port,
+                     d.modbusDevice2.errorString().toLatin1().constData());
+        }
+    }
 }

@@ -133,6 +133,7 @@ private:
     void printOutput();
     void debugOutput();
     QString outputFileName() const;
+    void checkAndConnect();
 
 private:
     ModbusDaemonPrivate d;
