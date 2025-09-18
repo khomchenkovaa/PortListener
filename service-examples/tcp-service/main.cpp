@@ -1,6 +1,4 @@
 #include "tcpservice.h"
-#include "udpservice.h"
-#include "modbusservice.h"
 
 #include "settings.h"
 
@@ -25,7 +23,7 @@ int main(int argc, char *argv[]) {
     QCoreApplication::setOrganizationName(ORGANIZATION_NAME);
 //    QCoreApplication::setOrganizationDomain(ORGANIZATION_DOMAIN);
 //    QCoreApplication::setApplicationName(APPLICATION_NAME);
-    QCoreApplication::setApplicationName("scrload");
+    QCoreApplication::setApplicationName("tcp-service");
 
 #if !defined(Q_OS_WIN)
     // QtService stores service settings in SystemScope, which normally require root privileges.
@@ -38,8 +36,6 @@ int main(int argc, char *argv[]) {
              QCoreApplication::applicationName().toLatin1().constData());
 #endif
 
-//    TcpService service(argc, argv);
-//    UdpService service(argc, argv);
-    ModbusService service(argc, argv);
+    TcpService service(argc, argv);
     return service.exec();
 }

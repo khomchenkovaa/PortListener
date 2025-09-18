@@ -5,8 +5,15 @@
 #include "xcsvmodel.h"
 #include <QFile>
 #include <QTextStream>
-#include <QUrl>
 #include <QDebug>
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+#define QT_ENDL  Qt::endl
+#define QT_FLUSH Qt::flush
+#else
+#define QT_ENDL  endl
+#define QT_FLUSH flush
+#endif
 
 /******************************************************************/
 /**
@@ -422,7 +429,7 @@ void XCsvModel::toCSV(QIODevice* dest, bool withHeader, QChar separator, QTextCo
             if(col > 0) data += separator;
             data += xAddCsvQuotes(m_QuoteMode, m_Header.at(col).simplified());
         }
-        stream << data << Qt::endl;
+        stream << data << QT_ENDL;
     }
     for(row = 0; row < rows; ++row) {
         const QStringList& rowData = m_CsvData[row];
@@ -437,9 +444,9 @@ void XCsvModel::toCSV(QIODevice* dest, bool withHeader, QChar separator, QTextCo
                 data += xAddCsvQuotes(m_QuoteMode, QString());
             }
         }
-        stream << data << Qt::endl;
+        stream << data << QT_ENDL;
     }
-    stream << Qt::flush;
+    stream << QT_FLUSH;
     dest->close();
 }
 
@@ -466,39 +473,37 @@ QString XCsvModel::toHTML(bool withHeader, int numEmpty) const
     int cols = columnCount();
     QString result;
     QTextStream stream(&result);
-    stream << "<table border=1 cellspacing=0 cellpadding=0 width=\"100%\">" << Qt::endl;
+    stream << "<table border=1 cellspacing=0 cellpadding=0 width=\"100%\">" << QT_ENDL;
     if(withHeader) {
-        stream << "<tr>" << Qt::endl;
+        stream << "<tr>" << QT_ENDL;
         for(int col = 0; col < cols; ++col) {
-//            auto htmlEncoded = QUrl::toPercentEncoding(m_Header.at(col).simplified());
-            stream << "<td valign=top>" << "<p align=center>" << m_Header.at(col).simplified() << "</p>" << "</td>" << Qt::endl;
+            stream << "<td valign=top>" << "<p align=center>" << m_Header.at(col).simplified() << "</p>" << "</td>" << QT_ENDL;
         }
-        stream << "</tr>" << Qt::endl;
+        stream << "</tr>" << QT_ENDL;
     }
     if (!rows && numEmpty) {
         for (int row = 0; row < numEmpty; ++row) {
-            stream << "<tr>" << Qt::endl;
+            stream << "<tr>" << QT_ENDL;
             for(int col = 0; col < cols; ++col) {
-                stream << "<td>" << "&nbsp;" << "</td>" << Qt::endl;
+                stream << "<td>" << "&nbsp;" << "</td>" << QT_ENDL;
             }
-            stream << "</tr>" << Qt::endl;
+            stream << "</tr>" << QT_ENDL;
         }
     }
     for(int row = 0; row < rows; ++row) {
         const QStringList& rowData = m_CsvData[row];
-        stream << "<tr>" << Qt::endl;
+        stream << "<tr>" << QT_ENDL;
         for(int col = 0; col < cols; ++col) {
             if(col < rowData.length()) {
-//                auto htmlEncoded = QUrl::toPercentEncoding(rowData.at(col).simplified());
-                stream << "<td valign=top>" << "<p align=center>" << rowData.at(col).simplified() << "</p>" << "</td>" << Qt::endl;
+                stream << "<td valign=top>" << "<p align=center>" << rowData.at(col).simplified() << "</p>" << "</td>" << QT_ENDL;
             } else {
-                stream << "<td>" << "&nbsp;" << "</td>" << Qt::endl;
+                stream << "<td>" << "&nbsp;" << "</td>" << QT_ENDL;
             }
         }
-        stream << "</tr>" << Qt::endl;
+        stream << "</tr>" << QT_ENDL;
     }
-    stream << "</table>" << Qt::endl;
-    stream << Qt::flush;
+    stream << "</table>" << QT_ENDL;
+    stream << QT_ENDL;
     return result;
 }
 

@@ -1,8 +1,8 @@
 TEMPLATE = subdirs
 
 SUBDIRS += \
-    PLDesk \
-    PLService
+    PortListener \
+    service-examples
 
 DISTFILES += \
     README.md

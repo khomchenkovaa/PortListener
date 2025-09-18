@@ -1,9 +1,6 @@
 QT -= gui
 QT += network sql
 
-# comment next line if you don't want the modbus
-QT += serialbus
-
 CONFIG += c++11 console
 CONFIG -= app_bundle
 
@@ -18,33 +15,20 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-include("../common/ext/ext-gui.pri")
-include("../common/depprotocol/depprotocol.pri")
-include(../common/qtservice/qtservice.pri)
-include(../common/settings/settings.pri)
-include("../messaging/messaging.pri")
-include(../handler/handler.pri)
+include("../../3rdparty/qtservice/qtservice.pri")
+include("../../common/ext/ext-gui.pri")
+include("../../common/depprotocol/depprotocol.pri")
+include("../../common/settings/settings.pri")
+include("../../messaging/messaging.pri")
+include("../../handler/handler.pri")
 
 SOURCES += main.cpp \
     tcpdaemon.cpp \
-    tcpservice.cpp \
-    udpdaemon.cpp \
-    udpservice.cpp
+    tcpservice.cpp
 
 HEADERS += \
     tcpdaemon.h \
-    tcpservice.h \
-    udpdaemon.h \
-    udpservice.h
-
-contains(QT, serialbus) {
-    SOURCES += \
-        modbusdaemon.cpp
-
-    HEADERS += \
-        modbusdaemon.h \
-        modbusservice.h
-}
+    tcpservice.h
 
 RESOURCES += \
-    ../PortListener.qrc
+    ../../PortListener.qrc
