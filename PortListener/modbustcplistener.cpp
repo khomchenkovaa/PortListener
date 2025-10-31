@@ -99,9 +99,8 @@ QTextBrowser *ModbusTcpListener::textLog() const
 void ModbusTcpListener::doConnect()
 {
     quint16 port = ui->spinPort->value();
-    quint16 addr = ui->spinServerId->value();
     m_ModbusDevice.setConnectionParameter(QModbusDevice::NetworkPortParameter, port);
-    m_ModbusDevice.setServerAddress(addr);
+    m_ModbusDevice.setServerAddress(0xff);
     if (!m_ModbusDevice.connectDevice()) {
         QMessageBox::critical(this, QApplication::applicationDisplayName(),
                               tr("Modbus TCP Port %1 connection error!\n%2")
@@ -327,7 +326,7 @@ void ModbusTcpListener::updateStatus()
         ui->btnConnect->setVisible(false);
         ui->btnDisconnect->setVisible(true);
         ui->boxAction->setEnabled(false);
-        emit tabText(QString("Modbus TCP [%1:%2]").arg(ui->spinPort->value()).arg(ui->spinServerId->value()));
+        emit tabText(QString("Modbus TCP [%1]").arg(ui->spinPort->value()));
     } else {
         ui->lblConnection->setText(tr("<font color=\"black\">Choose TCP port to listen</font>"));
         ui->spinPort->setEnabled(true);

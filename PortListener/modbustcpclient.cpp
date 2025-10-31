@@ -76,7 +76,7 @@ void ModbusTcpClient::doReadRequest()
             static_cast<QModbusDataUnit::RegisterType>(ui->cmbRegister->currentData().toInt());
     const auto valueType =
             static_cast<Modbus::DataType>(ui->cmbValueType->currentData().toInt());
-    int serverId = ui->spinServerId->value();
+    int serverId = 0xff;
     int address  = ui->spinAddress->value();
     int interval = Modbus::dataTypeSizeOf(valueType);
 
@@ -155,7 +155,7 @@ void ModbusTcpClient::doWriteRequest()
             static_cast<QModbusDataUnit::RegisterType>(ui->cmbRegister->currentData().toInt());
     const auto valueType =
             static_cast<Modbus::DataType>(ui->cmbValueType->currentData().toInt());
-    int serverId = ui->spinServerId->value();
+    int serverId = 0xff;
     int address  = ui->spinAddress->value();
 
     QVector<quint16> data;
@@ -244,7 +244,7 @@ void ModbusTcpClient::doModbusRequest()
 
         const auto table =
                 static_cast<QModbusDataUnit::RegisterType>(ui->cmbTable->currentData().toInt());
-        int serverId = ui->spinServerId->value();
+        int serverId = 0xff;
 
         for (const auto &item : qAsConst(m.conf.items)) {
             QModbusDataUnit request(table, item.ad, Modbus::dataTypeSizeOf(item.dt));
@@ -506,7 +506,7 @@ void ModbusTcpClient::updateStatus()
         ui->boxRequest->setEnabled(true);
         ui->boxCycle->setEnabled(true);
         ui->boxAction->setEnabled(false);
-        emit tabText(QString("Modbus Client [%1:%2]").arg(ui->spinPort->value()).arg(ui->spinServerId->value()));
+        emit tabText(QString("Modbus Client [%1]").arg(ui->spinPort->value()));
     } else {
         ui->lblConnection->setText(tr("<font color=\"black\">Choose TCP port to connect</font>"));
         ui->spinPort->setEnabled(true);
