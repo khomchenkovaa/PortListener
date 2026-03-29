@@ -43,6 +43,10 @@ ModbusTcpListener::ModbusTcpListener(QWidget *parent) :
     connect(ui->btnDisconnect, &QAbstractButton::clicked,
             this, &ModbusTcpListener::doDisconnect);
 
+    connect(&m_ModbusDevice, &XModbusTcpServer::connectInfo, this, [this](const QString& msg) {
+        printInfo("DEBUG", msg);
+    });
+
     setupEditor();
 
     // action block
