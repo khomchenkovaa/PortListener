@@ -3,17 +3,19 @@
 #include <QTcpSocket>
 #include <QHostAddress>
 
-XModbusTcpConnectionObserver::XModbusTcpConnectionObserver(QObject *parent)
-    : QObject(parent)
+XModbusTcpConnectionObserver::XModbusTcpConnectionObserver(XModbusTcpServer *parent)
 {
+    m_Server = parent;
 }
 
 XModbusTcpConnectionObserver::~XModbusTcpConnectionObserver() {
-
+    m_Server = Q_NULLPTR;
 }
 
 bool XModbusTcpConnectionObserver::acceptNewConnection(QTcpSocket *newClient) {
-    emit newConnection(QString("%1 connected to server!").arg(newClient->peerAddress().toString()));
+    if (m_Server) {
+        m_Server->modbusClientConnected(newClient->peerAddress().toString());
+    }
     return true;
 }
 
@@ -24,11 +26,14 @@ XModbusTcpServer::XModbusTcpServer(QObject *parent)
 {
     XModbusTcpConnectionObserver *observer = new XModbusTcpConnectionObserver(this);
     installConnectionObserver(observer);
-    connect(observer, &XModbusTcpConnectionObserver::newConnection,
-            this, &XModbusTcpServer::connectInfo);
     connect(this, &QModbusTcpServer::modbusClientDisconnected, this, [this](QTcpSocket *modbusClient){
         emit connectInfo(QString("%1 disconnected from server!").arg(modbusClient->peerAddress().toString()));
     });
+}
+
+void XModbusTcpServer::modbusClientConnected(const QString &peerAdderss)
+{
+    emit connectInfo(QString("%1 connected to server!").arg(peerAdderss));
 }
 
 /********************************************************/

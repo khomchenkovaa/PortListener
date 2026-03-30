@@ -2,18 +2,18 @@
 #define XMODBUSTCPSERVER_H
 
 #include <QModbusTcpServer>
-#include <QObject>
 
-class XModbusTcpConnectionObserver : public QObject, public QModbusTcpConnectionObserver {
-    Q_OBJECT
+class XModbusTcpServer;
 
+class XModbusTcpConnectionObserver : public QModbusTcpConnectionObserver
+{
 public:
-    XModbusTcpConnectionObserver(QObject *parent = Q_NULLPTR);
+    XModbusTcpConnectionObserver(XModbusTcpServer *parent = Q_NULLPTR);
     ~XModbusTcpConnectionObserver();
     bool acceptNewConnection(QTcpSocket *newClient);
 
-Q_SIGNALS:
-    void newConnection(const QString& clientInfo);
+private:
+    XModbusTcpServer *m_Server = Q_NULLPTR;
 };
 
 class XModbusTcpServer : public QModbusTcpServer
@@ -22,6 +22,8 @@ class XModbusTcpServer : public QModbusTcpServer
 
 public:
     explicit XModbusTcpServer(QObject *parent = nullptr);
+
+    void modbusClientConnected(const QString &peerAdderss);
 
 Q_SIGNALS:
     void connectInfo(const QString& msg);

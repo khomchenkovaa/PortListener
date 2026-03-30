@@ -103,18 +103,24 @@ QTextBrowser *ModbusTcpListener::textLog() const
 void ModbusTcpListener::doConnect()
 {
     quint16 port = ui->spinPort->value();
+    QString host = "0.0.0.0";
+    m_ModbusDevice.setConnectionParameter(QModbusDevice::NetworkAddressParameter, host);
     m_ModbusDevice.setConnectionParameter(QModbusDevice::NetworkPortParameter, port);
     m_ModbusDevice.setServerAddress(0xff);
     if (!m_ModbusDevice.connectDevice()) {
         QMessageBox::critical(this, QApplication::applicationDisplayName(),
-                              tr("Modbus TCP Port %1 connection error!\n%2")
+                              tr("Modbus TCP %1:%1 listening error!\n%3")
+                              .arg(host)
                               .arg(port)
                               .arg(m_ModbusDevice.errorString()));
-    } else if (initHandler()) {
-        connect(handler(), &MessageHandler::logMessage,
-                this, &ModbusTcpListener::printMessage);
-        connect(handler(), &MessageHandler::logError,
-                this, &ModbusTcpListener::printError);
+    } else {
+        printInfo("Modbus TCP start listenig", QString("%1:%2").arg(host).arg(port));
+        if (initHandler()) {
+            connect(handler(), &MessageHandler::logMessage,
+                    this, &ModbusTcpListener::printMessage);
+            connect(handler(), &MessageHandler::logError,
+                    this, &ModbusTcpListener::printError);
+        }
     }
     const auto errors = handlerErrors();
     for (const auto &error : errors) {
@@ -129,6 +135,9 @@ void ModbusTcpListener::doConnect()
 void ModbusTcpListener::doDisconnect()
 {
     if (m_ModbusDevice.state() == QModbusDevice::ConnectedState) {
+        quint16 port = m_ModbusDevice.connectionParameter(QModbusDevice::NetworkPortParameter).toUInt();
+        QString host = m_ModbusDevice.connectionParameter(QModbusDevice::NetworkAddressParameter).toString();;
+        printInfo("Modbus TCP stop listenig", QString("%1:%2").arg(host).arg(port));
         m_ModbusDevice.disconnectDevice();
     }
     disconnectHandler();
