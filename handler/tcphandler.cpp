@@ -25,10 +25,12 @@ QByteArray TcpHandler::processData(const QByteArray &data)
         addError("Not connected to Host");
         return QByteArray();
     }
-    m_TcpSocket->write(data, data.length());
-    if (!m_TcpSocket->waitForBytesWritten()) {
-        addError("Cannot write binary data");
-        return QByteArray();
+    if (data.length()) {
+        m_TcpSocket->write(data, data.length());
+        if (!m_TcpSocket->waitForBytesWritten()) {
+            addError("Cannot write binary data");
+            return QByteArray();
+        }
     }
     return m_TcpSocket->readAll();
 }
@@ -41,10 +43,12 @@ QByteArray TcpHandler::processData(const QString &data)
         addError("Not connected to Host");
         return QByteArray();
     }
-    m_TcpSocket->write(data.toUtf8());
-    if (!m_TcpSocket->waitForBytesWritten()) {
-        addError("Cannot write text data");
-        return QByteArray();
+    if (!data.isEmpty()) {
+        m_TcpSocket->write(data.toUtf8());
+        if (!m_TcpSocket->waitForBytesWritten()) {
+            addError("Cannot write text data");
+            return QByteArray();
+        }
     }
     return m_TcpSocket->readAll();
 }
