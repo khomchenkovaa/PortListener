@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "tcpclient.h"
 #include "tcplistener.h"
 #include "udplistener.h"
 #include "socketlistener.h"
@@ -43,6 +44,19 @@ void MainWindow::addTcpListener()
     ui->tabWidget->addTab(widget, tr("TCP [-]"));
     ui->tabWidget->setCurrentWidget(widget);
     connect(widget, &TcpListener::tabText, this, [this, widget](const QString &label){
+        int idx = ui->tabWidget->indexOf(widget);
+        ui->tabWidget->setTabText(idx, label);
+    });
+}
+
+/********************************************************/
+
+void MainWindow::addTcpClient()
+{
+    auto widget = new TcpClient(this);
+    ui->tabWidget->addTab(widget, tr("TCP client [-]"));
+    ui->tabWidget->setCurrentWidget(widget);
+    connect(widget, &TcpClient::tabText, this, [this, widget](const QString &label){
         int idx = ui->tabWidget->indexOf(widget);
         ui->tabWidget->setTabText(idx, label);
     });
@@ -147,6 +161,8 @@ void MainWindow::setupUI()
 {
     connect(ui->btnTcp, &QPushButton::clicked,
             ui->actionTCP_port, &QAction::triggered);
+    connect(ui->btnTcpSocket, &QPushButton::clicked,
+            ui->actionTCP_client, &QAction::triggered);
     connect(ui->btnUdp, &QPushButton::clicked,
             ui->actionUDP_port, &QAction::triggered);
     connect(ui->btnSocket, &QPushButton::clicked,
@@ -160,6 +176,8 @@ void MainWindow::setupUI()
 
     connect(ui->actionTCP_port, &QAction::triggered,
             this, &MainWindow::addTcpListener);
+    connect(ui->actionTCP_client, &QAction::triggered,
+            this, &MainWindow::addTcpClient);
     connect(ui->actionUDP_port, &QAction::triggered,
             this, &MainWindow::addUdpListener);
     connect(ui->actionSocket, &QAction::triggered,

@@ -63,45 +63,59 @@
                </property>
               </widget>
              </item>
-             <item row="2" column="0">
+             <item row="3" column="0">
               <widget class="QPushButton" name="btnUdp">
                <property name="text">
                 <string>UDP port</string>
                </property>
               </widget>
              </item>
-             <item row="2" column="1">
+             <item row="3" column="1">
               <widget class="QLabel" name="lblUdp">
                <property name="text">
                 <string>via QUdpSocket</string>
                </property>
               </widget>
              </item>
-             <item row="3" column="0">
+             <item row="4" column="0">
               <widget class="QPushButton" name="btnSocket">
                <property name="text">
                 <string>Socket</string>
                </property>
               </widget>
              </item>
-             <item row="3" column="1">
+             <item row="4" column="1">
               <widget class="QLabel" name="lblSocket">
                <property name="text">
                 <string>via QLockalSocket</string>
                </property>
               </widget>
              </item>
-             <item row="4" column="0">
+             <item row="5" column="0">
               <widget class="QPushButton" name="btnMqueue">
                <property name="text">
                 <string>MQueue</string>
                </property>
               </widget>
              </item>
-             <item row="4" column="1">
+             <item row="5" column="1">
               <widget class="QLabel" name="lblMqueue">
                <property name="text">
                 <string>via mqueue</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QPushButton" name="btnTcpSocket">
+               <property name="text">
+                <string>TCP client</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>via QTcpSocket</string>
                </property>
               </widget>
              </item>
@@ -204,6 +218,7 @@
      <string>&amp;Listen</string>
     </property>
     <addaction name="actionTCP_port"/>
+    <addaction name="actionTCP_client"/>
     <addaction name="actionUDP_port"/>
     <addaction name="actionSocket"/>
     <addaction name="actionMQueue"/>
@@ -271,6 +286,11 @@
   <action name="actionFileReader">
    <property name="text">
     <string>File Reader</string>
+   </property>
+  </action>
+  <action name="actionTCP_client">
+   <property name="text">
+    <string>TCP client</string>
    </property>
   </action>
  </widget>

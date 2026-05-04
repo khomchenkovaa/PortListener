@@ -33,6 +33,7 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     socketlistener.cpp \
+    tcpclient.cpp \
     tcplistener.cpp \
     udplistener.cpp
 
@@ -42,6 +43,7 @@ HEADERS += \
     listenerwidget.h \
     mainwindow.h \
     socketlistener.h \
+    tcpclient.h \
     tcplistener.h \
     udplistener.h
 
@@ -50,6 +52,7 @@ FORMS += \
     filereader.ui \
     mainwindow.ui \
     socketlistener.ui \
+    tcpclient.ui \
     tcplistener.ui \
     udplistener.ui
 

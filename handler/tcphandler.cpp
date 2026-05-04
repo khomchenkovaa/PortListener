@@ -32,6 +32,10 @@ QByteArray TcpHandler::processData(const QByteArray &data)
             return QByteArray();
         }
     }
+//    if (!m_TcpSocket->waitForReadyRead(1000)) {
+//        addError("Cannot read binary data");
+//        return QByteArray();
+//    }
     return m_TcpSocket->readAll();
 }
 
@@ -50,6 +54,10 @@ QByteArray TcpHandler::processData(const QString &data)
             return QByteArray();
         }
     }
+//    if (!m_TcpSocket->waitForReadyRead(1000)) {
+//        addError("Cannot read text data");
+//        return QByteArray();
+//    }
     return m_TcpSocket->readAll();
 }
 
@@ -67,21 +75,22 @@ void TcpHandler::doConnect(bool binary)
 #if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
     QObject::connect(m_TcpSocket, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error), this, [this](){
             addError(m_TcpSocket->errorString());
-            qDebug() << m_TcpSocket->errorString();
         });
 #else
     QObject::connect(m_TcpSocket, &QAbstractSocket::errorOccurred, this, [this](){
         addError(m_TcpSocket->errorString());
-        qDebug() << m_TcpSocket->errorString();
     });
 #endif
     m_TcpSocket->connectToHost(host, port);
     m_TcpSocket->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
 
     if (m_TcpSocket->waitForConnected()) {
+        qDebug() << "Connection established";
         setConnected();
     } else {
         addError("Connection error");
+        m_TcpSocket->deleteLater();
+        m_TcpSocket = Q_NULLPTR;
     }
 }
 

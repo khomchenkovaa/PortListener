@@ -17,6 +17,7 @@ public:
 
 private slots:
     void addTcpListener();
+    void addTcpClient();
     void addUdpListener();
     void addSocketListener();
     void addMqueueListener();
