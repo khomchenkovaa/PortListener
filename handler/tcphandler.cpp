@@ -1,5 +1,6 @@
 #include "tcphandler.h"
 
+#include <QCoreApplication>
 #include <QNetworkDatagram>
 
 /********************************************************/
@@ -32,10 +33,7 @@ QByteArray TcpHandler::processData(const QByteArray &data)
             return QByteArray();
         }
     }
-//    if (!m_TcpSocket->waitForReadyRead(1000)) {
-//        addError("Cannot read binary data");
-//        return QByteArray();
-//    }
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 500);
     return m_TcpSocket->readAll();
 }
 
@@ -54,10 +52,7 @@ QByteArray TcpHandler::processData(const QString &data)
             return QByteArray();
         }
     }
-//    if (!m_TcpSocket->waitForReadyRead(1000)) {
-//        addError("Cannot read text data");
-//        return QByteArray();
-//    }
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 500);
     return m_TcpSocket->readAll();
 }
 
