@@ -5,7 +5,11 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 # comment next line if you don't want the modbus
 QT += serialbus
 
+# comment next line if you don't want the mqueue
 unix:!macx: DEFINES += MQUEUE
+
+# comment next line if you don't want the dts
+#unix:!macx: DEFINES += DTS_LIB
 
 CONFIG += c++11
 
@@ -82,7 +86,22 @@ contains(DEFINES, MQUEUE) {
     FORMS += \
         mqueuelistener.ui
 
-    LIBS += -lrt
+    LIBS *= -lrt
+}
+
+contains(DEFINES, DTS_LIB) {
+    INCLUDEPATH *= /usr/local/include
+
+    SOURCES += \
+        dtsconnect.cpp
+
+    HEADERS += \
+        dtsconnect.h
+
+    FORMS += \
+        dtsconnect.ui
+
+    LIBS *= -ldts -lrt -lpthread
 }
 
 # Default rules for deployment.

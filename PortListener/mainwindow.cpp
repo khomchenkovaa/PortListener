@@ -17,6 +17,10 @@
 #include "mqueuelistener.h"
 #endif
 
+#ifdef DTS_LIB
+#include "dtsconnect.h"
+#endif
+
 #include <QTabBar>
 
 /********************************************************/
@@ -135,6 +139,21 @@ void MainWindow::addModbusTcpClient()
 
 /********************************************************/
 
+void MainWindow::addDtsClient()
+{
+#ifdef DTS_LIB
+    auto widget = new DtsConnect(this);
+    ui->tabWidget->addTab(widget, tr("DTS client [-]"));
+    ui->tabWidget->setCurrentWidget(widget);
+    connect(widget, &DtsConnect::tabText, this, [this, widget](const QString &label){
+        int idx = ui->tabWidget->indexOf(widget);
+        ui->tabWidget->setTabText(idx, label);
+    });
+#endif
+}
+
+/********************************************************/
+
 void MainWindow::addFileReader()
 {
     auto widget = new FileReader(this);
@@ -173,6 +192,8 @@ void MainWindow::setupUI()
             ui->actionModbusTcpServer, &QAction::triggered);
     connect(ui->btnModbusTcpClient, &QPushButton::clicked,
             ui->actionModbusTcpClient, &QAction::triggered);
+    connect(ui->btnDtsClient, &QPushButton::clicked,
+            ui->actionDTS_Client, &QAction::triggered);
 
     connect(ui->actionTCP_port, &QAction::triggered,
             this, &MainWindow::addTcpListener);
@@ -188,6 +209,8 @@ void MainWindow::setupUI()
             this, &MainWindow::addModbusTcpServer);
     connect(ui->actionModbusTcpClient, &QAction::triggered,
             this, &MainWindow::addModbusTcpClient);
+    connect(ui->actionDTS_Client, &QAction::triggered,
+            this, &MainWindow::addDtsClient);
     connect(ui->actionDataSender, &QAction::triggered,
             this, &MainWindow::addDataSender);
     connect(ui->actionFileReader, &QAction::triggered,
@@ -203,6 +226,11 @@ void MainWindow::setupUI()
 #ifndef MQUEUE
     ui->btnMqueue->setDisabled(true);
     ui->actionMQueue->setDisabled(true);
+#endif
+
+#ifndef DTS_LIB
+    ui->btnDtsClient->setDisabled(true);
+    ui->actionDTS_Client->setDisabled(true);
 #endif
 
     connect(ui->tabWidget->tabBar(), &QTabBar::tabCloseRequested, this, [this](int index){

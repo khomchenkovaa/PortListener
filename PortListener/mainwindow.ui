@@ -166,6 +166,20 @@
                </property>
               </widget>
              </item>
+             <item row="3" column="1">
+              <widget class="QLabel" name="lbldtsClient">
+               <property name="text">
+                <string>via DTS lib</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QPushButton" name="btnDtsClient">
+               <property name="text">
+                <string>DTS Client</string>
+               </property>
+              </widget>
+             </item>
             </layout>
            </widget>
           </item>
@@ -239,8 +253,15 @@
     <addaction name="actionDataSender"/>
     <addaction name="actionFileReader"/>
    </widget>
+   <widget class="QMenu" name="menuDTS">
+    <property name="title">
+     <string>DTS</string>
+    </property>
+    <addaction name="actionDTS_Client"/>
+   </widget>
    <addaction name="menuConnect"/>
    <addaction name="menuModbus"/>
+   <addaction name="menuDTS"/>
    <addaction name="menuTools"/>
   </widget>
   <action name="actionTCP_port">
@@ -291,6 +312,11 @@
   <action name="actionTCP_client">
    <property name="text">
     <string>TCP client</string>
+   </property>
+  </action>
+  <action name="actionDTS_Client">
+   <property name="text">
+    <string>DTS Client</string>
    </property>
   </action>
  </widget>
