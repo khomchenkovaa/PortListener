@@ -9,7 +9,7 @@ QT += serialbus
 unix:!macx: DEFINES += MQUEUE
 
 # comment next line if you don't want the dts
-#unix:!macx: DEFINES += DTS_LIB
+unix:!macx: DEFINES += DTS_LIB
 
 CONFIG += c++11
 

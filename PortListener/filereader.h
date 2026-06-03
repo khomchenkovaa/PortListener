@@ -39,7 +39,7 @@ class FileReader : public ListenerWidget
         }
 
         bool isBin() const {
-            return (fileFormat != FileFormat::HEX_CONTENT);
+            return (fileFormat != FileFormat::PLAIN_TEXT);
         }
     };
 

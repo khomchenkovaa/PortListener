@@ -27,7 +27,7 @@ DtsConnect::DtsConnect(QWidget *parent) :
     connect(ui->btnDisconnect, &QAbstractButton::clicked,
             this, &DtsConnect::doDisconnect);
     connect(this, &DtsConnect::dataReceived,
-            this, &DtsConnect::doReceive);
+            this, &DtsConnect::doReceive, Qt::QueuedConnection);
 
     setupUiDefaultState();
 
@@ -167,8 +167,8 @@ int DtsConnect::rcvFunc( void * argPtr, Value & value, int32_t chnlId )
 
     DtsValue dtsValue(value);
 
-    dtsPtr->doReceive(dtsValue, chnlId);
-//    emit dtsPtr->dataReceived(dtsValue, chnlId);
+//    dtsPtr->doReceive(dtsValue, chnlId);
+    emit dtsPtr->dataReceived(dtsValue, chnlId);
 
     return 0;
 }
