@@ -12,22 +12,50 @@ namespace Ui {
 class DtsConnect;
 }
 
+struct DtsValue {
+    int32_t   type;     ///< Тип значения (enum ValueType)
+    int32_t   idx;      ///< Индекс значения
+    int32_t   quality;  ///< Битовое качество
+    QDateTime dt;       ///< Время создания
+    QVariant  value;    ///< Значение
+
+    DtsValue() {}
+    DtsValue(Value & v);
+};
+
+Q_DECLARE_METATYPE(DtsValue)
+
+class DtsAgent : public QObject
+{
+    Q_OBJECT
+
+    DTSClient *dtsClient;
+
+public:
+    explicit DtsAgent(QObject *parent = Q_NULLPTR);
+    ~DtsAgent();
+
+    void receiveData(Value & value, int32_t chnlId);
+    bool doConnect(quint16 port, QString *err = Q_NULLPTR);
+    void doDisconnect();
+    bool isActive() const {
+        return dtsClient;
+    }
+
+signals:
+    void dataReceived(DtsValue v, int32_t chnlId);
+
+private: // static
+    /// Функция регистрации принятых данных
+    static int rcvFunc( void * argPtr, Value & value, int32_t chnlId );
+};
+
 class DtsConnect : public ListenerWidget
 {
     Q_OBJECT
 
-    struct DtsValue {
-        int32_t   type;     ///< Тип значения (enum ValueType)
-        int32_t   idx;      ///< Индекс значения
-        int32_t    quality; ///< Битовое качество
-        QDateTime dt;       ///< Время создания
-        QVariant  value;    ///< Значение
-
-        DtsValue(Value & v);
-    };
-
     struct DtsConnectData {
-        QScopedPointer<DTSClient> dtsClient;
+        QScopedPointer<DtsAgent> dtsAgent;
         QTimer timer;
         QMutex mutex;
     };
@@ -37,7 +65,6 @@ public:
     ~DtsConnect();
 
 signals:
-    void dataReceived(DtsConnect::DtsValue v, int32_t chnlId);
     void tabText(const QString &label);
 
 protected:
@@ -46,16 +73,12 @@ protected:
 private Q_SLOTS:
     void doConnect();
     void doDisconnect();
-    void doReceive(DtsConnect::DtsValue v, int32_t chnlId);
+    void doReceive(DtsValue v, int32_t chnlId);
 
 private:
     /// configure UI default state
     void setupUiDefaultState();
     void updateStatus();
-
-private: // static
-    /// Функция регистрации принятых данных
-    static int rcvFunc( void * argPtr, Value & value, int32_t chnlId );
 
 private:
     Ui::DtsConnect *ui;

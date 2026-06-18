@@ -14,6 +14,105 @@
 #define OK_RET 0
 #define WARNING_RET 1
 
+DtsValue::DtsValue(Value &v)
+{
+    this->type = v.type;
+    this->idx  = v.idx;
+    this->dt   = QDateTime::fromSecsSinceEpoch(v.sec).addMSecs(v.msec);
+
+    switch( v.type ) {
+    case Ana_VT :
+    {
+        AData * dataPtr = Q_NULLPTR;
+        v.getData( dataPtr );
+        this->value = dataPtr->value;
+    }
+        break;
+    case Bin_VT :
+    {
+        BData * dataPtr = Q_NULLPTR;
+        v.getData( dataPtr );
+        this->value = dataPtr->value;
+    }
+        break;
+    case Int_VT :
+    {
+        IData * dataPtr = Q_NULLPTR;
+        v.getData( dataPtr );
+        this->value = dataPtr->value;
+    }
+        break;
+    case Grp_VT :
+    {
+        GData * dataPtr = NULL;
+        v.getData( dataPtr );
+        this->value = QByteArray(reinterpret_cast<const char *>(dataPtr->value), dataPtr->size);
+    }
+        break;
+    default : break;
+    }
+}
+
+DtsAgent::DtsAgent(QObject *parent) : QObject(parent)
+{
+    dtsClient = Q_NULLPTR;
+}
+
+DtsAgent::~DtsAgent()
+{
+    doDisconnect();
+}
+
+void DtsAgent::receiveData(Value &value, int32_t chnlId)
+{
+    DtsValue dtsValue(value);
+    emit dataReceived(dtsValue, chnlId);
+}
+
+bool DtsAgent::doConnect(quint16 port, QString *err)
+{
+    if (dtsClient) {
+        return true;
+    }
+    dtsClient = new DTSClient(DtsAgent::rcvFunc, this, Q_NULLPTR, Q_NULLPTR, port);
+    if (dtsClient->getState() != Ok ) {
+        if (err) err->append(QString("(%1) %2").arg(dtsClient->getError()).arg(dtsClient->getErrStr()));
+        delete dtsClient;
+        dtsClient = Q_NULLPTR;
+        return false;
+    }
+    return true;
+}
+
+void DtsAgent::doDisconnect()
+{
+    if (dtsClient) {
+        delete dtsClient;
+        dtsClient = Q_NULLPTR;
+    }
+}
+
+int DtsAgent::rcvFunc( void * argPtr, Value & value, int32_t chnlId )
+{
+    if (argPtr == Q_NULLPTR) {
+        qWarning() << "DtsAgent: arg pointer is Q_NULLPTR";
+        return -1;
+    }
+
+    auto *objPtr = static_cast<QObject *>(argPtr);
+    auto *dtsPtr = qobject_cast<DtsAgent *>(objPtr);
+
+    if (dtsPtr == Q_NULLPTR) {
+        qWarning() << "DtsAgent: DTS pointer is Q_NULLPTR";
+        return -1;
+    }
+
+    dtsPtr->receiveData(value, chnlId);
+
+    return 0;
+}
+
+
 /********************************************************/
 
 DtsConnect::DtsConnect(QWidget *parent) :
@@ -22,11 +121,13 @@ DtsConnect::DtsConnect(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    d.dtsAgent.reset(new DtsAgent(this));
+
     connect(ui->btnConnect, &QAbstractButton::clicked,
             this, &DtsConnect::doConnect);
     connect(ui->btnDisconnect, &QAbstractButton::clicked,
             this, &DtsConnect::doDisconnect);
-    connect(this, &DtsConnect::dataReceived,
+    connect(d.dtsAgent.data(), &DtsAgent::dataReceived,
             this, &DtsConnect::doReceive, Qt::QueuedConnection);
 
     setupUiDefaultState();
@@ -54,21 +155,11 @@ QTextBrowser *DtsConnect::textLog() const
 
 void DtsConnect::doConnect()
 {
+    QString err;
     const quint16 port = ui->spinPort->value();
-
-    d.dtsClient.reset( new DTSClient(DtsConnect::rcvFunc, this, Q_NULLPTR, Q_NULLPTR, port));
-//    d.dtsClient.reset( new DTSClient(Q_NULLPTR, Q_NULLPTR, Q_NULLPTR, Q_NULLPTR, port));
-
-    if( d.dtsClient->getState() != Ok ) {
-        printError("DTS Client error", QString("(%1) %2").arg(d.dtsClient->getError()).arg(d.dtsClient->getErrStr()));
-        d.dtsClient.reset();
+    if (!d.dtsAgent->doConnect(port, &err)) {
+        printError("DTS Client error", err);
     }
-
-//    d.timer.setSingleShot(true);
-//    connect(&d.timer, &QTimer::timeout,
-//            this, &DtsConnect::doReadData);
-//    d.timer.setInterval(1000);
-//    d.timer.start();
     updateStatus();
 }
 
@@ -77,11 +168,7 @@ void DtsConnect::doConnect()
 void DtsConnect::doDisconnect()
 {
     d.timer.stop();
-    if (!d.dtsClient.isNull()) {
-        d.dtsClient->stopSend();
-        d.dtsClient->stopReceive();
-        d.dtsClient.reset();
-    }
+    d.dtsAgent->doDisconnect();
     disconnectDecoder();
     disconnectHandler();
     updateStatus();
@@ -137,7 +224,7 @@ void DtsConnect::setupUiDefaultState()
 
 void DtsConnect::updateStatus()
 {
-    if (!d.dtsClient.isNull()) {
+    if (d.dtsAgent->isActive()) {
         ui->lblConnection->setText(tr("<font color=\"darkRed\">Connected to the DTS</font>"));
         ui->editHost->setEnabled(false);
         ui->spinPort->setEnabled(false);
@@ -156,58 +243,3 @@ void DtsConnect::updateStatus()
 
 /********************************************************/
 
-int DtsConnect::rcvFunc( void * argPtr, Value & value, int32_t chnlId )
-{
-    if (argPtr == Q_NULLPTR) return -1;
-
-    auto *objPtr = static_cast<QObject *>(argPtr);
-    auto *dtsPtr = qobject_cast<DtsConnect *>(objPtr);
-
-    if (dtsPtr == Q_NULLPTR) return -1;
-
-    DtsValue dtsValue(value);
-
-//    dtsPtr->doReceive(dtsValue, chnlId);
-    emit dtsPtr->dataReceived(dtsValue, chnlId);
-
-    return 0;
-}
-
-DtsConnect::DtsValue::DtsValue(Value &v)
-{
-    this->type = v.type;
-    this->idx  = v.idx;
-    this->dt   = QDateTime::fromSecsSinceEpoch(v.sec).addMSecs(v.msec);
-
-    switch( v.type ) {
-    case Ana_VT :
-    {
-        AData * dataPtr = Q_NULLPTR;
-        v.getData( dataPtr );
-        this->value = dataPtr->value;
-    }
-        break;
-    case Bin_VT :
-    {
-        BData * dataPtr = Q_NULLPTR;
-        v.getData( dataPtr );
-        this->value = dataPtr->value;
-    }
-        break;
-    case Int_VT :
-    {
-        IData * dataPtr = Q_NULLPTR;
-        v.getData( dataPtr );
-        this->value = dataPtr->value;
-    }
-        break;
-    case Grp_VT :
-    {
-        GData * dataPtr = NULL;
-        v.getData( dataPtr );
-        this->value = QByteArray(reinterpret_cast<const char *>(dataPtr->value), dataPtr->size);
-    }
-        break;
-    default : break;
-    }
-}
