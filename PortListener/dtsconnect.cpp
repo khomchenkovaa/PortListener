@@ -7,6 +7,7 @@
 #include <QNetworkDatagram>
 #include <QTextCodec>
 #include <QMessageBox>
+#include <QPair>
 
 #include <QDebug>
 
@@ -39,7 +40,8 @@ DtsValue::DtsValue(Value &v)
     {
         AData * dataPtr = Q_NULLPTR;
         v.getData( dataPtr );
-        this->value = dataPtr->value;
+        this->value   = dataPtr->value;
+        this->quality = dataPtr->quality;
     }
         break;
     case Bin_VT :
@@ -47,6 +49,7 @@ DtsValue::DtsValue(Value &v)
         BData * dataPtr = Q_NULLPTR;
         v.getData( dataPtr );
         this->value = dataPtr->value;
+        this->quality = dataPtr->quality;
     }
         break;
     case Int_VT :
@@ -54,6 +57,7 @@ DtsValue::DtsValue(Value &v)
         IData * dataPtr = Q_NULLPTR;
         v.getData( dataPtr );
         this->value = dataPtr->value;
+        this->quality = dataPtr->quality;
     }
         break;
     case Grp_VT :
@@ -61,6 +65,7 @@ DtsValue::DtsValue(Value &v)
         GData * dataPtr = NULL;
         v.getData( dataPtr );
         this->value = QByteArray(reinterpret_cast<const char *>(dataPtr->value), dataPtr->size);
+        this->quality = 0;
     }
         break;
     default : break;
@@ -106,6 +111,21 @@ void DtsAgent::doDisconnect()
     }
 }
 
+int DtsAgent::put(Value &value, int32_t chnlId, QString *err)
+{
+    if (!dtsClient) {
+        if (err) *err = "Нет подключения к dts";
+        return -1;
+    }
+    const int ret = dtsClient->put(value, chnlId);
+    if (ret < 0 && err) {
+        *err = QString("Ошибка %1 (%2)")
+                     .arg(dtsClient->getError())
+                     .arg(dtsClient->getErrStr());
+    }
+    return ret;
+}
+
 int DtsAgent::rcvFunc( void * argPtr, Value & value, int32_t chnlId )
 {
     if (argPtr == Q_NULLPTR) {
@@ -143,6 +163,13 @@ DtsConnect::DtsConnect(QWidget *parent) :
             this, &DtsConnect::doDisconnect);
     connect(d.dtsAgent.data(), &DtsAgent::dataReceived,
             this, &DtsConnect::doReceive, Qt::QueuedConnection);
+
+    connect(ui->btnASend, &QAbstractButton::clicked,
+            this, &DtsConnect::doSendAValue);
+    connect(ui->btnBSend, &QAbstractButton::clicked,
+            this, &DtsConnect::doSendBValue);
+    connect(ui->btnISend, &QAbstractButton::clicked,
+            this, &DtsConnect::doSendIValue);
 
     setupUiDefaultState();
 
@@ -216,19 +243,97 @@ void DtsConnect::doReceive(DtsValue v, int32_t chnlId)
     }
 }
 
+void DtsConnect::doSendAValue()
+{
+    Value outValue;
+    int32_t chnlId = 0; ///< Канал
+    int32_t idx = ui->spinAIdx->value(); ///< Индекс значения
+    int32_t quality = ui->cmbAQuality->currentData().toInt(); ///< Качество
+    float value = ui->doubleAValue->value();
+    int makeRet = makeAValue(outValue, idx, quality, value);
+    if (makeRet < 0) {
+        printError(QString("makeAValue invalid [%1]").arg(makeRet),
+                   QString("ANA[%1]:%2(%3)").arg(idx).arg(value, 0, 'f', 5).arg(quality));
+        return;
+    }
+    QString err;
+    int putRet = d.dtsAgent->put(outValue, chnlId, &err);
+    if (putRet < 0) {
+        printError(QString("putAValue [%1] error %2").arg(chnlId).arg(err),
+                   QString("ANA[%1]:%2(%3)").arg(idx).arg(value, 0, 'f', 5).arg(quality));
+    }
+}
+
+void DtsConnect::doSendBValue()
+{
+    Value outValue;
+    int32_t chnlId = 0; ///< Канал
+    int32_t idx = ui->spinBIdx->value(); ///< Индекс значения
+    int32_t quality = ui->cmbBQuality->currentData().toInt(); ///< Качество
+    int32_t value = ui->spinBValue->value();
+    int makeRet = makeBValue(outValue, idx, quality, value);
+    if (makeRet < 0) {
+        printError(QString("makeBValue invalid [%1]").arg(makeRet),
+                   QString("BIN[%1]:%2(%3)").arg(idx).arg(value).arg(quality));
+        return;
+    }
+    QString err;
+    int putRet = d.dtsAgent->put(outValue, chnlId, &err);
+    if (putRet < 0) {
+        printError(QString("putBValue [%1] error %2").arg(chnlId).arg(err),
+                   QString("BIN[%1]:%2(%3)").arg(idx).arg(value).arg(quality));
+    }
+}
+
+void DtsConnect::doSendIValue()
+{
+    Value outValue;
+    int32_t chnlId = 0; ///< Канал
+    int32_t idx = ui->spinIIdx->value(); ///< Индекс значения
+    int32_t quality = ui->cmbIQuality->currentData().toInt(); ///< Качество
+    int32_t value = ui->spinIValue->value();
+    int makeRet = makeIValue(outValue, idx, quality, value);
+    if (makeRet < 0) {
+        printError(QString("makeIValue invalid [%1]").arg(makeRet),
+                   QString("INT[%1]:%2(%3)").arg(idx).arg(value).arg(quality));
+        return;
+    }
+    QString err;
+    int putRet = d.dtsAgent->put(outValue, chnlId, &err);
+    if (putRet < 0) {
+        printError(QString("putIValue [%1] error %2").arg(chnlId).arg(err),
+                   QString("INT[%1]:%2(%3)").arg(idx).arg(value).arg(quality));
+    }
+}
+
 /********************************************************/
 
 void DtsConnect::setupUiDefaultState()
 {
-    ui->rbBinary->setChecked(true);
-    ui->rbText->setChecked(false);
-    ui->cmbReplyType->setCurrentIndex(ReplyType::NoReply);
-    ui->editReply->setHidden(true);
+    QVector< QPair<QString, int32_t> > quality;
+    quality.append({"Нормальное состояние", 0});
+    quality.append({"(0) Отказ устройства", 1});
+    quality.append({"(1) Отказ канала передачи", 2});
+    quality.append({"(2) Не инициализированно", 4});
+    quality.append({"(3) Время недостоверно", 8});
+    quality.append({"(4) Данные по запросу", 16});
+    quality.append({"(5) Циклические данные", 32});
+    quality.append({"(6) Фильтр изменений", 64});
+    quality.append({"(7) Восстановленные данные", 128});
+    quality.append({"(8) Имитация", 256});
+    quality.append({"(9) Выход за диапазон", 512});
+    quality.append({"(10) Отказ канала ППД", 1024});
+    quality.append({"(11) Циклические данные ППД", 2048});
 
-    ui->boxDecoder->setEnabled(false);
-    ui->boxAction->setEnabled(false);
-    ui->boxInput->setEnabled(false);
-    ui->boxReply->setEnabled(false);
+    for (const auto &item : quality) {
+        ui->cmbAQuality->addItem(item.first, item.second);
+        ui->cmbBQuality->addItem(item.first, item.second);
+        ui->cmbIQuality->addItem(item.first, item.second);
+    }
+
+    ui->boxAData->setEnabled(false);
+    ui->boxBData->setEnabled(false);
+    ui->boxIData->setEnabled(false);
 
     ui->splitter->setStretchFactor(0, 1);
     ui->splitter->setStretchFactor(1, 3);
@@ -240,17 +345,21 @@ void DtsConnect::updateStatus()
 {
     if (d.dtsAgent->isActive()) {
         ui->lblConnection->setText(tr("<font color=\"darkRed\">Connected to the DTS</font>"));
-        ui->editHost->setEnabled(false);
         ui->spinPort->setEnabled(false);
         ui->btnConnect->setVisible(false);
         ui->btnDisconnect->setVisible(true);
+        ui->boxAData->setEnabled(true);
+        ui->boxBData->setEnabled(true);
+        ui->boxIData->setEnabled(true);
         emit tabText(QString("DTS client [%1]").arg(ui->spinPort->value()));
     } else {
-        ui->lblConnection->setText(tr("<font color=\"black\">Choose DTS server to connect</font>"));
-        ui->editHost->setEnabled(true);
+        ui->lblConnection->setText(tr("<font color=\"black\">Choose DTS port to connect</font>"));
         ui->spinPort->setEnabled(true);
         ui->btnConnect->setVisible(true);
         ui->btnDisconnect->setVisible(false);
+        ui->boxAData->setEnabled(false);
+        ui->boxBData->setEnabled(false);
+        ui->boxIData->setEnabled(false);
         emit tabText(QString("DTS client [-]"));
     }
 }

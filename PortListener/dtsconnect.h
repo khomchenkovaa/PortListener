@@ -38,6 +38,9 @@ public:
     void receiveData(Value & value, int32_t chnlId);
     bool doConnect(quint16 port, QString *err = Q_NULLPTR);
     void doDisconnect();
+
+    int put(Value & value, int32_t chnlId, QString *err = Q_NULLPTR);
+
     bool isActive() const {
         return dtsClient;
     }
@@ -74,6 +77,9 @@ private Q_SLOTS:
     void doConnect();
     void doDisconnect();
     void doReceive(DtsValue v, int32_t chnlId);
+    void doSendAValue();
+    void doSendBValue();
+    void doSendIValue();
 
 private:
     /// configure UI default state
