@@ -36,7 +36,6 @@ SettingsMap DepHandlerWidget::settings() const
     map.insert(DepHandler::TypeColumn, ui->spinTypeColumn->value());
     map.insert(DepHandler::IndexColumn, ui->spinIndexColumn->value());
     map.insert(DepHandler::KksColumn, ui->spinKksColumn->value());
-    map.insert(DepHandler::IidColumn, ui->spinIidColumn->value());
     return map;
 }
 
@@ -49,7 +48,6 @@ void DepHandlerWidget::setSettings(const SettingsMap &map)
     ui->spinTypeColumn->setValue(map.value(DepHandler::TypeColumn, -1).toInt());
     ui->spinIndexColumn->setValue(map.value(DepHandler::IndexColumn, -1).toInt());
     ui->spinKksColumn->setValue(map.value(DepHandler::KksColumn, -1).toInt());
-    ui->spinIidColumn->setValue(map.value(DepHandler::IidColumn, -1).toInt());
 }
 
 /********************************************************/

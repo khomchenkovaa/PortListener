@@ -134,6 +134,7 @@ struct CsvConfig
         int iidColumn     = -1;      ///< iid column index: >=0 (otherwise not used)
         int kksColumn     = -1;      ///< kks column index: >=0 (otherwise not used)
         int rtmColumn     = -1;      ///< rtm column index: >=0 (otherwise not used)
+        int nameColumn    = -1;      ///< name column index: >=0 (otherwise not used)
 
         int maxIndex() const {
             int result = qMax(typeColumn, indexColumn);
@@ -141,6 +142,7 @@ struct CsvConfig
             result = qMax(result, iidColumn);
             result = qMax(result, kksColumn);
             result = qMax(result, rtmColumn);
+            result = qMax(result, nameColumn);
             return result;
         }
     };
@@ -150,6 +152,11 @@ struct CsvConfig
         quint32    index; ///< номер
         QString    kks;   ///< Код KKS
         QString    iid;   ///< Interal ID
+        QString    name;  ///< name
+
+        QString kksOrIid() const {
+            return kks.isEmpty() ? iid : kks;
+        }
     };
 
     QList<CsvConfigItem> items;
@@ -174,21 +181,34 @@ struct CsvConfig
         for (int i = 0; i < csvModel.rowCount(); ++i) {
             CsvConfigItem item;
             if (csv.typeColumn != -1) {
-                QString typeStr = csvModel.data(csvModel.index(i, csv.typeColumn)).toString();
+                QString typeStr = csvModel.data(csvModel.index(i, csv.typeColumn)).toString().trimmed();
                 item.type = depTypeByString(typeStr);
             } else {
                 item.type = defaultType;
             }
             item.index = csvModel.data(csvModel.index(i, csv.indexColumn)).toUInt();
             if (csv.kksColumn != -1) {
-                item.kks = csvModel.data(csvModel.index(i, csv.kksColumn)).toString();
+                item.kks = csvModel.data(csvModel.index(i, csv.kksColumn)).toString().trimmed();
             }
             if (csv.iidColumn != -1) {
-                item.iid = csvModel.data(csvModel.index(i, csv.iidColumn)).toString();
+                item.iid = csvModel.data(csvModel.index(i, csv.iidColumn)).toString().trimmed();
+            }
+            if (csv.nameColumn != -1) {
+                item.name = csvModel.data(csvModel.index(i, csv.nameColumn)).toString().trimmed();
             }
             items << item;
         }
         return items.size();
+    }
+
+    CsvConfigItem findByIdx(quint32 idx) {
+        for (const auto &item : qAsConst(items)) {
+            if (item.index == idx) return item;
+        }
+        CsvConfigItem unknownRes;
+        unknownRes.index = idx;
+        unknownRes.type = DPDataType::NONE;
+        return unknownRes;
     }
 };
 

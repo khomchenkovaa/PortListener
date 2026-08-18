@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>295</width>
-    <height>215</height>
+    <height>180</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -116,26 +116,6 @@
    </item>
    <item row="4" column="1">
     <widget class="QSpinBox" name="spinKksColumn">
-     <property name="minimum">
-      <number>-1</number>
-     </property>
-     <property name="maximum">
-      <number>20</number>
-     </property>
-     <property name="value">
-      <number>-1</number>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="0">
-    <widget class="QLabel" name="lblIidColumn">
-     <property name="text">
-      <string>IID Column</string>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="1">
-    <widget class="QSpinBox" name="spinIidColumn">
      <property name="minimum">
       <number>-1</number>
      </property>

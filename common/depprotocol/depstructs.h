@@ -117,10 +117,10 @@ struct DEPDataRecord
     QVariant  value;           ///< непосредственно само значение параметра
     qint32    validity   = 0;  ///< достоверность значения параметра
 
-    QString toString() const {
+    QString toString(const QString& kks = "DEPDataRecord") const {
         const QString s_time = dt.toString("dd.MM.yyyy hh:mm:ss.zzz");
-        return QString("DEPDataRecord: {%1, %2, %3, %4}")
-                .arg(pack_index).arg(s_time, value.toString()).arg(validity);
+        return QString("%1: {%2, %3, %4, %5}")
+                .arg(kks).arg(pack_index).arg(s_time, value.toString()).arg(validity);
     }
 
     void fromDataStream(QDataStream& stream, const DEPDataHeader &i_header);

@@ -30,7 +30,9 @@ QByteArray DepHandler::processData(const QByteArray &data)
         if (!d.depWorker->doWork()) break;
         const auto records = d.depWorker->packetData().records;
         for (const auto &rec : records) {
-            emit logMessage(name(), rec.toString());
+            auto csvItem = d.csvConf.findByIdx(rec.pack_index);
+            QString kks = csvItem.type == Gate::DPDataType::NONE ? "DEPDataRecord" : csvItem.kksOrIid();
+            emit logMessage(name(), rec.toString(kks));
         }
     }
 //    QByteArray buff(data);
