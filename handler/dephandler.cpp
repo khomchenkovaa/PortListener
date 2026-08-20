@@ -30,9 +30,8 @@ QByteArray DepHandler::processData(const QByteArray &data)
         if (!d.depWorker->doWork()) break;
         const auto records = d.depWorker->packetData().records;
         for (const auto &rec : records) {
-            auto csvItem = d.csvConf.findByIdx(rec.pack_index);
-            QString kks = csvItem.type == Gate::DPDataType::NONE ? "DEPDataRecord" : csvItem.kksOrIid();
-            emit logMessage(name(), rec.toString(kks));
+            QString kks = d.csvConf.findKksByIdx(rec.pack_index);
+            emit logMessage(name(), rec.toString(kks.isEmpty() ? "DEPDataRecord" : kks));
         }
     }
 //    QByteArray buff(data);
@@ -87,11 +86,8 @@ void DepHandler::doConnect(bool binary)
     if (csvFileName.isEmpty()) {
         emit logMessage(name(), tr("No CSV config file to open"));
     } else {
-        d.csvConf.csv.typeValue   = settings()->value(Settings::TypeValue, "NONE").toString();
-        d.csvConf.csv.typeColumn  = settings()->value(Settings::TypeColumn, -1).toInt();
         d.csvConf.csv.indexColumn = settings()->value(Settings::IndexColumn, -1).toInt();
         d.csvConf.csv.kksColumn   = settings()->value(Settings::KksColumn, -1).toInt();
-        d.csvConf.csv.iidColumn   = settings()->value(Settings::IidColumn, -1).toInt();
         int resId = d.csvConf.load(csvFileName, ',', QTextCodec::codecForName("Windows-1251"));
         switch (resId) {
         case -1:

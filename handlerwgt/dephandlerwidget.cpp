@@ -14,9 +14,6 @@ DepHandlerWidget::DepHandlerWidget(QWidget *parent) :
     DepHandlerWidget::setSettings(SettingsMap());
     connect(ui->btnCsvFile, &QAbstractButton::clicked,
             this, &DepHandlerWidget::openCsvFileDialog);
-    connect(ui->cmbTypeValue, &QComboBox::currentTextChanged,
-            this, &DepHandlerWidget::onTypeValueCmbChanged);
-    onTypeValueCmbChanged();
 }
 
 /********************************************************/
@@ -32,8 +29,6 @@ SettingsMap DepHandlerWidget::settings() const
 {
     SettingsMap map;
     map.insert(DepHandler::CsvFileName, ui->editCsvFile->text());
-    map.insert(DepHandler::TypeValue, ui->cmbTypeValue->currentText());
-    map.insert(DepHandler::TypeColumn, ui->spinTypeColumn->value());
     map.insert(DepHandler::IndexColumn, ui->spinIndexColumn->value());
     map.insert(DepHandler::KksColumn, ui->spinKksColumn->value());
     return map;
@@ -44,8 +39,6 @@ SettingsMap DepHandlerWidget::settings() const
 void DepHandlerWidget::setSettings(const SettingsMap &map)
 {
     ui->editCsvFile->setText(map.value(DepHandler::CsvFileName).toString());
-    ui->cmbTypeValue->setCurrentText(map.value(DepHandler::TypeValue, "NONE").toString());
-    ui->spinTypeColumn->setValue(map.value(DepHandler::TypeColumn, -1).toInt());
     ui->spinIndexColumn->setValue(map.value(DepHandler::IndexColumn, -1).toInt());
     ui->spinKksColumn->setValue(map.value(DepHandler::KksColumn, -1).toInt());
 }
@@ -66,19 +59,6 @@ void DepHandlerWidget::openCsvFileDialog()
                                             "CSV files (*.csv)");
     if (!fileName.isEmpty()) {
         ui->editCsvFile->setText(fileName);
-    }
-}
-
-/********************************************************/
-
-void DepHandlerWidget::onTypeValueCmbChanged()
-{
-    if (ui->cmbTypeValue->currentIndex()) {
-        ui->lblTypeColumn->setHidden(true);
-        ui->spinTypeColumn->setHidden(true);
-    } else {
-        ui->lblTypeColumn->setHidden(false);
-        ui->spinTypeColumn->setHidden(false);
     }
 }
 

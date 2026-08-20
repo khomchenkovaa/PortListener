@@ -18,11 +18,8 @@ class DepHandler : public MessageHandler
 public:
     enum Settings {
         CsvFileName,
-        TypeValue,
-        TypeColumn,
         IndexColumn,
-        KksColumn,
-        IidColumn
+        KksColumn
     };
 
     explicit DepHandler(QObject *parent = nullptr);

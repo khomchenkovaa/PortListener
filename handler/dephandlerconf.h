@@ -168,10 +168,6 @@ struct CsvConfig
         if (csvModel.columnCount() <= csv.maxIndex()) {
             return -1; // lines too short
         }
-        DPDataType defaultType = depTypeByString(csv.typeValue);
-        if (defaultType == DPDataType::NONE && csv.typeColumn == -1) {
-            return -2; // type value is not defined
-        }
         if (csv.indexColumn == -1) {
             return -3; // index is not defined
         }
@@ -183,8 +179,6 @@ struct CsvConfig
             if (csv.typeColumn != -1) {
                 QString typeStr = csvModel.data(csvModel.index(i, csv.typeColumn)).toString().trimmed();
                 item.type = depTypeByString(typeStr);
-            } else {
-                item.type = defaultType;
             }
             item.index = csvModel.data(csvModel.index(i, csv.indexColumn)).toUInt();
             if (csv.kksColumn != -1) {
@@ -201,14 +195,11 @@ struct CsvConfig
         return items.size();
     }
 
-    CsvConfigItem findByIdx(quint32 idx) {
+    QString findKksByIdx(quint32 idx) {
         for (const auto &item : qAsConst(items)) {
-            if (item.index == idx) return item;
+            if (item.index == idx) return item.kksOrIid();
         }
-        CsvConfigItem unknownRes;
-        unknownRes.index = idx;
-        unknownRes.type = DPDataType::NONE;
-        return unknownRes;
+        return QString();
     }
 };
 
