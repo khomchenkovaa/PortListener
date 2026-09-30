@@ -244,7 +244,7 @@ void ModbusTcpClient::doModbusRequest()
 
         const auto table =
                 static_cast<QModbusDataUnit::RegisterType>(ui->cmbTable->currentData().toInt());
-        int serverId = 0xff;
+        int serverId = ui->spinSid->value();
 
         for (const auto &item : qAsConst(m.conf.items)) {
             QModbusDataUnit request(table, item.ad, Modbus::dataTypeSizeOf(item.dt));
@@ -414,9 +414,13 @@ void ModbusTcpClient::setupSingleRequestBlock()
     ui->spinAddress->setMaximum(REG_MAX);
 
     connect(ui->cmbRegister, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](){
-        switch(ui->cmbRegister->currentData().toInt()) {
+        int regType = ui->cmbRegister->currentData().toInt();
+        bool regWritable = (regType == QModbusDataUnit::Coils) || (regType == QModbusDataUnit::HoldingRegisters);
+        ui->btnValueWrite->setVisible(regWritable);
+        switch(regType) {
         case QModbusDataUnit::Coils:
         case QModbusDataUnit::DiscreteInputs:
+            ui->chkValue->setEnabled(regWritable);
             if (ui->cmbValueType->count() != 1) {
                 QSignalBlocker block(ui->cmbValueType);
                 ui->cmbValueType->clear();
@@ -428,6 +432,7 @@ void ModbusTcpClient::setupSingleRequestBlock()
             break;
         case QModbusDataUnit::InputRegisters:
         case QModbusDataUnit::HoldingRegisters:
+            ui->editValue->setEnabled(regWritable);
             if (ui->cmbValueType->count() != 3) {
                 QSignalBlocker block(ui->cmbValueType);
                 ui->cmbValueType->clear();
@@ -500,7 +505,9 @@ void ModbusTcpClient::updateStatus()
 {
     if (m.modbusDevice.state() == QModbusDevice::ConnectedState) {
         ui->lblConnection->setText(tr("<font color=\"darkRed\">Connected to Modbus TCP port</font>"));
+        ui->editHost->setEnabled(false);
         ui->spinPort->setEnabled(false);
+        ui->spinSid->setEnabled(false);
         ui->btnConnect->setVisible(false);
         ui->btnDisconnect->setVisible(true);
         ui->boxRequest->setEnabled(true);
@@ -509,7 +516,9 @@ void ModbusTcpClient::updateStatus()
         emit tabText(QString("Modbus Client [%1]").arg(ui->spinPort->value()));
     } else {
         ui->lblConnection->setText(tr("<font color=\"black\">Choose TCP port to connect</font>"));
+        ui->editHost->setEnabled(true);
         ui->spinPort->setEnabled(true);
+        ui->spinSid->setEnabled(true);
         ui->btnConnect->setVisible(true);
         ui->btnDisconnect->setVisible(false);
         ui->boxRequest->setEnabled(false);
