@@ -79,11 +79,13 @@ void ModbusTcpClient::doReadRequest()
     int serverId = ui->spinSid->value();
     int address  = ui->spinAddress->value();
     int interval = Modbus::dataTypeSizeOf(valueType);
+    const auto byteOrder =
+            static_cast<Modbus::ByteOrder>(ui->cmbByteOrder->currentIndex());
 
     QModbusDataUnit request(table, address, interval);
     if (auto *response = m.modbusDevice.sendReadRequest(request, serverId)) {
         if (!response->isFinished())
-            connect(response, &QModbusReply::finished, this, [this, address, valueType](){
+            connect(response, &QModbusReply::finished, this, [this, address, valueType, byteOrder](){
                 auto reply = qobject_cast<QModbusReply *>(sender());
                 if (!reply) return;
 
@@ -92,7 +94,7 @@ void ModbusTcpClient::doReadRequest()
                     switch(valueType) {
                     case Modbus::RealType: {
                         auto arg = QVector<quint16>() << unit.value(0) << unit.value(1);
-                        auto val = Modbus::takeFloat(arg);
+                        auto val = Modbus::takeFloat(arg, byteOrder);
                         auto host = takeHost(QString::number(address), arg);
                         auto info = QString::number(val, 'f', 3);
                         ui->editValue->setText(info);
@@ -100,7 +102,7 @@ void ModbusTcpClient::doReadRequest()
                     } break;
                     case Modbus::DWordType: {
                         auto arg = QVector<quint16>() << unit.value(0) << unit.value(1);
-                        auto val = Modbus::takeUInt(arg);
+                        auto val = Modbus::takeUInt(arg, byteOrder);
                         auto host = takeHost(QString::number(address), arg);
                         auto info = QString::number(val);
                         ui->editValue->setText(info);
@@ -157,6 +159,8 @@ void ModbusTcpClient::doWriteRequest()
             static_cast<Modbus::DataType>(ui->cmbValueType->currentData().toInt());
     int serverId = ui->spinSid->value();
     int address  = ui->spinAddress->value();
+    const auto byteOrder =
+            static_cast<Modbus::ByteOrder>(ui->cmbByteOrder->currentIndex());
 
     QVector<quint16> data;
     QStringList displayData;
@@ -174,8 +178,8 @@ void ModbusTcpClient::doWriteRequest()
                 regType == QModbusDataUnit::HoldingRegisters) {
             Modbus::ModbusValue v;
             v.outFloat = ui->editValue->text().toDouble();
-            data << v.in.first << v.in.last;
-            displayData << QString("0x%1").arg(v.in.first, 4, 16, QLatin1Char('0')) << QString("0x%1").arg(v.in.last, 4, 16, QLatin1Char('0'));
+            data = Modbus::getValues(&v, byteOrder);
+            displayData << QString("0x%1").arg(data.constFirst(), 4, 16, QLatin1Char('0')) << QString("0x%1").arg(data.constLast(), 4, 16, QLatin1Char('0'));
         }
         break;
     case Modbus::DWordType:
@@ -183,8 +187,8 @@ void ModbusTcpClient::doWriteRequest()
                 regType == QModbusDataUnit::HoldingRegisters) {
             Modbus::ModbusValue v;
             v.outUInt = ui->editValue->text().toUInt();
-            data << v.in.first << v.in.last;
-            displayData << QString("0x%1").arg(v.in.first, 4, 16, QLatin1Char('0')) << QString("0x%1").arg(v.in.last, 4, 16, QLatin1Char('0'));
+            data = Modbus::getValues(&v, byteOrder);
+            displayData << QString("0x%1").arg(data.constFirst(), 4, 16, QLatin1Char('0')) << QString("0x%1").arg(data.constLast(), 4, 16, QLatin1Char('0'));
         }
         break;
     case Modbus::IntType:
