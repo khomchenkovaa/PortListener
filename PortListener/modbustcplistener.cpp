@@ -180,6 +180,8 @@ void ModbusTcpListener::updateEditorStatus()
             ui->cmbValueType->clear();
             ui->cmbValueType->addItem(tr("Binary"), Modbus::BinaryType);
             ui->cmbValueType->setCurrentIndex(0);
+            ui->lblByteOrder->setVisible(false);
+            ui->cmbByteOrder->setVisible(false);
             ui->editValue->setVisible(false);
             ui->chkValue->setVisible(true);
         }
@@ -194,6 +196,8 @@ void ModbusTcpListener::updateEditorStatus()
             ui->cmbValueType->addItem(tr("Integer (2-byte)"), Modbus::IntType);
             ui->cmbValueType->setCurrentIndex(0);
             ui->chkValue->setVisible(false);
+            ui->lblByteOrder->setVisible(true);
+            ui->cmbByteOrder->setVisible(true);
             ui->editValue->setVisible(true);
             ui->editValue->clear();
         }
@@ -208,6 +212,8 @@ void ModbusTcpListener::doReadValue()
 {
     auto regType = static_cast<QModbusDataUnit::RegisterType>(ui->cmbTable->currentData().toInt());
     auto addr    = ui->spinAddress->value();
+    const auto byteOrder =
+            static_cast<Modbus::ByteOrder>(ui->cmbByteOrder->currentIndex());
 
     quint16 value = 0;
     m_ModbusDevice.data(regType, quint16(addr), &value);
@@ -224,10 +230,9 @@ void ModbusTcpListener::doReadValue()
                 regType == QModbusDataUnit::HoldingRegisters) {
             quint16 value2 = 0;
             m_ModbusDevice.data(regType, quint16(addr+1), &value2);
-            Modbus::ModbusValue v;
-            v.in.first = value;
-            v.in.last  = value2;
-            ui->editValue->setText(QString::number(v.outFloat, 'f'));
+            auto arg = QVector<quint16>() << value << value2;
+            auto val = Modbus::takeFloat(arg, byteOrder);
+            ui->editValue->setText(QString::number(val, 'f'));
         }
         break;
     case Modbus::DWordType:
@@ -235,10 +240,9 @@ void ModbusTcpListener::doReadValue()
                 regType == QModbusDataUnit::HoldingRegisters) {
             quint16 value2 = 0;
             m_ModbusDevice.data(regType, quint16(addr+1), &value2);
-            Modbus::ModbusValue v;
-            v.in.first = value;
-            v.in.last  = value2;
-            ui->editValue->setText(QString::number(v.outUInt));
+            auto arg = QVector<quint16>() << value << value2;
+            auto val = Modbus::takeUInt(arg, byteOrder);
+            ui->editValue->setText(QString::number(val));
         }
         break;
     case Modbus::IntType:
@@ -256,6 +260,8 @@ void ModbusTcpListener::doWriteValue()
 {
     auto regType = static_cast<QModbusDataUnit::RegisterType>(ui->cmbTable->currentData().toInt());
     auto addr    = ui->spinAddress->value();
+    const auto byteOrder =
+            static_cast<Modbus::ByteOrder>(ui->cmbByteOrder->currentIndex());
 
     quint16 value = 0;
     m_ModbusDevice.data(regType, quint16(addr), &value);
@@ -273,8 +279,9 @@ void ModbusTcpListener::doWriteValue()
                 regType == QModbusDataUnit::HoldingRegisters) {
             Modbus::ModbusValue v;
             v.outFloat = ui->editValue->text().toDouble();
-            m_ModbusDevice.setData(regType, quint16(addr), v.in.first);
-            m_ModbusDevice.setData(regType, quint16(addr+1), v.in.last);
+            auto data = Modbus::getValues(&v, byteOrder);
+            m_ModbusDevice.setData(regType, quint16(addr), data.constFirst());
+            m_ModbusDevice.setData(regType, quint16(addr+1), data.constLast());
         }
         break;
     case Modbus::DWordType:
@@ -282,8 +289,9 @@ void ModbusTcpListener::doWriteValue()
                 regType == QModbusDataUnit::HoldingRegisters) {
             Modbus::ModbusValue v;
             v.outUInt = ui->editValue->text().toUInt();
-            m_ModbusDevice.setData(regType, quint16(addr), v.in.first);
-            m_ModbusDevice.setData(regType, quint16(addr+1), v.in.last);
+            auto data = Modbus::getValues(&v, byteOrder);
+            m_ModbusDevice.setData(regType, quint16(addr), data.constFirst());
+            m_ModbusDevice.setData(regType, quint16(addr+1), data.constLast());
         }
         break;
     case Modbus::IntType:

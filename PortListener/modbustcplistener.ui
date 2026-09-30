@@ -19,7 +19,7 @@
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
-     <widget class="QWidget" name="">
+     <widget class="QWidget" name="layoutWidget">
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
         <widget class="QGroupBox" name="boxConnection">
@@ -135,7 +135,54 @@
            </widget>
           </item>
           <item row="1" column="1">
-           <widget class="QComboBox" name="cmbValueType"/>
+           <layout class="QHBoxLayout" name="horizontalLayout_5">
+            <item>
+             <widget class="QComboBox" name="cmbValueType"/>
+            </item>
+            <item>
+             <widget class="QLabel" name="lblByteOrder">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>bo</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="cmbByteOrder">
+              <property name="currentIndex">
+               <number>3</number>
+              </property>
+              <item>
+               <property name="text">
+                <string>ABCD</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>DCBA</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>BADC</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>CDAB</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+           </layout>
           </item>
           <item row="2" column="0">
            <widget class="QLabel" name="lblAddress">
