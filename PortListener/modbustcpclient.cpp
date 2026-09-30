@@ -76,7 +76,7 @@ void ModbusTcpClient::doReadRequest()
             static_cast<QModbusDataUnit::RegisterType>(ui->cmbRegister->currentData().toInt());
     const auto valueType =
             static_cast<Modbus::DataType>(ui->cmbValueType->currentData().toInt());
-    int serverId = 0xff;
+    int serverId = ui->spinSid->value();
     int address  = ui->spinAddress->value();
     int interval = Modbus::dataTypeSizeOf(valueType);
 
@@ -155,7 +155,7 @@ void ModbusTcpClient::doWriteRequest()
             static_cast<QModbusDataUnit::RegisterType>(ui->cmbRegister->currentData().toInt());
     const auto valueType =
             static_cast<Modbus::DataType>(ui->cmbValueType->currentData().toInt());
-    int serverId = 0xff;
+    int serverId = ui->spinSid->value();
     int address  = ui->spinAddress->value();
 
     QVector<quint16> data;
