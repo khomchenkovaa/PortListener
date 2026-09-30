@@ -52,7 +52,7 @@ struct ModbusSigConf
             return Modbus::RealType;
         }
         if (value.startsWith("I", Qt::CaseInsensitive)) {
-            return Modbus::IntType;
+            return Modbus::DWordType;
         }
         return Modbus::UnkownType;
     }

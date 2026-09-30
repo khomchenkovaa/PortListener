@@ -236,7 +236,7 @@ void ModbusTcpClient::doWriteRequest()
 
 /********************************************************/
 
-void ModbusTcpClient::doModbusRequest()
+void ModbusTcpClient::doCycleRequest()
 {
     if (m.modbusDevice.state() == QModbusDevice::ConnectedState) {
         QString host = QString("%1:%2").arg(ui->editHost->text()).arg(ui->spinPort->value());
@@ -246,15 +246,16 @@ void ModbusTcpClient::doModbusRequest()
         printMessage(host, QString::number(time));
         doHandle(QString("%1\n").arg(time));
 
-        const auto table =
-                static_cast<QModbusDataUnit::RegisterType>(ui->cmbTable->currentData().toInt());
+        const auto table = QModbusDataUnit::RegisterType::HoldingRegisters;
         int serverId = ui->spinSid->value();
+        const auto byteOrder =
+                static_cast<Modbus::ByteOrder>(ui->cmbCRByteOrder->currentIndex());
 
         for (const auto &item : qAsConst(m.conf.items)) {
             QModbusDataUnit request(table, item.ad, Modbus::dataTypeSizeOf(item.dt));
             if (auto *response = m.modbusDevice.sendReadRequest(request, serverId)) {
                 if (!response->isFinished())
-                    connect(response, &QModbusReply::finished, this, [this, item](){
+                    connect(response, &QModbusReply::finished, this, [this, item, byteOrder](){
                         auto reply = qobject_cast<QModbusReply *>(sender());
                         if (!reply) return;
 
@@ -263,7 +264,7 @@ void ModbusTcpClient::doModbusRequest()
                             switch(item.dt) {
                             case Modbus::RealType: {
                                 auto arg = QVector<quint16>() << unit.value(0) << unit.value(1);
-                                auto val = Modbus::takeFloat(arg);
+                                auto val = Modbus::takeFloat(arg, byteOrder);
                                 auto host = takeHost(item.pin, arg);
                                 auto info = QString::number(val, 'f', 3);
                                 printReply(host, info);
@@ -271,15 +272,8 @@ void ModbusTcpClient::doModbusRequest()
                             } break;
                             case Modbus::DWordType: {
                                 auto arg = QVector<quint16>() << unit.value(0) << unit.value(1);
-                                auto val = Modbus::takeUInt(arg);
+                                auto val = Modbus::takeUInt(arg, byteOrder);
                                 auto host = takeHost(item.pin, arg);
-                                auto info = QString::number(val);
-                                printReply(host, info);
-                                doHandle(QString("%1;%2\n").arg(item.pin, info));
-                            } break;
-                            case Modbus::IntType: {
-                                quint16 val = unit.value(0);
-                                auto host = takeHost(item.pin, QVector<quint16>() << val);
                                 auto info = QString::number(val);
                                 printReply(host, info);
                                 doHandle(QString("%1;%2\n").arg(item.pin, info));
@@ -393,13 +387,6 @@ void ModbusTcpClient::activateHandler()
 
 /********************************************************/
 
-void ModbusTcpClient::onReadReady()
-{
-
-}
-
-/********************************************************/
-
 void ModbusTcpClient::setupUiDefaultState()
 {
     ui->splitter->setStretchFactor(0, 1);
@@ -468,12 +455,6 @@ void ModbusTcpClient::setupSingleRequestBlock()
 
 void ModbusTcpClient::setupCycleRequestBlock()
 {
-    ui->cmbTable->addItem(tr("Coils"), QModbusDataUnit::Coils);
-    ui->cmbTable->addItem(tr("Discrete Inputs"), QModbusDataUnit::DiscreteInputs);
-    ui->cmbTable->addItem(tr("Input Registers"), QModbusDataUnit::InputRegisters);
-    ui->cmbTable->addItem(tr("Holding Registers"), QModbusDataUnit::HoldingRegisters);
-    ui->cmbTable->setCurrentIndex(ui->cmbTable->findData(QModbusDataUnit::HoldingRegisters));
-
     connect(ui->btnConfig, &QAbstractButton::clicked, this, [this](){
         const QFileInfo fileInfo(ui->editConfig->text());
         const QString dirPath = fileInfo.exists() ? fileInfo.path() : QCoreApplication::applicationDirPath();
@@ -487,7 +468,7 @@ void ModbusTcpClient::setupCycleRequestBlock()
 
     m.timer.setSingleShot(true);
     connect(&m.timer, &QTimer::timeout,
-            this, &ModbusTcpClient::doModbusRequest);
+            this, &ModbusTcpClient::doCycleRequest);
 
     connect(ui->btnStart, &QAbstractButton::clicked, this, [this](){
         QString sigFile = ui->editConfig->text().trimmed();

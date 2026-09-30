@@ -280,7 +280,7 @@
           <bool>false</bool>
          </property>
          <property name="title">
-          <string>Cyclic request</string>
+          <string>Cyclic request  (HR)</string>
          </property>
          <layout class="QFormLayout" name="formLayout_2">
           <item row="0" column="0" colspan="2">
@@ -305,39 +305,76 @@
            </layout>
           </item>
           <item row="1" column="0">
-           <widget class="QLabel" name="lblTable">
-            <property name="text">
-             <string>Table</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QComboBox" name="cmbTable"/>
-          </item>
-          <item row="2" column="0">
            <widget class="QLabel" name="lblFrequency">
             <property name="text">
              <string>Frequency</string>
             </property>
            </widget>
           </item>
-          <item row="2" column="1">
-           <widget class="QSpinBox" name="spinFrequency">
-            <property name="suffix">
-             <string> sec.</string>
-            </property>
-            <property name="minimum">
-             <number>1</number>
-            </property>
-            <property name="maximum">
-             <number>60</number>
-            </property>
-            <property name="value">
-             <number>4</number>
-            </property>
-           </widget>
+          <item row="1" column="1">
+           <layout class="QHBoxLayout" name="horizontalLayout_8">
+            <item>
+             <widget class="QSpinBox" name="spinFrequency">
+              <property name="suffix">
+               <string> sec.</string>
+              </property>
+              <property name="minimum">
+               <number>1</number>
+              </property>
+              <property name="maximum">
+               <number>60</number>
+              </property>
+              <property name="value">
+               <number>4</number>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lblCRByteOrder">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>bo</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="cmbCRByteOrder">
+              <property name="currentIndex">
+               <number>3</number>
+              </property>
+              <item>
+               <property name="text">
+                <string>ABCD</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>DCBA</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>BADC</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>CDAB</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+           </layout>
           </item>
-          <item row="3" column="1">
+          <item row="2" column="1">
            <layout class="QHBoxLayout" name="horizontalLayout_4">
             <item>
              <widget class="QPushButton" name="btnStart">

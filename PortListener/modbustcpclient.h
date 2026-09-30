@@ -31,7 +31,7 @@ signals:
 public Q_SLOTS:
     void doReadRequest();
     void doWriteRequest();
-    void doModbusRequest();
+    void doCycleRequest();
     void handleDeviceError(QModbusDevice::Error newError);
 
 protected:
@@ -41,7 +41,6 @@ private Q_SLOTS:
     void doConnect();
     void doDisconnect();
     void activateHandler();
-    void onReadReady();
 
 private:
     /// configure UI default state
