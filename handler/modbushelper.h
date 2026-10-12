@@ -57,20 +57,20 @@ inline quint16 reverse(quint16 value) {
 inline void setValues(ModbusValue *v, const QVector<quint16> &values, ByteOrder bo) {
     switch (bo) {
     case ByteOrder::ABCD:
-        v->in.first = values.constLast();
-        v->in.last  = values.constFirst();
-        break;
-    case ByteOrder::DCBA:
-        v->in.first = reverse(values.constFirst());
-        v->in.last  = reverse(values.constLast());
-        break;
-    case ByteOrder::BADC:
         v->in.first = reverse(values.constLast());
         v->in.last  = reverse(values.constFirst());
         break;
-    case ByteOrder::CDAB:
+    case ByteOrder::DCBA:
         v->in.first = values.constFirst();
         v->in.last  = values.constLast();
+        break;
+    case ByteOrder::BADC:
+        v->in.first = values.constLast();
+        v->in.last  = values.constFirst();
+        break;
+    case ByteOrder::CDAB:
+        v->in.first = reverse(values.constFirst());
+        v->in.last  = reverse(values.constLast());
         break;
     }
 }
@@ -79,16 +79,16 @@ inline QVector<quint16> getValues(ModbusValue *v, ByteOrder bo = ByteOrder::CDAB
     QVector<quint16> result;
     switch (bo) {
     case ByteOrder::ABCD:
-        result << v->in.last << v->in.first;
-        break;
-    case ByteOrder::DCBA:
-        result << reverse(v->in.first) << reverse(v->in.last);
-        break;
-    case ByteOrder::BADC:
         result << reverse(v->in.last) << reverse(v->in.first);
         break;
-    case ByteOrder::CDAB:
+    case ByteOrder::DCBA:
         result << v->in.first << v->in.last;
+        break;
+    case ByteOrder::BADC:
+        result << v->in.last << v->in.first;
+        break;
+    case ByteOrder::CDAB:
+        result << reverse(v->in.first) << reverse(v->in.last);
         break;
     }
     return result;
