@@ -11,8 +11,8 @@ namespace Modbus {
 
 union ModbusValue {
     struct {
-        quint16 last;
         quint16 first;
+        quint16 last;
     } in;
     float   outFloat;
     quint32 outUInt;
@@ -57,20 +57,20 @@ inline quint16 reverse(quint16 value) {
 inline void setValues(ModbusValue *v, const QVector<quint16> &values, ByteOrder bo) {
     switch (bo) {
     case ByteOrder::ABCD:
-        v->in.first = reverse(values.constLast());
-        v->in.last  = reverse(values.constFirst());
+        v->in.first = reverse(values.constFirst());
+        v->in.last  = reverse(values.constLast());
         break;
     case ByteOrder::DCBA:
-        v->in.first = values.constFirst();
-        v->in.last  = values.constLast();
-        break;
-    case ByteOrder::BADC:
         v->in.first = values.constLast();
         v->in.last  = values.constFirst();
         break;
+    case ByteOrder::BADC:
+        v->in.first = values.constFirst();
+        v->in.last  = values.constLast();
+        break;
     case ByteOrder::CDAB:
-        v->in.first = reverse(values.constFirst());
-        v->in.last  = reverse(values.constLast());
+        v->in.first = reverse(values.constLast());
+        v->in.last  = reverse(values.constFirst());
         break;
     }
 }
@@ -79,16 +79,16 @@ inline QVector<quint16> getValues(ModbusValue *v, ByteOrder bo = ByteOrder::CDAB
     QVector<quint16> result;
     switch (bo) {
     case ByteOrder::ABCD:
-        result << reverse(v->in.last) << reverse(v->in.first);
+        result << reverse(v->in.first) << reverse(v->in.last);
         break;
     case ByteOrder::DCBA:
-        result << v->in.first << v->in.last;
-        break;
-    case ByteOrder::BADC:
         result << v->in.last << v->in.first;
         break;
+    case ByteOrder::BADC:
+        result << v->in.first << v->in.last;
+        break;
     case ByteOrder::CDAB:
-        result << reverse(v->in.first) << reverse(v->in.last);
+        result << reverse(v->in.last) << reverse(v->in.first);
         break;
     }
     return result;
@@ -108,7 +108,7 @@ inline quint32 takeUInt(const QVector<quint16> &values, ByteOrder bo = ByteOrder
     return v.outUInt;
 }
 
-inline quint32 takeInt(const QVector<quint16> &values, ByteOrder bo = ByteOrder::CDAB) {
+inline qint32 takeInt(const QVector<quint16> &values, ByteOrder bo = ByteOrder::CDAB) {
     Q_ASSERT(values.size() == 2);
     ModbusValue v;
     setValues(&v, values, bo);

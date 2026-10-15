@@ -193,7 +193,7 @@
             <item>
              <widget class="QComboBox" name="cmbByteOrder">
               <property name="currentIndex">
-               <number>1</number>
+               <number>0</number>
               </property>
               <item>
                <property name="text">
@@ -348,7 +348,7 @@
             <item>
              <widget class="QComboBox" name="cmbCRByteOrder">
               <property name="currentIndex">
-               <number>1</number>
+               <number>0</number>
               </property>
               <item>
                <property name="text">
